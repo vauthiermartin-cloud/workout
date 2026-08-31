@@ -87,6 +87,24 @@ const WORKOUTS = {
         {tag:"MIN 3",items:[r(3,"tractions")]},
       ],
       goal:"Sept passages sur les burpees. Même cadence du bloc 1 au bloc 7." },
+    { name:"EMOM 20 explosif", dur:"20 min", meta:"4 blocs × 5 min · tout est en puissance, sauf la planche",
+      blocks:[
+        {tag:"MIN 1",items:[r(6,"burpees sautés en longueur","Burpee classique, mais tu termines par un saut vers l'avant au lieu d'un saut sur place")]},
+        {tag:"MIN 2",items:[r(16,"fentes marchées","Tu avances à chaque répétition. 16 = 8 par jambe. Pas de place ? Fentes arrière sur place.")]},
+        {tag:"MIN 3",items:[r(12,"jump squats")]},
+        {tag:"MIN 4",items:[f("30 s de planche","Le reste de la minute est ta récup")]},
+        {tag:"MIN 5",items:[r(4,"tractions")]},
+      ],
+      goal:"Chaque saut est une répétition à part entière. Si tu enchaînes mou, réduis le nombre." },
+    { name:"EMOM 20 sol", dur:"20 min", meta:"4 blocs × 5 min · rien en position debout, la barre en renfort",
+      blocks:[
+        {tag:"MIN 1",items:[r(12,"swings latéraux","Mains posées au sol d'un côté. Tu fais passer les deux pieds joints de l'autre côté des mains en soulevant le bassin avec les abdos. 12 = 6 par côté.")]},
+        {tag:"MIN 2",items:[r(20,"sauts mogul","En planche haute, mains fixes, pieds qui sautent d'un côté à l'autre, genoux vers la poitrine")]},
+        {tag:"MIN 3",items:[r(8,"hollow to sweep","Départ en hollow, bascule en appui sur une main et un pied, jambe libre tendue vers le haut, main opposée qui touche le pied. 8 = 4 par côté.")]},
+        {tag:"MIN 4",items:[r(8,"relevés de genoux suspendu","Suspendu à la barre, tu remontes les genoux vers la poitrine sans balancer")]},
+        {tag:"MIN 5",items:[r(20,"shoulder taps en gainage","En planche haute, tu touches l'épaule opposée sans laisser le bassin partir sur le côté")]},
+      ],
+      goal:"La séance la plus technique de la semaine. Si une minute se dégrade, baisse les reps plutôt que la qualité." },
   ],
   2: [
     { name:"Escalier montant", dur:"20 min", meta:"1 tour = 1 min · 5 tours par bloc · les reps montent",
@@ -113,6 +131,28 @@ const WORKOUTS = {
         {tag:"→ SUITE",items:[f("+1 rep partout, jusqu'à la fin des 20 min")]},
       ],
       goal:"Retiens le numéro du dernier round terminé. C'est ton score." },
+    { name:"Escalier croisé", dur:"20 min", meta:"1 tour = 1 min · 5 tours par bloc · les burpees montent, les fentes suivent",
+      blocks:[
+        {tag:"MIN 1–5",items:[
+          r(2,"burpees genou diagonal","Burpee sans saut : tu remontes debout, puis tu lances un genou en diagonale vers le coude opposé. Alterne les côtés."),
+          r(10,"fentes croisées","Depuis debout, la jambe arrière passe en diagonale derrière l'autre et tu descends. 10 = 5 par jambe."),
+        ]},
+        {tag:"MIN 6–10",items:[r(3,"burpees genou diagonal"), r(12,"fentes croisées")]},
+        {tag:"MIN 11–15",items:[r(4,"burpees genou diagonal"), r(14,"fentes croisées")]},
+        {tag:"MIN 16–20",items:[r(5,"burpees genou diagonal"), r(16,"fentes croisées")]},
+      ],
+      goal:"70 burpees sans un seul saut. Tes genoux te remercieront, ton cardio pas du tout." },
+    { name:"Escalier tirage", dur:"20 min", meta:"1 tour = 1 min · 5 tours par bloc · l'espalier travaille autant que toi",
+      blocks:[
+        {tag:"MIN 1–5",items:[
+          r(2,"burpees"),
+          r(5,"tirages australiens","Allongé sous un barreau bas de l'espalier, corps gainé en ligne, tu tires la poitrine vers la barre. Plus les pieds sont loin, plus c'est dur."),
+        ]},
+        {tag:"MIN 6–10",items:[r(3,"burpees"), r(5,"tirages australiens")]},
+        {tag:"MIN 11–15",items:[r(4,"burpees"), r(20,"montées sur pointes","Debout, tu montes sur la pointe des pieds et tu redescends lentement. Sur une jambe pour durcir.")]},
+        {tag:"MIN 16–20",items:[r(5,"burpees"), r(20,"montées sur pointes")]},
+      ],
+      goal:"La seule séance qui tire à l'horizontale et qui travaille les mollets. Elle a sa place dans chaque semaine." },
   ],
   3: [
     { name:"5 rounds", dur:"≤ 25 min", meta:"Pour le temps · cap 25 min · repos libre entre les rounds",
@@ -138,6 +178,31 @@ const WORKOUTS = {
         {tag:"7",items:[r(10,"tractions")]},
       ],
       goal:"Les burpees arrivent quand tu es cuit. C'est exactement le but." },
+    { name:"Tours explosifs", dur:"≤ 25 min", meta:"4 tours · pour le temps · beaucoup de saut, repos libre entre les tours",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(12,"burpees sautés en longueur","Burpee classique, mais tu termines par un saut vers l'avant au lieu d'un saut sur place"),
+          r(20,"fentes marchées","Tu avances à chaque répétition. 20 = 10 par jambe. Pas de place ? Fentes arrière sur place."),
+          r(20,"jump squats"),
+          r(30,"mountain climbers"),
+          f("30 s de planche","Coudes sous les épaules, fessiers serrés"),
+        ]},
+        {tag:"× 4",items:[f("Enchaîne 4 tours")]},
+      ],
+      goal:"Le tour le plus dur des trois du mercredi. Si le tour 2 s'écroule, tu es parti trop vite." },
+    { name:"Tours au sol", dur:"≤ 25 min", meta:"4 tours · pour le temps · chaîne postérieure et quadrupédie",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(6,"bear crawl to thread the needle","4 pas de bear crawl en avant, 4 en arrière, puis depuis la quadrupédie tu passes un bras tendu sous le corps jusqu'à poser l'épaule et la tempe au sol. 6 = 3 par côté."),
+          r(20,"ponts fessiers","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin jusqu'à l'alignement épaules-hanches-genoux et tu serres 1 s en haut."),
+          r(10,"ponts fessiers sur une jambe","Même mouvement, une jambe tendue en l'air. 10 = 5 par jambe."),
+          r(20,"mountain climbers croisés","Genou vers le coude opposé"),
+          r(12,"superman","Sur le ventre, bras et jambes décollés, 2 s en haut"),
+          r(10,"pompes"),
+        ]},
+        {tag:"× 4",items:[f("Enchaîne 4 tours")]},
+      ],
+      goal:"Aucun impact, aucun saut. C'est la séance à prendre quand les genoux tirent." },
   ],
   4: [
     { name:"2 × AMRAP 10", dur:"23 min", meta:"Max de tours en 10 min · 3 min de repos entre les blocs",
@@ -159,6 +224,26 @@ const WORKOUTS = {
         {tag:"BLOC C",items:[r(3,"tractions"),r(6,"burpees")]},
       ],
       goal:"Blocs courts, donc tu peux pousser. Ne garde rien pour la fin." },
+    { name:"AMRAP 18 au sol", dur:"18 min", meta:"Max de tours en 18 min · tout se passe au ras du sol",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(12,"sauts mogul","En planche haute, mains fixes, tu sautes les deux pieds d'un côté à l'autre, genoux repliés vers la poitrine. 12 = 6 par côté."),
+          r(8,"sweeps","Appui sur une main et un pied, hanche décollée du sol, la jambe libre passe tendue sous toi vers l'avant. 8 = 4 par côté."),
+          r(10,"V-ups","Bras et jambes tendus qui se rejoignent au-dessus du bassin"),
+          r(8,"pompes"),
+        ]},
+      ],
+      goal:"Le sweep est le mouvement le plus technique du lot. Si tu perds la forme, ralentis-le au lieu de le sauter." },
+    { name:"AMRAP 20 poussée-tirage", dur:"20 min", meta:"Max de tours en 20 min · la seule séance qui pousse à la verticale",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(6,"pompes piquées","Bassin haut, tête vers le sol entre les mains, tu descends puis tu pousses. Pieds sur un barreau de l'espalier pour durcir."),
+          r(8,"tirages australiens","Allongé sous un barreau bas de l'espalier, corps gainé, tu tires la poitrine vers la barre."),
+          r(4,"tractions"),
+          r(10,"pompes"),
+        ]},
+      ],
+      goal:"Poussée verticale, poussée horizontale, tirage vertical, tirage horizontal. Les quatre en un tour." },
   ],
   5: [
     { name:"Test 4 min + finisher", dur:"≈ 23 min", test:true, testLabel:"Burpees en 4 min",
@@ -188,6 +273,35 @@ const WORKOUTS = {
         {tag:"3 ROUNDS",items:[r(10,"pompes"),r(15,"air squats"),r(3,"tractions"),r(15,"sit-ups")]},
       ],
       goal:"Note le temps en secondes. Sous 240 s, c'est déjà solide." },
+    { name:"Test 4 min + sangle", dur:"≈ 22 min", test:true, testLabel:"Burpees en 4 min",
+      meta:"Le même test, suivi d'un circuit lent centré sur la sangle abdominale",
+      blocks:[
+        {tag:"TEST",items:[f("Max de burpees en 4 min")]},
+        {tag:"REPOS",items:[f("3 min")]},
+        {tag:"3 ROUNDS",items:[
+          r(12,"corkscrews","Sur le dos, jambes tendues vers le plafond. Tu décolles le bassin en vrillant vers un côté, puis vers l'autre. 12 = 6 par côté."),
+          r(16,"dead bugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent lentement"),
+          r(20,"russian twists","Assis, buste incliné, tu passes les mains d'un côté à l'autre. 20 = 10 par côté."),
+          r(15,"crunchs inversés","Sur le dos, tu remontes le bassin en enroulant, jambes fléchies"),
+          r(15,"relevés de jambes au sol","Mains sous les fessiers, jambes tendues qui descendent sans toucher le sol"),
+          r(20,"ciseaux","Jambes tendues qui se croisent en alternance, à 20 cm du sol"),
+        ]},
+      ],
+      goal:"Même chiffre de test que la version longue, comparable d'une semaine à l'autre." },
+    { name:"Test 4 min + chaîne postérieure", dur:"≈ 22 min", test:true, testLabel:"Burpees en 4 min",
+      meta:"Le même test, suivi de tout ce que la semaine oublie le plus souvent",
+      blocks:[
+        {tag:"TEST",items:[f("Max de burpees en 4 min")]},
+        {tag:"REPOS",items:[f("3 min")]},
+        {tag:"4 ROUNDS",items:[
+          r(20,"ponts fessiers","Genoux pliés, pieds à plat, tu montes le bassin et tu serres 1 s en haut"),
+          r(10,"ponts fessiers sur une jambe","Une jambe tendue en l'air. 10 = 5 par jambe."),
+          r(20,"fentes arrière"),
+          r(25,"montées sur pointes","Debout, tu montes sur la pointe des pieds et tu redescends lentement"),
+          r(12,"superman","Sur le ventre, bras et jambes décollés, 2 s en haut"),
+        ]},
+      ],
+      goal:"Fessiers, ischios, mollets. C'est ce qui te manquera le jour où le kiné te rendra la course." },
   ],
 };
 
@@ -222,6 +336,42 @@ const FINISHERS = {
     { name:"Descente 10 à 1", dur:"≤ 10 min", meta:"10 burpees, puis 9, puis 8… jusqu'à 1",
       blocks:[
         {tag:"SÉRIES",items:[f("10, 9, 8, 7, 6, 5, 4, 3, 2, 1 burpees","55 burpees au total. Le plus dur est au début, c'est fait exprès.")]},
+      ] },
+    { name:"Explosif", dur:"≤ 10 min", meta:"5 tours · tout en puissance, rien en endurance",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(6,"burpees sautés en longueur","Saut vers l'avant en fin de burpee, le plus loin possible"),
+          r(12,"fentes marchées"),
+          r(20,"mountain climbers"),
+        ]},
+        {tag:"× 5",items:[f("Enchaîne 5 tours")]},
+      ] },
+    { name:"Sol et saut", dur:"≤ 10 min", meta:"5 tours · les mains ne quittent jamais le sol",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(20,"sauts mogul","En planche haute, mains fixes, tu sautes les deux pieds d'un côté à l'autre, genoux repliés vers la poitrine. 20 = 10 par côté."),
+          r(10,"sweeps","Appui sur une main et un pied, hanche décollée, la jambe libre passe tendue sous toi vers l'avant. 10 = 5 par côté."),
+          r(20,"mountain climbers"),
+        ]},
+        {tag:"× 5",items:[f("Enchaîne 5 tours")]},
+      ] },
+    { name:"Bboy", dur:"≤ 10 min", meta:"5 tours · zéro impact, beaucoup de coordination",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(8,"burpees genou diagonal","Burpee sans saut : tu remontes debout, puis tu lances un genou en diagonale vers le coude opposé. Alterne."),
+          r(10,"hollow to sweep","Départ en hollow au sol. Tu bascules en appui sur une main et un pied, bassin haut, la jambe libre tendue vers le haut, la main opposée qui vient toucher le pied. Retour en hollow. 10 = 5 par côté."),
+          r(16,"fentes croisées","La jambe arrière passe en diagonale derrière l'autre. 16 = 8 par jambe."),
+        ]},
+        {tag:"× 5",items:[f("Enchaîne 5 tours")]},
+      ] },
+    { name:"Quadrupédie", dur:"≤ 10 min", meta:"5 tours · les mains restent au sol du début à la fin",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(6,"bear crawl to thread the needle","4 pas de bear crawl en avant, 4 en arrière, puis depuis la quadrupédie tu passes un bras tendu sous le corps jusqu'à poser l'épaule et la tempe au sol. Alterne les côtés. 6 = 3 par côté."),
+          r(20,"sauts mogul","En planche haute, mains fixes, pieds qui sautent d'un côté à l'autre, genoux vers la poitrine"),
+          r(12,"shoulder taps en gainage","Tu touches l'épaule opposée sans laisser le bassin partir sur le côté"),
+        ]},
+        {tag:"× 5",items:[f("Enchaîne 5 tours")]},
       ] },
   ],
   abdos: [
@@ -277,6 +427,43 @@ const FINISHERS = {
         ]},
         {tag:"× 5",items:[f("Enchaîne 5 tours")]},
       ] },
+    { name:"V-ups et compagnie", dur:"≤ 9 min", meta:"4 tours · le V-up en ouverture, quand tu es encore frais",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(12,"V-ups","Bras et jambes tendus qui se rejoignent au-dessus du bassin. Trop dur ? Plie les genoux."),
+          r(20,"sauts mogul","En planche haute, mains fixes, pieds qui sautent d'un côté à l'autre, genoux vers la poitrine"),
+          r(15,"relevés de jambes au sol","Mains sous les fessiers, jambes tendues qui descendent sans toucher le sol"),
+        ]},
+        {tag:"× 4",items:[f("Enchaîne 4 tours")]},
+      ] },
+    { name:"Bassin et vrille", dur:"≤ 9 min", meta:"4 tours · fessiers et obliques, rien de sauté",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(20,"ponts fessiers","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin jusqu'à l'alignement épaules-hanches-genoux et tu serres 1 s en haut."),
+          r(12,"corkscrews","Sur le dos, jambes tendues vers le plafond. Tu décolles le bassin en vrillant vers un côté, puis vers l'autre. 12 = 6 par côté."),
+          f("30 s de planche","Coudes sous les épaules, fessiers serrés"),
+        ]},
+        {tag:"× 4",items:[f("Enchaîne 4 tours")]},
+      ] },
+    { name:"Pont et gainage", dur:"≤ 8 min", meta:"5 tours · chaîne postérieure et sangle profonde",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(15,"ponts fessiers","Genoux pliés, pieds à plat, tu serres les fessiers en haut"),
+          r(10,"ponts fessiers sur une jambe","Même mouvement, une jambe tendue en l'air. 10 = 5 par jambe."),
+          r(10,"corkscrews"),
+          f("20 s gainage latéral par côté"),
+        ]},
+        {tag:"× 5",items:[f("Enchaîne 5 tours")]},
+      ] },
+    { name:"Swings", dur:"≤ 9 min", meta:"5 tours · tout part de la sangle abdominale",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(16,"swings latéraux","Mains posées au sol d'un côté. Tu fais passer les deux pieds joints de l'autre côté des mains en soulevant le bassin avec les abdos, puis tu reviens. 16 = 8 par côté."),
+          r(12,"V-ups","Bras et jambes tendus qui se rejoignent au-dessus du bassin"),
+          f("20 s hollow hold","Bras tendus derrière la tête, lombaires plaquées au sol"),
+        ]},
+        {tag:"× 5",items:[f("Enchaîne 5 tours")]},
+      ] },
   ],
 };
 
@@ -300,12 +487,13 @@ const STRETCHES = [
       {tag:"45 S / CÔTÉ",items:[f("Torsion allongée","Sur le dos, genoux qui tombent d'un côté, épaules qui restent au sol")]},
       {tag:"60 S",items:[f("Posture de l'enfant","Respiration dans le bas du dos")]},
     ] },
-  { id:"haut", name:"Haut du corps", dur:"7 min", meta:"Épaules, pecs, dorsaux · après tractions et pompes",
+  { id:"haut", name:"Haut du corps", dur:"8 min", meta:"Épaules, pecs, dorsaux · après tractions et pompes",
     blocks:[
       {tag:"30 S / CÔTÉ",items:[f("Bras croisé devant la poitrine","Coude tiré vers toi, épaule basse")]},
       {tag:"45 S / CÔTÉ",items:[f("Ouverture pectorale à l'espalier","Main sur un barreau derrière toi, tu pivotes doucement")]},
       {tag:"60 S",items:[f("Chien tête en bas","Talons vers le sol, dos long, tu pousses le sol loin de toi")]},
       {tag:"45 S",items:[f("Sphinx","Coudes sous les épaules, ouverture de la poitrine")]},
+      {tag:"45 S / CÔTÉ",items:[f("Thread the needle","À quatre pattes, un bras tendu passe sous le corps jusqu'à poser l'épaule et la tempe au sol")]},
       {tag:"30 S / CÔTÉ",items:[f("Triceps bras derrière la tête","Coude vers le plafond, main entre les omoplates")]},
       {tag:"45 S",items:[f("Suspension passive à la barre","Bras tendus, épaules relâchées, tu laisses pendre")]},
       {tag:"60 S",items:[f("Posture de l'enfant, bras sur le côté","Bras tendus vers la gauche, puis vers la droite")]},
@@ -358,6 +546,14 @@ const TIMERS = {
   "EMOM 21": [{ t:"cycle", sec:60, label:"EMOM 21", stations:[
     st(r(8,"burpees")), st(r(12,"pompes")), st(r(3,"tractions")),
   ], loops:7 }],
+  "EMOM 20 sol": [{ t:"cycle", sec:60, label:"EMOM 20 sol", stations:[
+    st(r(12,"swings latéraux")), st(r(20,"sauts mogul")), st(r(8,"hollow to sweep")),
+    st(r(8,"relevés de genoux suspendu")), st(r(20,"shoulder taps en gainage")),
+  ], loops:4 }],
+  "EMOM 20 explosif": [{ t:"cycle", sec:60, label:"EMOM 20 explosif", stations:[
+    st(r(6,"burpees sautés en longueur")), st(r(16,"fentes marchées")), st(r(12,"jump squats")),
+    st(f("30 s de planche")), st(r(4,"tractions")),
+  ], loops:4 }],
 
   /* Mardi */
   "Escalier montant": [{ t:"cycle", sec:60, label:"Escalier montant", stations:[
@@ -375,6 +571,18 @@ const TIMERS = {
   "Escalier ouvert": [{ t:"down", sec:1200, label:"Escalier ouvert", sub:"Round 1, puis +1 rep partout", list:[
     r(1,"burpee"), r(2,"pompes"), r(3,"air squats"),
   ] }],
+  "Escalier croisé": [{ t:"cycle", sec:60, label:"Escalier croisé", stations:[
+    ...x5(st(r(2,"burpees genou diagonal"), r(10,"fentes croisées"))),
+    ...x5(st(r(3,"burpees genou diagonal"), r(12,"fentes croisées"))),
+    ...x5(st(r(4,"burpees genou diagonal"), r(14,"fentes croisées"))),
+    ...x5(st(r(5,"burpees genou diagonal"), r(16,"fentes croisées"))),
+  ], loops:1 }],
+  "Escalier tirage": [{ t:"cycle", sec:60, label:"Escalier tirage", stations:[
+    ...x5(st(r(2,"burpees"), r(5,"tirages australiens"))),
+    ...x5(st(r(3,"burpees"), r(5,"tirages australiens"))),
+    ...x5(st(r(4,"burpees"), r(20,"montées sur pointes"))),
+    ...x5(st(r(5,"burpees"), r(20,"montées sur pointes"))),
+  ], loops:1 }],
 
   /* Mercredi */
   "5 rounds": [{ t:"up", cap:1500, label:"5 rounds", sub:"1 tour, à répéter 5 fois", list:[
@@ -388,6 +596,15 @@ const TIMERS = {
   "Chipper": [{ t:"up", cap:1500, label:"Chipper", sub:"Dans l'ordre, une ligne à la fois", list:[
     r(100,"mountain climbers"), r(80,"air squats"), r(60,"sit-ups"),
     r(40,"fentes arrière"), r(30,"pompes"), r(20,"burpees"), r(10,"tractions"),
+  ] }],
+  "Tours explosifs": [{ t:"up", cap:1500, label:"4 tours explosifs", sub:"1 tour, à répéter 4 fois", list:[
+    r(12,"burpees sautés en longueur"), r(20,"fentes marchées"), r(20,"jump squats"),
+    r(30,"mountain climbers"), f("30 s de planche"),
+  ] }],
+
+  "Tours au sol": [{ t:"up", cap:1500, label:"4 tours au sol", sub:"1 tour, à répéter 4 fois", list:[
+    r(6,"bear crawl to thread the needle"), r(20,"ponts fessiers"), r(10,"ponts fessiers sur une jambe"),
+    r(20,"mountain climbers croisés"), r(12,"superman"), r(10,"pompes"),
   ] }],
 
   /* Jeudi */
@@ -408,6 +625,12 @@ const TIMERS = {
     { t:"rest", sec:120, label:"Repos" },
     { t:"down", sec:360, label:"Bloc C", sub:"Max de tours", list:[r(3,"tractions"), r(6,"burpees")] },
   ],
+  "AMRAP 18 au sol": [{ t:"down", sec:1080, label:"AMRAP 18", sub:"Max de tours", list:[
+    r(12,"sauts mogul"), r(8,"sweeps"), r(10,"V-ups"), r(8,"pompes"),
+  ] }],
+  "AMRAP 20 poussée-tirage": [{ t:"down", sec:1200, label:"AMRAP 20", sub:"Max de tours", list:[
+    r(6,"pompes piquées"), r(8,"tirages australiens"), r(4,"tractions"), r(10,"pompes"),
+  ] }],
 
   /* Vendredi */
   "Test 4 min + finisher": [
@@ -430,6 +653,22 @@ const TIMERS = {
       r(10,"pompes"), r(15,"air squats"), r(3,"tractions"), r(15,"sit-ups") ] },
   ],
 
+  "Test 4 min + sangle": [
+    { t:"down", sec:240, label:"TEST", sub:"Max de burpees", test:true },
+    { t:"rest", sec:180, label:"Repos" },
+    { t:"up", cap:900, label:"3 rounds", sub:"1 tour, à répéter 3 fois", list:[
+      r(12,"corkscrews"), r(16,"dead bugs"), r(20,"russian twists"),
+      r(15,"crunchs inversés"), r(15,"relevés de jambes au sol"), r(20,"ciseaux") ] },
+  ],
+
+  "Test 4 min + chaîne postérieure": [
+    { t:"down", sec:240, label:"TEST", sub:"Max de burpees", test:true },
+    { t:"rest", sec:180, label:"Repos" },
+    { t:"up", cap:900, label:"4 rounds", sub:"1 tour, à répéter 4 fois", list:[
+      r(20,"ponts fessiers"), r(10,"ponts fessiers sur une jambe"), r(20,"fentes arrière"),
+      r(25,"montées sur pointes"), r(12,"superman") ] },
+  ],
+
   /* Finishers cardio */
   "EMOM 10 burpees": [{ t:"cycle", sec:60, label:"EMOM 10", stations:[st(r(5,"burpees"))], loops:10 }],
   "Montée jusqu'à l'échec": [{ t:"cycle", sec:60, label:"Montée", stations:[
@@ -450,10 +689,22 @@ const TIMERS = {
   "Descente 10 à 1": [{ t:"up", cap:600, label:"Descente 10→1", sub:"55 burpees au total", list:[
     f("10, 9, 8, 7, 6, 5, 4, 3, 2, 1"),
   ] }],
+  "Explosif": [{ t:"up", cap:600, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
+    r(6,"burpees sautés en longueur"), r(12,"fentes marchées"), r(20,"mountain climbers"),
+  ] }],
+  "Sol et saut": [{ t:"up", cap:600, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
+    r(20,"sauts mogul"), r(10,"sweeps"), r(20,"mountain climbers"),
+  ] }],
+  "Bboy": [{ t:"up", cap:600, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
+    r(8,"burpees genou diagonal"), r(10,"hollow to sweep"), r(16,"fentes croisées"),
+  ] }],
+  "Quadrupédie": [{ t:"up", cap:600, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
+    r(6,"bear crawl to thread the needle"), r(20,"sauts mogul"), r(12,"shoulder taps en gainage"),
+  ] }],
 
   /* Finishers abdos */
   "Le classique": [{ t:"up", cap:540, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
-    r(10,"sit-ups"), r(20,"russian twists"), r(10,"shoulder taps"),
+    r(10,"sit-ups"), r(20,"russian twists"), r(10,"shoulder taps en gainage"),
   ] }],
   "Barre de traction": [{ t:"up", cap:540, label:"4 tours", sub:"1 tour, à répéter 4 fois", list:[
     r(10,"relevés de genoux suspendu"), r(15,"sit-ups"), r(20,"russian twists"),
@@ -468,12 +719,93 @@ const TIMERS = {
     r(20,"dead bugs"), r(15,"crunchs inversés"), f("30 s gainage latéral par côté"),
   ] }],
   "Chaîne complète": [{ t:"up", cap:540, label:"4 tours", sub:"1 tour, à répéter 4 fois", list:[
-    r(12,"relevés de jambes"), r(20,"mountain climbers croisés"), r(12,"superman"),
+    r(12,"relevés de jambes au sol"), r(20,"mountain climbers croisés"), r(12,"superman"),
   ] }],
   "Hollow et ciseaux": [{ t:"up", cap:480, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
     f("20 s hollow hold"), r(20,"ciseaux"), r(10,"V-ups"),
   ] }],
+  "V-ups et compagnie": [{ t:"up", cap:540, label:"4 tours", sub:"1 tour, à répéter 4 fois", list:[
+    r(12,"V-ups"), r(20,"sauts mogul"), r(15,"relevés de jambes au sol"),
+  ] }],
+  "Bassin et vrille": [{ t:"up", cap:540, label:"4 tours", sub:"1 tour, à répéter 4 fois", list:[
+    r(20,"ponts fessiers"), r(12,"corkscrews"), f("30 s de planche"),
+  ] }],
+  "Pont et gainage": [{ t:"up", cap:480, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
+    r(15,"ponts fessiers"), r(10,"ponts fessiers sur une jambe"), r(10,"corkscrews"),
+    f("20 s gainage latéral par côté"),
+  ] }],
+  "Swings": [{ t:"up", cap:540, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
+    r(16,"swings latéraux"), r(12,"V-ups"), f("20 s hollow hold"),
+  ] }],
 };
+
+/* --------------------------- Schémas moteurs ---------------------------
+   Les étiquettes ne sont jamais saisies à la main sur les séances :
+   elles se déduisent des exercices, donc elles ne peuvent pas dériver.
+------------------------------------------------------------------------*/
+const PATTERNS = [
+  { id:"poussee", label:"POUSSÉE" },
+  { id:"tirage", label:"TIRAGE" },
+  { id:"squat", label:"SQUAT" },
+  { id:"unilat", label:"UNILATÉRAL" },
+  { id:"hinge", label:"POSTÉRIEURE" },
+  { id:"core", label:"SANGLE" },
+  { id:"cardio", label:"CARDIO" },
+  { id:"mobilite", label:"MOBILITÉ" },
+  { id:"mollets", label:"MOLLETS" },
+];
+
+const EX_PATTERNS = {
+  "pompes":["poussee"],
+  "pompes piquées":["poussee"],
+  "tractions":["tirage"],
+  "tirages australiens":["tirage"],
+  "relevés de genoux suspendu":["tirage","core"],
+  "air squats":["squat"],
+  "jump squats":["squat","cardio"],
+  "fentes arrière":["unilat"],
+  "fentes marchées":["unilat"],
+  "fentes croisées":["unilat"],
+  "ponts fessiers":["hinge"],
+  "ponts fessiers sur une jambe":["hinge","unilat"],
+  "superman":["hinge"],
+  "montées sur pointes":["mollets"],
+  "burpees":["cardio"],
+  "burpee":["cardio"],
+  "burpees sautés en longueur":["cardio"],
+  "burpees genou diagonal":["cardio"],
+  "mountain climbers":["cardio","core"],
+  "mountain climbers croisés":["cardio","core"],
+  "sauts mogul":["cardio","core"],
+  "swings latéraux":["core","mobilite"],
+  "sweeps":["mobilite","core"],
+  "hollow to sweep":["mobilite","core"],
+  "bear crawl to thread the needle":["mobilite","core"],
+  "sit-ups":["core"],
+  "V-ups":["core"],
+  "ciseaux":["core"],
+  "corkscrews":["core"],
+  "dead bugs":["core"],
+  "crunchs inversés":["core"],
+  "relevés de jambes au sol":["core"],
+  "russian twists":["core"],
+  "shoulder taps en gainage":["core"],
+};
+
+/* Les lignes en texte libre (« 30 s de planche ») sont classées par mot-clé. */
+const TXT_PATTERNS = [
+  [/planche|gainage|hollow/i, ["core"]],
+  [/burpee/i, ["cardio"]],
+];
+
+function patternsOfWorkout(w) {
+  const s = new Set();
+  w.blocks.forEach((b) => b.items.forEach((it) => {
+    if (it.t && EX_PATTERNS[it.t]) EX_PATTERNS[it.t].forEach((p) => s.add(p));
+    else if (it.txt) TXT_PATTERNS.forEach(([re, ps]) => { if (re.test(it.txt)) ps.forEach((p) => s.add(p)); });
+  }));
+  return [...s];
+}
 
 const LEVELS = [
   { id:1, name:"REPRISE", need:0, desc:"Volume de base" },
@@ -524,6 +856,9 @@ function Rail({ blocks, accent, level, reduced }) {
     </div>
   );
 }
+
+const WORKOUT_BY_NAME = {};
+Object.values(WORKOUTS).flat().forEach((w) => { WORKOUT_BY_NAME[w.name] = w; });
 
 /* --------------------------- Chrono --------------------------- */
 const mmss = (s) => {
@@ -669,7 +1004,11 @@ function Timer({ phases, level, onDone }) {
           <div style={{ marginTop:28 }}>
             {station.map((it, j) => (
               <div key={j} style={{ fontFamily:DISPLAY, fontSize:28, lineHeight:1.2 }}>
-                <span style={{ color:accent }}>{scaleRep(it.n, level)}</span> {it.t}
+                {it.txt ? it.txt : (
+                  <React.Fragment>
+                    <span style={{ color:accent }}>{scaleRep(it.n, level)}</span> {it.t}
+                  </React.Fragment>
+                )}
               </div>
             ))}
           </div>
@@ -697,7 +1036,7 @@ function Timer({ phases, level, onDone }) {
         )}
         {next && (
           <div style={{ marginTop:18, fontFamily:MONO, fontSize:10, letterSpacing:".1em", color:C.ash }}>
-            ENSUITE · {next.map((it) => `${scaleRep(it.n, level)} ${it.t}`).join(" · ")}
+            ENSUITE · {next.map((it) => it.txt ? it.txt : `${scaleRep(it.n, level)} ${it.t}`).join(" · ")}
           </div>
         )}
       </div>
@@ -768,6 +1107,15 @@ function App() {
   log.forEach((e) => { const d = fromIso(e.d); if (d >= wkStart) weekDone[((d.getDay()+6)%7)+1] = true; });
   const weekCount = Object.keys(weekDone).length;
 
+  /* Ce que la semaine a déjà couvert, reconstruit depuis le journal */
+  const weekPatterns = new Set();
+  log.forEach((e) => {
+    const d = fromIso(e.d);
+    if (d >= wkStart && WORKOUT_BY_NAME[e.w]) {
+      patternsOfWorkout(WORKOUT_BY_NAME[e.w]).forEach((p) => weekPatterns.add(p));
+    }
+  });
+
   const weeks = [];
   for (let i = 7; i >= 0; i--) {
     const s = new Date(wkStart); s.setDate(s.getDate() - i*7);
@@ -789,8 +1137,17 @@ function App() {
   const accent = wod && wod.test ? C.ember : C.lime;
 
   const generate = () => {
-    let n = Math.floor(Math.random() * pool.length);
-    if (pool.length > 1 && n === variant) n = (n + 1) % pool.length;
+    const scored = pool.map((w, i) => ({
+      i,
+      neuf: patternsOfWorkout(w).filter((p) => !weekPatterns.has(p)).length,
+    }));
+    const best = Math.max(...scored.map((s) => s.neuf));
+    let candidats = scored.filter((s) => s.neuf === best).map((s) => s.i);
+    if (candidats.length > 1 && variant !== null) {
+      const sansRepet = candidats.filter((i) => i !== variant);
+      if (sansRepet.length) candidats = sansRepet;
+    }
+    const n = candidats[Math.floor(Math.random() * candidats.length)];
     setVariant(n); setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
     setFinisher(null); setStretch(null);
   };
@@ -873,6 +1230,7 @@ function App() {
       `Séances sur 28 jours : ${last28} · ce mois : ${monthCount}`,
       `Semaines (ancienne → récente) : ${weeks.map((w) => w.n).join(", ")}`,
       tests.length ? `Tests : ${tests.slice(0,8).map((t) => `${shortFr(t.d)} = ${t.s}`).join(" | ")}` : "Tests : aucun",
+      `Couverture de la semaine : ${weekPatterns.size}/${PATTERNS.length} — ${PATTERNS.filter((p) => weekPatterns.has(p.id)).map((p) => p.label.toLowerCase()).join(", ") || "rien"}`,
       `Finishers : ${log.filter((e) => e.fin).length} · stretching : ${log.filter((e) => e.str).length} (sur ${log.length} séances)`,
       "", "DÉTAIL 35 JOURS",
       ...recent.map((e) => `${shortFr(e.d)} ${DAYS.find((d) => d.key === e.day).short} · ${e.w} · N${e.lvl}`
@@ -968,7 +1326,22 @@ function App() {
                   <span style={{ fontFamily:DISPLAY, fontSize:30, lineHeight:1 }}>{wod.name}</span>
                   <span style={{ fontFamily:MONO, fontSize:12, fontWeight:700, color:accent }}>{wod.dur}</span>
                 </div>
-                <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"0 0 24px" }}>{wod.meta}</p>
+                <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"0 0 16px" }}>{wod.meta}</p>
+
+                <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:22 }}>
+                  {patternsOfWorkout(wod).map((p) => {
+                    const neuf = !weekPatterns.has(p);
+                    return (
+                      <span key={p} style={{ fontFamily:MONO, fontSize:9, letterSpacing:".1em",
+                        padding:"4px 7px", borderRadius:2,
+                        background: neuf ? C.lime : "transparent",
+                        color: neuf ? C.ink : C.ash,
+                        border: `1px solid ${neuf ? C.lime : C.line}` }}>
+                        {PATTERNS.find((x) => x.id === p).label}
+                      </span>
+                    );
+                  })}
+                </div>
 
                 <Rail blocks={wod.blocks} accent={accent} level={level} reduced={reduced} />
 
@@ -1074,6 +1447,28 @@ function App() {
                 </div>
               ))}
             </div>
+
+            <Label>COUVERTURE DE LA SEMAINE · {weekPatterns.size}/{PATTERNS.length}</Label>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:10 }}>
+              {PATTERNS.map((p) => {
+                const on = weekPatterns.has(p.id);
+                return (
+                  <span key={p.id} style={{ fontFamily:MONO, fontSize:9, letterSpacing:".1em",
+                    padding:"6px 8px", borderRadius:2,
+                    background: on ? C.lime : "transparent", color: on ? C.ink : C.ash,
+                    border:`1px solid ${on ? C.lime : C.line}` }}>
+                    {p.label}
+                  </span>
+                );
+              })}
+            </div>
+            <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"0 0 32px" }}>
+              {weekPatterns.size === PATTERNS.length
+                ? "Semaine complète. Tous les schémas moteurs ont été travaillés."
+                : weekPatterns.size === 0
+                ? "Rien d'enregistré cette semaine. Le générateur partira de zéro."
+                : `Il manque ${PATTERNS.filter((p) => !weekPatterns.has(p.id)).map((p) => p.label.toLowerCase()).join(", ")}. Le générateur privilégie les séances qui les couvrent.`}
+            </p>
 
             <Label>8 DERNIÈRES SEMAINES</Label>
             <div style={{ display:"flex", alignItems:"flex-end", gap:6, height:90, marginBottom:6 }}>
