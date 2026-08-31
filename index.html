@@ -57,8 +57,8 @@ const DAYS = [
   { key:4, short:"JEU", long:"JEUDI", theme:"AMRAP" },
   { key:5, short:"VEN", long:"VENDREDI", theme:"Test + finisher" },
 ];
-const r = (n,t) => ({n,t});
-const f = (txt) => ({txt});
+const r = (n,t,d) => ({n,t,d});
+const f = (txt,d) => ({txt,d});
 
 const WORKOUTS = {
   1: [
@@ -191,6 +191,150 @@ const WORKOUTS = {
   ],
 };
 
+/* --------------------------- Finishers (10 min max) --------------------------- */
+const FINISHERS = {
+  cardio: [
+    { name:"EMOM 10 burpees", dur:"10 min", meta:"5 burpees au début de chaque minute · le reste, tu souffles",
+      blocks:[{tag:"CHAQUE MINUTE",items:[r(5,"burpees")]},{tag:"× 10",items:[f("Dix minutes, dix départs")]}] },
+    { name:"Montée jusqu'à l'échec", dur:"≤ 10 min", meta:"1 burpee la 1re minute, 2 la 2e, 3 la 3e… jusqu'à ne plus tenir",
+      blocks:[
+        {tag:"MIN 1",items:[r(1,"burpee")]},
+        {tag:"MIN 2",items:[r(2,"burpees")]},
+        {tag:"MIN 3",items:[r(3,"burpees")]},
+        {tag:"→ SUITE",items:[f("+1 burpee par minute","Tu t'arrêtes à la minute que tu ne finis pas. Retiens le numéro.")]},
+      ] },
+    { name:"Tabata double", dur:"9 min", meta:"20 s à fond, 10 s de repos, 8 fois · 1 min entre les deux blocs",
+      blocks:[
+        {tag:"BLOC 1 · 4 MIN",items:[f("Burpees","Compte les reps du premier round, essaie de tenir ce chiffre sur les huit")]},
+        {tag:"REPOS",items:[f("1 min")]},
+        {tag:"BLOC 2 · 4 MIN",items:[f("Mountain climbers")]},
+      ] },
+    { name:"Pyramide burpees", dur:"≤ 8 min", meta:"Tu montes puis tu redescends, sans repos programmé",
+      blocks:[
+        {tag:"MONTÉE",items:[f("1, 2, 3, 4, 5 burpees","10 mountain climbers entre chaque palier")]},
+        {tag:"DESCENTE",items:[f("4, 3, 2, 1 burpees","Mêmes 10 mountain climbers entre chaque")]},
+      ] },
+    { name:"3 tours cardio", dur:"≤ 9 min", meta:"Pour le temps · repos libre entre les tours",
+      blocks:[
+        {tag:"1 TOUR",items:[r(30,"mountain climbers"),r(20,"jump squats"),r(10,"burpees")]},
+        {tag:"× 3",items:[f("Enchaîne 3 fois")]},
+      ] },
+    { name:"Descente 10 à 1", dur:"≤ 10 min", meta:"10 burpees, puis 9, puis 8… jusqu'à 1",
+      blocks:[
+        {tag:"SÉRIES",items:[f("10, 9, 8, 7, 6, 5, 4, 3, 2, 1 burpees","55 burpees au total. Le plus dur est au début, c'est fait exprès.")]},
+      ] },
+  ],
+  abdos: [
+    { name:"Le classique", dur:"≤ 9 min", meta:"5 tours · repos court entre les tours",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(10,"sit-ups"),
+          r(20,"russian twists","Assis, buste incliné, tu passes les mains d'un côté à l'autre. 20 = 10 par côté."),
+          r(10,"shoulder taps en gainage","En position de planche haute, tu touches l'épaule opposée sans bouger le bassin"),
+        ]},
+        {tag:"× 5",items:[f("Enchaîne 5 tours")]},
+      ] },
+    { name:"Barre de traction", dur:"≤ 9 min", meta:"4 tours · le premier exercice se fait suspendu",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(10,"relevés de genoux suspendu","Suspendu à la barre, tu remontes les genoux vers la poitrine sans balancer"),
+          r(15,"sit-ups"),
+          r(20,"russian twists"),
+        ]},
+        {tag:"× 4",items:[f("Enchaîne 4 tours")]},
+      ] },
+    { name:"Gainage descendant", dur:"≤ 8 min", meta:"4 tours · le temps de gainage baisse à chaque tour",
+      blocks:[
+        {tag:"TOUR 1",items:[f("60 s planche","Coudes sous les épaules, fessiers serrés, bassin bas"),r(10,"shoulder taps en gainage")]},
+        {tag:"TOUR 2",items:[f("45 s planche"),r(10,"shoulder taps en gainage")]},
+        {tag:"TOUR 3",items:[f("30 s planche"),r(10,"shoulder taps en gainage")]},
+        {tag:"TOUR 4",items:[f("15 s planche"),r(10,"shoulder taps en gainage")]},
+      ] },
+    { name:"Profond et lent", dur:"≤ 9 min", meta:"3 tours · rien de rapide, tout est contrôlé",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(20,"dead bugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),
+          r(15,"crunchs inversés","Sur le dos, tu remontes le bassin en enroulant, jambes fléchies"),
+          f("30 s gainage latéral par côté","Corps aligné, hanche haute"),
+        ]},
+        {tag:"× 3",items:[f("Enchaîne 3 tours")]},
+      ] },
+    { name:"Chaîne complète", dur:"≤ 9 min", meta:"4 tours · devant, côtés, dos",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          r(12,"relevés de jambes au sol","Sur le dos, mains sous les fessiers, jambes tendues qui descendent sans toucher le sol"),
+          r(20,"mountain climbers croisés","Genou vers le coude opposé"),
+          r(12,"superman","Sur le ventre, bras et jambes décollés, 2 s en haut"),
+        ]},
+        {tag:"× 4",items:[f("Enchaîne 4 tours")]},
+      ] },
+    { name:"Hollow et ciseaux", dur:"≤ 8 min", meta:"5 tours · tout se passe sur le dos, bas du dos plaqué",
+      blocks:[
+        {tag:"1 TOUR",items:[
+          f("20 s hollow hold","Sur le dos, bras tendus derrière la tête, épaules et jambes décollées, lombaires au sol"),
+          r(20,"ciseaux","Jambes tendues qui se croisent en alternance, à 20 cm du sol"),
+          r(10,"V-ups","Bras et jambes tendus qui se rejoignent au-dessus du bassin"),
+        ]},
+        {tag:"× 5",items:[f("Enchaîne 5 tours")]},
+      ] },
+  ],
+};
+
+/* --------------------------- Stretching --------------------------- */
+const STRETCHES = [
+  { id:"post", name:"Chaîne postérieure", dur:"7 min", meta:"Ischios, mollets, bas du dos · après les jours de jambes",
+    blocks:[
+      {tag:"60 S",items:[f("Pince debout","Mains derrière les chevilles, genoux souples, nuque relâchée")]},
+      {tag:"45 S / CÔTÉ",items:[f("Fente basse, genou arrière au sol","Bassin qui descend, buste droit")]},
+      {tag:"90 S",items:[f("Écart facial assis","Mains au sol devant toi, dos long, tu descends sans arrondir")]},
+      {tag:"45 S / CÔTÉ",items:[f("Torsion assise","Coude contre le genou opposé, regard derrière l'épaule")]},
+      {tag:"45 S",items:[f("Sphinx puis cobra","Bassin au sol, coudes puis mains, épaules basses")]},
+      {tag:"60 S",items:[f("Posture de l'enfant","Genoux écartés, bras tendus devant, front au sol")]},
+    ] },
+  { id:"hanches", name:"Hanches", dur:"8 min", meta:"Fléchisseurs, fessiers, adducteurs · après squats et fentes",
+    blocks:[
+      {tag:"90 S",items:[f("Squat profond talons au sol","Coudes contre l'intérieur des genoux, tu pousses vers l'extérieur")]},
+      {tag:"60 S / CÔTÉ",items:[f("Pigeon","Tibia avant parallèle au sol si possible, hanche arrière qui s'ouvre")]},
+      {tag:"60 S",items:[f("Papillon assis","Plantes de pieds jointes, coudes sur les cuisses, dos long")]},
+      {tag:"45 S / CÔTÉ",items:[f("Fente basse avec rotation","Main au sol côté intérieur, bras opposé qui monte au ciel")]},
+      {tag:"45 S / CÔTÉ",items:[f("Torsion allongée","Sur le dos, genoux qui tombent d'un côté, épaules qui restent au sol")]},
+      {tag:"60 S",items:[f("Posture de l'enfant","Respiration dans le bas du dos")]},
+    ] },
+  { id:"haut", name:"Haut du corps", dur:"7 min", meta:"Épaules, pecs, dorsaux · après tractions et pompes",
+    blocks:[
+      {tag:"30 S / CÔTÉ",items:[f("Bras croisé devant la poitrine","Coude tiré vers toi, épaule basse")]},
+      {tag:"45 S / CÔTÉ",items:[f("Ouverture pectorale à l'espalier","Main sur un barreau derrière toi, tu pivotes doucement")]},
+      {tag:"60 S",items:[f("Chien tête en bas","Talons vers le sol, dos long, tu pousses le sol loin de toi")]},
+      {tag:"45 S",items:[f("Sphinx","Coudes sous les épaules, ouverture de la poitrine")]},
+      {tag:"30 S / CÔTÉ",items:[f("Triceps bras derrière la tête","Coude vers le plafond, main entre les omoplates")]},
+      {tag:"45 S",items:[f("Suspension passive à la barre","Bras tendus, épaules relâchées, tu laisses pendre")]},
+      {tag:"60 S",items:[f("Posture de l'enfant, bras sur le côté","Bras tendus vers la gauche, puis vers la droite")]},
+    ] },
+  { id:"flow", name:"Enchaînement complet", dur:"9 min", meta:"La séquence entière, du debout au sol",
+    blocks:[
+      {tag:"45 S",items:[f("Pince debout","Mains derrière les chevilles")]},
+      {tag:"45 S / CÔTÉ",items:[f("Fente basse, bras au ciel","Ouverture thoracique, regard qui suit la main")]},
+      {tag:"60 S",items:[f("Chien tête en bas")]},
+      {tag:"45 S",items:[f("Cobra, bassin au sol","Épaules loin des oreilles")]},
+      {tag:"90 S",items:[f("Écart facial assis","Mains au sol devant, tu descends progressivement")]},
+      {tag:"45 S / CÔTÉ",items:[f("Torsion assise, coude contre le genou")]},
+      {tag:"60 S",items:[f("Ouverture antérieure assis","Assis jambes fléchies, mains au sol derrière toi, poitrine vers le haut")]},
+      {tag:"90 S",items:[f("Posture de l'enfant","La plus longue. Tu ne fais que respirer.")]},
+    ] },
+  { id:"express", name:"Express", dur:"4 min", meta:"Le minimum viable quand tu n'as plus de temps",
+    blocks:[
+      {tag:"45 S",items:[f("Pince debout")]},
+      {tag:"30 S / CÔTÉ",items:[f("Fente basse, genou arrière au sol")]},
+      {tag:"60 S",items:[f("Écart facial assis")]},
+      {tag:"60 S",items:[f("Posture de l'enfant")]},
+    ] },
+];
+
+/* Stretch par défaut selon ce que la séance du jour a chargé */
+const STRETCH_BY_DAY = { 1:"hanches", 2:"post", 3:"hanches", 4:"haut", 5:"post" };
+/* Les jours déjà chargés en burpees basculent vers les abdos */
+const FINISHER_BIAS = { 1:"cardio", 2:"abdos", 3:"abdos", 4:"cardio", 5:"abdos" };
+
 const LEVELS = [
   { id:1, name:"REPRISE", need:0, desc:"Volume de base" },
   { id:2, name:"RÉGULIER", need:12, desc:"+25 % de reps" },
@@ -214,6 +358,33 @@ function mondayOf(d) {
 const daysBetween = (a,b) => Math.round((b - a) / 86400000);
 const shortFr = (s) => { const d = fromIso(s); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}`; };
 
+/* --------------------------- Rail de blocs --------------------------- */
+function Rail({ blocks, accent, level, reduced }) {
+  return (
+    <div style={{ borderLeft:`1px solid ${C.line}`, marginLeft:6 }}>
+      {blocks.map((b,i) => (
+        <div key={i} style={{ position:"relative", paddingLeft:20, paddingBottom:20,
+          opacity: reduced?1:0, animation: reduced?"none":`wodIn 320ms cubic-bezier(.2,.7,.3,1) ${i*55}ms forwards` }}>
+          <span style={{ position:"absolute", left:-4, top:5, width:7, height:7, background:accent, borderRadius:1 }} />
+          <div style={{ fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".14em", color:C.ash, marginBottom:5 }}>{b.tag}</div>
+          {b.items.map((it,j) => (
+            <div key={j} style={{ marginBottom: it.d ? 8 : 0 }}>
+              <div style={{ fontFamily:DISPLAY, fontSize:21, lineHeight:1.24 }}>
+                {it.txt ? it.txt : (
+                  <React.Fragment>
+                    <span style={{ color: level>1 ? C.lime : C.bone }}>{scaleRep(it.n, level)}</span> {it.t}
+                  </React.Fragment>
+                )}
+              </div>
+              {it.d && <div style={{ fontSize:12, color:C.ash, lineHeight:1.45, marginTop:2 }}>{it.d}</div>}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* --------------------------- App --------------------------- */
 function App() {
   const today = new Date();
@@ -229,6 +400,8 @@ function App() {
   const [saveState, setSaveState] = useState("idle");
   const [askScore, setAskScore] = useState(false);
   const [scoreInput, setScoreInput] = useState("");
+  const [finisher, setFinisher] = useState(null);
+  const [stretch, setStretch] = useState(null);
   const [recap, setRecap] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
@@ -283,11 +456,36 @@ function App() {
     let n = Math.floor(Math.random() * pool.length);
     if (pool.length > 1 && n === variant) n = (n + 1) % pool.length;
     setVariant(n); setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
+    setFinisher(null); setStretch(null);
+  };
+
+  /* Le tirage penche vers les abdos les jours déjà chargés en burpees,
+     mais garde une chance de sortir l'autre famille pour ne pas devenir prévisible. */
+  const drawFinisher = () => {
+    const biased = FINISHER_BIAS[dayKey];
+    const other = biased === "cardio" ? "abdos" : "cardio";
+    const fam = Math.random() < 0.7 ? biased : other;
+    const list = FINISHERS[fam];
+    let pick = list[Math.floor(Math.random() * list.length)];
+    if (finisher && list.length > 1 && pick.name === finisher.name) {
+      pick = list[(list.indexOf(pick) + 1) % list.length];
+    }
+    setFinisher({ ...pick, fam });
+  };
+
+  const drawStretch = () => {
+    if (!stretch) {
+      setStretch(STRETCHES.find((s) => s.id === STRETCH_BY_DAY[dayKey]) || STRETCHES[0]);
+      return;
+    }
+    const i = STRETCHES.findIndex((s) => s.id === stretch.id);
+    setStretch(STRETCHES[(i + 1) % STRETCHES.length]);
   };
 
   const finish = () => {
     if (wod.test && !askScore) { setAskScore(true); return; }
     const entry = { d: todayIso, day: dayKey, w: wod.name, lvl: level,
+      fin: finisher ? finisher.name : null, str: stretch ? stretch.name : null,
       s: wod.test && scoreInput !== "" ? Number(scoreInput) : null };
     const ok = saveLog([...log.filter((e) => e.d !== todayIso), entry]);
     setSaveState(ok ? "done" : "error");
@@ -313,8 +511,12 @@ function App() {
       `Séances sur 28 jours : ${last28} · ce mois : ${monthCount}`,
       `Semaines (ancienne → récente) : ${weeks.map((w) => w.n).join(", ")}`,
       tests.length ? `Tests : ${tests.slice(0,8).map((t) => `${shortFr(t.d)} = ${t.s}`).join(" | ")}` : "Tests : aucun",
+      `Finishers : ${log.filter((e) => e.fin).length} · stretching : ${log.filter((e) => e.str).length} (sur ${log.length} séances)`,
       "", "DÉTAIL 35 JOURS",
-      ...recent.map((e) => `${shortFr(e.d)} ${DAYS.find((d) => d.key === e.day).short} · ${e.w} · N${e.lvl}${e.s != null ? ` · score ${e.s}` : ""}`),
+      ...recent.map((e) => `${shortFr(e.d)} ${DAYS.find((d) => d.key === e.day).short} · ${e.w} · N${e.lvl}`
+        + (e.s != null ? ` · score ${e.s}` : "")
+        + (e.fin ? ` · finisher : ${e.fin}` : "")
+        + (e.str ? ` · stretch : ${e.str}` : "")),
     ].join("\n");
     try { navigator.clipboard.writeText(txt); } catch (e) {}
     setRecap(txt);
@@ -374,7 +576,7 @@ function App() {
               {DAYS.map((d) => {
                 const on = d.key === dayKey, done = weekDone[d.key];
                 return (
-                  <button key={d.key} onClick={() => { setDayKey(d.key); setVariant(null); setSaveState("idle"); }}
+                  <button key={d.key} onClick={() => { setDayKey(d.key); setVariant(null); setSaveState("idle"); setFinisher(null); setStretch(null); }}
                     style={{ flex:1, padding:"8px 0", position:"relative", fontFamily:MONO, fontSize:11, fontWeight:700,
                       background:on?C.bone:"transparent", color:on?C.ink:(done?C.bone:C.ash),
                       border:`1px solid ${on?C.bone:C.line}`, borderRadius:2 }}>
@@ -406,24 +608,7 @@ function App() {
                 </div>
                 <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"0 0 24px" }}>{wod.meta}</p>
 
-                <div style={{ borderLeft:`1px solid ${C.line}`, marginLeft:6 }}>
-                  {wod.blocks.map((b,i) => (
-                    <div key={i} style={{ position:"relative", paddingLeft:20, paddingBottom:20,
-                      opacity: reduced?1:0, animation: reduced?"none":`wodIn 320ms cubic-bezier(.2,.7,.3,1) ${i*55}ms forwards` }}>
-                      <span style={{ position:"absolute", left:-4, top:5, width:7, height:7, background:accent, borderRadius:1 }} />
-                      <div style={{ fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".14em", color:C.ash, marginBottom:5 }}>{b.tag}</div>
-                      {b.items.map((it,j) => (
-                        <div key={j} style={{ fontFamily:DISPLAY, fontSize:21, lineHeight:1.24 }}>
-                          {it.txt ? it.txt : (
-                            <React.Fragment>
-                              <span style={{ color: level>1 ? C.lime : C.bone }}>{scaleRep(it.n, level)}</span> {it.t}
-                            </React.Fragment>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+                <Rail blocks={wod.blocks} accent={accent} level={level} reduced={reduced} />
 
                 <div style={{ background:C.steel, borderRadius:3, padding:16, fontSize:13.5, lineHeight:1.55, marginTop:8 }}>
                   <span style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:accent }}>OBJECTIF</span>
@@ -446,6 +631,55 @@ function App() {
                   Tractions trop dures ? Tirages horizontaux à l'espalier, ou des négatives de 5 s à la descente.
                   Trois tractions propres valent mieux que cinq lancées.
                 </p>
+
+                {/* ---- En plus ---- */}
+                <div style={{ borderTop:`1px solid ${C.line}`, marginTop:28, paddingTop:20 }}>
+                  <Label>EN PLUS, SI TU AS DU JUS</Label>
+                  <div style={{ display:"flex", gap:8 }}>
+                    <button onClick={drawFinisher} style={{ flex:1, padding:"12px 0",
+                      border:`1px solid ${finisher ? C.line : C.bone}`, color: finisher ? C.ash : C.bone,
+                      fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".08em", borderRadius:2 }}>
+                      {finisher ? "AUTRE FINISHER" : "+ FINISHER"}
+                    </button>
+                    <button onClick={drawStretch} style={{ flex:1, padding:"12px 0",
+                      border:`1px solid ${stretch ? C.line : C.bone}`, color: stretch ? C.ash : C.bone,
+                      fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".08em", borderRadius:2 }}>
+                      {stretch ? "AUTRE SÉQUENCE" : "+ STRETCHING"}
+                    </button>
+                  </div>
+                </div>
+
+                {finisher && (
+                  <div key={`f-${finisher.name}`} style={{ marginTop:28 }}>
+                    <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.lime, marginBottom:6 }}>
+                      FINISHER · {finisher.fam === "cardio" ? "CARDIO" : "ABDOS"}
+                    </div>
+                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:4 }}>
+                      <span style={{ fontFamily:DISPLAY, fontSize:26, lineHeight:1 }}>{finisher.name}</span>
+                      <span style={{ fontFamily:MONO, fontSize:12, fontWeight:700, color:C.lime }}>{finisher.dur}</span>
+                    </div>
+                    <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"0 0 20px" }}>{finisher.meta}</p>
+                    <Rail blocks={finisher.blocks} accent={C.lime} level={level} reduced={reduced} />
+                  </div>
+                )}
+
+                {stretch && (
+                  <div key={`s-${stretch.id}`} style={{ marginTop:28 }}>
+                    <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginBottom:6 }}>
+                      STRETCHING
+                    </div>
+                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:4 }}>
+                      <span style={{ fontFamily:DISPLAY, fontSize:26, lineHeight:1 }}>{stretch.name}</span>
+                      <span style={{ fontFamily:MONO, fontSize:12, fontWeight:700, color:C.ash }}>{stretch.dur}</span>
+                    </div>
+                    <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"0 0 20px" }}>{stretch.meta}</p>
+                    <Rail blocks={stretch.blocks} accent={C.ash} level={1} reduced={reduced} />
+                    <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, marginTop:4 }}>
+                      Tu respires pendant tout l'étirement. Si tu retiens ton souffle, tu es allé trop loin :
+                      remonte d'un cran et reste-y.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ border:`1px dashed ${C.line}`, borderRadius:3, minHeight:200, display:"flex",
