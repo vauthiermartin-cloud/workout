@@ -335,6 +335,146 @@ const STRETCH_BY_DAY = { 1:"hanches", 2:"post", 3:"hanches", 4:"haut", 5:"post" 
 /* Les jours déjà chargés en burpees basculent vers les abdos */
 const FINISHER_BIAS = { 1:"cardio", 2:"abdos", 3:"abdos", 4:"cardio", 5:"abdos" };
 
+/* --------------------------- Plans de chrono ---------------------------
+   Une séance = une suite de phases.
+   cycle  : intervalles fixes (EMOM), avec une station par intervalle
+   tabata : alternance effort / repos
+   down   : compte à rebours (AMRAP, test, repos)
+   up     : chrono qui monte, avec un plafond (travail « pour le temps »)
+------------------------------------------------------------------------*/
+const st = (...items) => items;
+const x5 = (s) => [s, s, s, s, s];
+
+const TIMERS = {
+  /* Lundi */
+  "EMOM 25": [{ t:"cycle", sec:60, label:"EMOM 25", stations:[
+    st(r(8,"burpees")), st(r(15,"air squats")), st(r(12,"pompes")),
+    st(r(20,"fentes arrière")), st(r(4,"tractions")),
+  ], loops:5 }],
+  "EMOM 20": [{ t:"cycle", sec:60, label:"EMOM 20", stations:[
+    st(r(10,"burpees")), st(r(20,"fentes arrière")), st(r(12,"pompes")),
+    st(r(5,"tractions")), st(r(30,"mountain climbers")),
+  ], loops:4 }],
+  "EMOM 21": [{ t:"cycle", sec:60, label:"EMOM 21", stations:[
+    st(r(8,"burpees")), st(r(12,"pompes")), st(r(3,"tractions")),
+  ], loops:7 }],
+
+  /* Mardi */
+  "Escalier montant": [{ t:"cycle", sec:60, label:"Escalier montant", stations:[
+    ...x5(st(r(2,"burpees"), r(6,"pompes"), r(8,"jump squats"))),
+    ...x5(st(r(3,"burpees"), r(8,"pompes"), r(10,"jump squats"))),
+    ...x5(st(r(4,"burpees"), r(10,"pompes"), r(12,"jump squats"))),
+    ...x5(st(r(5,"burpees"), r(12,"pompes"), r(14,"jump squats"))),
+  ], loops:1 }],
+  "Escalier descendant": [{ t:"cycle", sec:60, label:"Escalier descendant", stations:[
+    ...x5(st(r(5,"burpees"), r(12,"pompes"), r(16,"air squats"))),
+    ...x5(st(r(4,"burpees"), r(10,"pompes"), r(14,"air squats"))),
+    ...x5(st(r(3,"burpees"), r(8,"pompes"), r(12,"air squats"))),
+    ...x5(st(r(2,"burpees"), r(6,"pompes"), r(10,"air squats"))),
+  ], loops:1 }],
+  "Escalier ouvert": [{ t:"down", sec:1200, label:"Escalier ouvert", sub:"Round 1, puis +1 rep partout", list:[
+    r(1,"burpee"), r(2,"pompes"), r(3,"air squats"),
+  ] }],
+
+  /* Mercredi */
+  "5 rounds": [{ t:"up", cap:1500, label:"5 rounds", sub:"1 tour, à répéter 5 fois", list:[
+    r(40,"mountain climbers"), r(30,"air squats"), r(20,"sit-ups"),
+    r(20,"fentes arrière"), r(10,"pompes"), r(3,"tractions"),
+  ] }],
+  "4 rounds lourds": [{ t:"up", cap:1500, label:"4 rounds", sub:"1 tour, à répéter 4 fois", list:[
+    r(50,"mountain climbers"), r(40,"air squats"), r(30,"sit-ups"),
+    r(20,"fentes arrière"), r(10,"pompes"), r(5,"tractions"),
+  ] }],
+  "Chipper": [{ t:"up", cap:1500, label:"Chipper", sub:"Dans l'ordre, une ligne à la fois", list:[
+    r(100,"mountain climbers"), r(80,"air squats"), r(60,"sit-ups"),
+    r(40,"fentes arrière"), r(30,"pompes"), r(20,"burpees"), r(10,"tractions"),
+  ] }],
+
+  /* Jeudi */
+  "2 × AMRAP 10": [
+    { t:"down", sec:600, label:"AMRAP A", sub:"Max de tours", list:[
+      r(5,"tractions"), r(10,"pompes"), r(15,"air squats") ] },
+    { t:"rest", sec:180, label:"Repos" },
+    { t:"down", sec:600, label:"AMRAP B", sub:"Max de tours", list:[
+      r(10,"fentes arrière"), r(15,"sit-ups"), r(20,"mountain climbers") ] },
+  ],
+  "AMRAP 20": [{ t:"down", sec:1200, label:"AMRAP 20", sub:"Max de tours", list:[
+    r(5,"tractions"), r(10,"burpees"), r(15,"pompes"), r(20,"air squats"),
+  ] }],
+  "3 × AMRAP 6": [
+    { t:"down", sec:360, label:"Bloc A", sub:"Max de tours", list:[r(10,"pompes"), r(10,"sit-ups")] },
+    { t:"rest", sec:120, label:"Repos" },
+    { t:"down", sec:360, label:"Bloc B", sub:"Max de tours", list:[r(8,"fentes arrière"), r(8,"jump squats")] },
+    { t:"rest", sec:120, label:"Repos" },
+    { t:"down", sec:360, label:"Bloc C", sub:"Max de tours", list:[r(3,"tractions"), r(6,"burpees")] },
+  ],
+
+  /* Vendredi */
+  "Test 4 min + finisher": [
+    { t:"down", sec:240, label:"TEST", sub:"Max de burpees", test:true },
+    { t:"rest", sec:180, label:"Repos" },
+    { t:"up", cap:900, label:"4 rounds", sub:"1 tour, à répéter 4 fois", list:[
+      r(15,"air squats"), r(10,"pompes"), r(5,"tractions"), r(20,"mountain climbers") ] },
+  ],
+  "Test 3 min + EMOM 12": [
+    { t:"down", sec:180, label:"TEST", sub:"Max de burpees", test:true },
+    { t:"rest", sec:180, label:"Repos" },
+    { t:"cycle", sec:60, label:"EMOM 12", stations:[
+      st(r(5,"tractions")), st(r(20,"mountain climbers")), st(r(15,"air squats")),
+    ], loops:4 },
+  ],
+  "50 burpees for time": [
+    { t:"up", cap:480, label:"TEST", sub:"50 burpees le plus vite possible", test:true },
+    { t:"rest", sec:240, label:"Repos" },
+    { t:"up", cap:480, label:"3 rounds", sub:"1 tour, à répéter 3 fois", list:[
+      r(10,"pompes"), r(15,"air squats"), r(3,"tractions"), r(15,"sit-ups") ] },
+  ],
+
+  /* Finishers cardio */
+  "EMOM 10 burpees": [{ t:"cycle", sec:60, label:"EMOM 10", stations:[st(r(5,"burpees"))], loops:10 }],
+  "Montée jusqu'à l'échec": [{ t:"cycle", sec:60, label:"Montée", stations:[
+    st(r(1,"burpee")), st(r(2,"burpees")), st(r(3,"burpees")), st(r(4,"burpees")), st(r(5,"burpees")),
+    st(r(6,"burpees")), st(r(7,"burpees")), st(r(8,"burpees")), st(r(9,"burpees")), st(r(10,"burpees")),
+  ], loops:1 }],
+  "Tabata double": [
+    { t:"tabata", work:20, rest:10, rounds:8, label:"Tabata 1", sub:"Burpees" },
+    { t:"rest", sec:60, label:"Repos" },
+    { t:"tabata", work:20, rest:10, rounds:8, label:"Tabata 2", sub:"Mountain climbers" },
+  ],
+  "Pyramide burpees": [{ t:"up", cap:480, label:"Pyramide", sub:"10 mountain climbers entre chaque palier", list:[
+    f("1, 2, 3, 4, 5 burpees"), f("puis 4, 3, 2, 1 burpees"),
+  ] }],
+  "3 tours cardio": [{ t:"up", cap:540, label:"3 tours", sub:"1 tour, à répéter 3 fois", list:[
+    r(30,"mountain climbers"), r(20,"jump squats"), r(10,"burpees"),
+  ] }],
+  "Descente 10 à 1": [{ t:"up", cap:600, label:"Descente 10→1", sub:"55 burpees au total", list:[
+    f("10, 9, 8, 7, 6, 5, 4, 3, 2, 1"),
+  ] }],
+
+  /* Finishers abdos */
+  "Le classique": [{ t:"up", cap:540, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
+    r(10,"sit-ups"), r(20,"russian twists"), r(10,"shoulder taps"),
+  ] }],
+  "Barre de traction": [{ t:"up", cap:540, label:"4 tours", sub:"1 tour, à répéter 4 fois", list:[
+    r(10,"relevés de genoux suspendu"), r(15,"sit-ups"), r(20,"russian twists"),
+  ] }],
+  "Gainage descendant": [
+    { t:"down", sec:60, label:"Planche", sub:"Tour 1" }, { t:"up", cap:60, label:"Shoulder taps", sub:"10 reps" },
+    { t:"down", sec:45, label:"Planche", sub:"Tour 2" }, { t:"up", cap:60, label:"Shoulder taps", sub:"10 reps" },
+    { t:"down", sec:30, label:"Planche", sub:"Tour 3" }, { t:"up", cap:60, label:"Shoulder taps", sub:"10 reps" },
+    { t:"down", sec:15, label:"Planche", sub:"Tour 4" }, { t:"up", cap:60, label:"Shoulder taps", sub:"10 reps" },
+  ],
+  "Profond et lent": [{ t:"up", cap:540, label:"3 tours", sub:"1 tour, à répéter 3 fois", list:[
+    r(20,"dead bugs"), r(15,"crunchs inversés"), f("30 s gainage latéral par côté"),
+  ] }],
+  "Chaîne complète": [{ t:"up", cap:540, label:"4 tours", sub:"1 tour, à répéter 4 fois", list:[
+    r(12,"relevés de jambes"), r(20,"mountain climbers croisés"), r(12,"superman"),
+  ] }],
+  "Hollow et ciseaux": [{ t:"up", cap:480, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
+    f("20 s hollow hold"), r(20,"ciseaux"), r(10,"V-ups"),
+  ] }],
+};
+
 const LEVELS = [
   { id:1, name:"REPRISE", need:0, desc:"Volume de base" },
   { id:2, name:"RÉGULIER", need:12, desc:"+25 % de reps" },
@@ -385,6 +525,198 @@ function Rail({ blocks, accent, level, reduced }) {
   );
 }
 
+/* --------------------------- Chrono --------------------------- */
+const mmss = (s) => {
+  s = Math.max(0, Math.ceil(s));
+  return `${Math.floor(s / 60)}:${pad(s % 60)}`;
+};
+
+let audioCtx = null;
+function beep(freq, ms) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = "square"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.14, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + ms / 1000);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + ms / 1000);
+  } catch (e) {}
+}
+
+function Timer({ phases, level, onDone }) {
+  const [idx, setIdx] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [running, setRunning] = useState(true);
+  const startRef = React.useRef(Date.now());
+  const pausedRef = React.useRef(0);
+  const beepRef = React.useRef(-1);
+
+  const ph = phases[idx];
+
+  /* Écran allumé pendant la séance */
+  useEffect(() => {
+    let lock = null;
+    const req = () => {
+      try {
+        if (navigator.wakeLock) navigator.wakeLock.request("screen").then((l) => { lock = l; }).catch(() => {});
+      } catch (e) {}
+    };
+    req();
+    const onVis = () => { if (document.visibilityState === "visible") req(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      try { if (lock) lock.release(); } catch (e) {}
+    };
+  }, []);
+
+  /* Battement : on lit l'horloge plutôt que de compter les ticks,
+     pour rester juste même si le téléphone met l'onglet en veille. */
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setElapsed((Date.now() - startRef.current) / 1000), 100);
+    return () => clearInterval(id);
+  }, [running, idx]);
+
+  const goTo = (i) => {
+    if (i >= phases.length) { onDone(); return; }
+    setIdx(i); setElapsed(0); beepRef.current = -1;
+    startRef.current = Date.now(); pausedRef.current = 0;
+    setRunning(true);
+  };
+
+  const toggle = () => {
+    if (running) { pausedRef.current = elapsed; setRunning(false); }
+    else { startRef.current = Date.now() - pausedRef.current * 1000; setRunning(true); }
+  };
+
+  /* État courant de la phase */
+  let big = "", label = ph.label, sub = ph.sub || "", progress = "", station = null, next = null;
+  let isRest = ph.t === "rest", isWork = true, remaining = null, done = false;
+
+  if (ph.t === "cycle") {
+    const total = ph.stations.length * (ph.loops || 1);
+    const i = Math.floor(elapsed / ph.sec);
+    if (i >= total) done = true;
+    const k = Math.min(i, total - 1);
+    remaining = ph.sec - (elapsed % ph.sec);
+    big = mmss(remaining);
+    progress = `MIN ${Math.min(i + 1, total)} / ${total}`;
+    station = ph.stations[k % ph.stations.length];
+    next = k + 1 < total ? ph.stations[(k + 1) % ph.stations.length] : null;
+  } else if (ph.t === "tabata") {
+    const cyc = ph.work + ph.rest;
+    const i = Math.floor(elapsed / cyc);
+    if (i >= ph.rounds) done = true;
+    const inCycle = elapsed % cyc;
+    isWork = inCycle < ph.work;
+    isRest = !isWork;
+    remaining = isWork ? ph.work - inCycle : cyc - inCycle;
+    big = mmss(remaining);
+    progress = `ROUND ${Math.min(i + 1, ph.rounds)} / ${ph.rounds}`;
+    label = isWork ? ph.label : "Repos";
+    sub = isWork ? ph.sub : ph.sub;
+  } else if (ph.t === "down" || ph.t === "rest") {
+    remaining = ph.sec - elapsed;
+    if (remaining <= 0) done = true;
+    big = mmss(remaining);
+    progress = `SUR ${mmss(ph.sec)}`;
+  } else if (ph.t === "up") {
+    big = mmss(elapsed);
+    remaining = ph.cap - elapsed;
+    if (remaining <= 0) done = true;
+    progress = `PLAFOND ${mmss(ph.cap)}`;
+  }
+
+  /* Bips : trois avant la bascule, un long à la bascule */
+  useEffect(() => {
+    if (!running || remaining === null) return;
+    const s = Math.ceil(remaining);
+    if (s <= 3 && s >= 1 && beepRef.current !== s) { beepRef.current = s; beep(880, 90); }
+  }, [elapsed, running, remaining]);
+
+  useEffect(() => {
+    if (done) { beep(1320, 260); goTo(idx + 1); }
+  }, [done]);
+
+  const accent = isRest ? C.ember : C.lime;
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:50, background:C.ink, display:"flex",
+      flexDirection:"column", padding:"max(20px, env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom))" }}>
+
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+        fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash }}>
+        <span>PHASE {idx + 1} / {phases.length}</span>
+        <button onClick={onDone} style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash }}>FERMER ✕</button>
+      </div>
+
+      <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", textAlign:"center" }}>
+        <div style={{ fontFamily:MONO, fontSize:11, letterSpacing:".16em", color:accent, marginBottom:6 }}>
+          {label.toUpperCase()}
+        </div>
+        <div style={{ fontFamily:DISPLAY, fontSize:"clamp(76px, 26vw, 132px)", lineHeight:.9,
+          color: running ? C.bone : C.ash, fontVariantNumeric:"tabular-nums" }}>
+          {big}
+        </div>
+        <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginTop:8 }}>
+          {progress}{!running ? " · EN PAUSE" : ""}
+        </div>
+
+        {station && (
+          <div style={{ marginTop:28 }}>
+            {station.map((it, j) => (
+              <div key={j} style={{ fontFamily:DISPLAY, fontSize:28, lineHeight:1.2 }}>
+                <span style={{ color:accent }}>{scaleRep(it.n, level)}</span> {it.t}
+              </div>
+            ))}
+          </div>
+        )}
+        {!station && ph.list && (
+          <div style={{ marginTop:26 }}>
+            {sub && (
+              <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash, marginBottom:10 }}>
+                {sub.toUpperCase()}
+              </div>
+            )}
+            {ph.list.map((it, j) => (
+              <div key={j} style={{ fontFamily:DISPLAY, fontSize:23, lineHeight:1.3 }}>
+                {it.txt ? it.txt : (
+                  <React.Fragment>
+                    <span style={{ color:accent }}>{scaleRep(it.n, level)}</span> {it.t}
+                  </React.Fragment>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {!station && !ph.list && sub && (
+          <div style={{ marginTop:24, fontFamily:DISPLAY, fontSize:24, color:C.bone }}>{sub}</div>
+        )}
+        {next && (
+          <div style={{ marginTop:18, fontFamily:MONO, fontSize:10, letterSpacing:".1em", color:C.ash }}>
+            ENSUITE · {next.map((it) => `${scaleRep(it.n, level)} ${it.t}`).join(" · ")}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={toggle} style={{ flex:1, padding:"18px 0", background: running ? "transparent" : accent,
+          border: running ? `1px solid ${C.line}` : "none", color: running ? C.bone : C.ink,
+          fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 }}>
+          {running ? "PAUSE" : "REPRENDRE"}
+        </button>
+        <button onClick={() => goTo(idx + 1)} style={{ flex:1, padding:"18px 0", border:`1px solid ${C.line}`,
+          color:C.bone, fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 }}>
+          {idx + 1 >= phases.length ? "TERMINER" : "PASSER"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* --------------------------- App --------------------------- */
 function App() {
   const today = new Date();
@@ -402,6 +734,10 @@ function App() {
   const [scoreInput, setScoreInput] = useState("");
   const [finisher, setFinisher] = useState(null);
   const [stretch, setStretch] = useState(null);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [warmup, setWarmup] = useState(true);
+  const [stretchEnd, setStretchEnd] = useState(true);
+  const [phases, setPhases] = useState(null);
   const [recap, setRecap] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
@@ -480,6 +816,32 @@ function App() {
     }
     const i = STRETCHES.findIndex((s) => s.id === stretch.id);
     setStretch(STRETCHES[(i + 1) % STRETCHES.length]);
+  };
+
+  /* Le plan se construit à partir de ce qui est à l'écran :
+     échauffement optionnel, séance, finisher s'il y en a un, étirements optionnels. */
+  const startTimer = () => {
+    const p = [];
+    if (warmup) p.push({ t:"down", sec:300, label:"Échauffement", sub:"À ton rythme", list:[
+      f("Squats latéraux"), f("Élévations latérales de jambe"), f("Isométries kiné"),
+    ] });
+    const w = TIMERS[wod.name];
+    if (w) p.push(...w); else p.push({ t:"up", cap:1500, label:wod.name, sub:"Chrono libre" });
+    if (finisher) {
+      p.push({ t:"rest", sec:120, label:"Transition", sub:"Tu souffles avant le finisher" });
+      const fz = TIMERS[finisher.name];
+      if (fz) p.push(...fz); else p.push({ t:"up", cap:600, label:finisher.name, sub:"Chrono libre" });
+    }
+    if (stretchEnd) {
+      p.push({ t:"down", sec:300, label:"Étirements",
+        sub: stretch ? stretch.name : "Séquence libre",
+        list: stretch
+          ? stretch.blocks.map((b) => f(`${b.items[0].txt} — ${b.tag.toLowerCase()}`))
+          : [f("Pince debout"), f("Fente basse"), f("Écart facial"), f("Posture de l'enfant")] });
+    }
+    beep(660, 120);
+    setPhases(p);
+    setSetupOpen(false);
   };
 
   const finish = () => {
@@ -841,22 +1203,76 @@ function App() {
         <div style={{ position:"fixed", bottom:0, left:0, right:0, display:"flex", justifyContent:"center",
           padding:"16px 20px calc(20px + env(safe-area-inset-bottom))",
           background:`linear-gradient(to top, ${C.ink} 62%, rgba(11,11,12,0))` }}>
-          <div style={{ width:"100%", maxWidth:460, display:"flex", gap:8 }}>
-            <button onClick={generate} style={{ flex: wod ? "0 0 42%" : 1, padding:"16px 0",
-              background: wod ? "transparent" : accent, border: wod ? `1px solid ${C.line}` : "none",
-              color: wod ? C.bone : C.ink, fontFamily:DISPLAY, fontSize: wod?15:20, letterSpacing:".04em", borderRadius:2 }}>
-              {wod ? "AUTRE SÉANCE" : "GÉNÉRER LA SÉANCE"}
-            </button>
+          <div style={{ width:"100%", maxWidth:460 }}>
             {wod && (
-              <button onClick={finish} disabled={saveState === "done"}
-                style={{ flex:1, padding:"16px 0", background: saveState==="done"?C.steel:accent,
-                  color: saveState==="done"?C.ash:C.ink, fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 }}>
-                {saveState === "done" ? "ENREGISTRÉE" : askScore ? "VALIDER LE SCORE" : "SÉANCE FAITE"}
+              <button onClick={() => setSetupOpen(true)} style={{ width:"100%", padding:"14px 0", marginBottom:8,
+                background:C.steel, border:`1px solid ${accent}`, color:accent,
+                fontFamily:DISPLAY, fontSize:16, letterSpacing:".06em", borderRadius:2 }}>
+                ▶ LANCER LE CHRONO
               </button>
             )}
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={generate} style={{ flex: wod ? "0 0 42%" : 1, padding:"16px 0",
+                background: wod ? "transparent" : accent, border: wod ? `1px solid ${C.line}` : "none",
+                color: wod ? C.bone : C.ink, fontFamily:DISPLAY, fontSize: wod?15:20, letterSpacing:".04em", borderRadius:2 }}>
+                {wod ? "AUTRE SÉANCE" : "GÉNÉRER LA SÉANCE"}
+              </button>
+              {wod && (
+                <button onClick={finish} disabled={saveState === "done"}
+                  style={{ flex:1, padding:"16px 0", background: saveState==="done"?C.steel:accent,
+                    color: saveState==="done"?C.ash:C.ink, fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 }}>
+                  {saveState === "done" ? "ENREGISTRÉE" : askScore ? "VALIDER LE SCORE" : "SÉANCE FAITE"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
+
+      {/* Réglages avant lancement */}
+      {setupOpen && wod && (
+        <div style={{ position:"fixed", inset:0, zIndex:40, background:"rgba(11,11,12,.94)", display:"flex",
+          alignItems:"flex-end", justifyContent:"center" }} onClick={() => setSetupOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width:"100%", maxWidth:460, background:C.steel,
+            borderTop:`1px solid ${C.line}`, borderRadius:"3px 3px 0 0",
+            padding:"24px 20px calc(24px + env(safe-area-inset-bottom))" }}>
+            <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginBottom:14 }}>
+              AVANT DE LANCER
+            </div>
+
+            {[
+              { on:warmup, set:setWarmup, t:"Échauffement", d:"5 min au début. Tu peux le passer à tout moment." },
+              { on:stretchEnd, set:setStretchEnd, t:"Étirements", d:"5 min enchaînés à la fin de la séance." },
+            ].map((o, i) => (
+              <button key={i} onClick={() => o.set(!o.on)} style={{ width:"100%", display:"flex", alignItems:"center",
+                gap:14, padding:"14px 0", borderBottom:`1px solid ${C.line}`, textAlign:"left" }}>
+                <span style={{ width:22, height:22, flexShrink:0, borderRadius:2,
+                  border:`1px solid ${o.on ? C.lime : C.line}`, background: o.on ? C.lime : "transparent",
+                  color:C.ink, fontFamily:MONO, fontSize:13, fontWeight:700, lineHeight:"21px", textAlign:"center" }}>
+                  {o.on ? "✓" : ""}
+                </span>
+                <span>
+                  <span style={{ fontFamily:DISPLAY, fontSize:19 }}>{o.t}</span>
+                  <span style={{ display:"block", fontSize:12, color:C.ash, lineHeight:1.4, marginTop:2 }}>{o.d}</span>
+                </span>
+              </button>
+            ))}
+
+            <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, margin:"16px 0 18px" }}>
+              Le chrono suit {wod.name}
+              {finisher ? `, puis ${finisher.name}` : ""}. Trois bips avant chaque bascule.
+              Garde le téléphone déverrouillé, le son activé.
+            </p>
+
+            <button onClick={startTimer} style={{ width:"100%", padding:"16px 0", background:accent, color:C.ink,
+              fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
+              DÉMARRER
+            </button>
+          </div>
+        </div>
+      )}
+
+      {phases && <Timer phases={phases} level={level} onDone={() => setPhases(null)} />}
     </div>
   );
 }
