@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>25</title>
+<meta name="theme-color" content="#0B0B0C" />
+<link rel="manifest" href="./manifest.json" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="25" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin></script>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; padding:0; background:#0B0B0C; color:#F2F2EE;
+    font-family:'Inter',-apple-system,system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  button { font:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+  input, textarea { font:inherit; }
+  #root { min-height:100vh; }
+  @keyframes wodIn { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:none} }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline:2px solid #D9FF3D; outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+  .boot { padding:40px 24px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#75787E; letter-spacing:.14em; }
+</style>
+</head>
+<body>
+<div id="root"><div class="boot">CHARGEMENT…</div></div>
+
+<script type="text/babel" data-type="module">
+const { useState, useEffect } = React;
+
+const C = { ink:"#0B0B0C", steel:"#17181B", line:"#26282D", bone:"#F2F2EE", ash:"#75787E", lime:"#D9FF3D", ember:"#FF4D2E" };
+const DISPLAY = "'Anton','Arial Narrow',Impact,sans-serif";
+const MONO = "'JetBrains Mono',ui-monospace,monospace";
+
+const K_LOG = "workout.log";
+const K_SET = "workout.settings";
+const K_BAK = "workout.lastBackup";
+
+/* ---- stockage tolérant aux pannes ---- */
+const mem = {};
+const store = {
+  get(k) { try { const v = localStorage.getItem(k); return v === null ? (mem[k] ?? null) : v; } catch (e) { return mem[k] ?? null; } },
+  set(k, v) { mem[k] = v; try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
+};
+
+/* --------------------------- Séances --------------------------- */
+const DAYS = [
+  { key:1, short:"LUN", long:"LUNDI", theme:"Densité · EMOM" },
+  { key:2, short:"MAR", long:"MARDI", theme:"Volume burpees" },
+  { key:3, short:"MER", long:"MERCREDI", theme:"Rounds chronométrés" },
+  { key:4, short:"JEU", long:"JEUDI", theme:"AMRAP" },
+  { key:5, short:"VEN", long:"VENDREDI", theme:"Test + finisher" },
+];
+const r = (n,t) => ({n,t});
+const f = (txt) => ({txt});
+
+const WORKOUTS = {
+  1: [
+    { name:"EMOM 25", dur:"25 min", meta:"5 blocs × 5 min · tu fais les reps, le reste de la minute c'est ta récup",
+      blocks:[
+        {tag:"MIN 1",items:[r(8,"burpees")]},
+        {tag:"MIN 2",items:[r(15,"air squats")]},
+        {tag:"MIN 3",items:[r(12,"pompes")]},
+        {tag:"MIN 4",items:[r(20,"fentes arrière")]},
+        {tag:"MIN 5",items:[r(4,"tractions")]},
+      ],
+      goal:"Ne rate aucun départ de minute. Si tu finis en moins de 25 s, tu es sous-dosé." },
+    { name:"EMOM 20", dur:"20 min", meta:"4 blocs × 5 min · une station par minute",
+      blocks:[
+        {tag:"MIN 1",items:[r(10,"burpees")]},
+        {tag:"MIN 2",items:[r(20,"fentes arrière")]},
+        {tag:"MIN 3",items:[r(12,"pompes")]},
+        {tag:"MIN 4",items:[r(5,"tractions")]},
+        {tag:"MIN 5",items:[r(30,"mountain climbers")]},
+      ],
+      goal:"Le bloc 3 est le mur. Passe-le sans casser le rythme." },
+    { name:"EMOM 21", dur:"21 min", meta:"7 blocs × 3 min · cycle court, ça revient vite",
+      blocks:[
+        {tag:"MIN 1",items:[r(8,"burpees")]},
+        {tag:"MIN 2",items:[r(12,"pompes")]},
+        {tag:"MIN 3",items:[r(3,"tractions")]},
+      ],
+      goal:"Sept passages sur les burpees. Même cadence du bloc 1 au bloc 7." },
+  ],
+  2: [
+    { name:"Escalier montant", dur:"20 min", meta:"1 tour = 1 min · 5 tours par bloc · les reps montent",
+      blocks:[
+        {tag:"MIN 1–5",items:[r(2,"burpees"),r(6,"pompes"),r(8,"jump squats")]},
+        {tag:"MIN 6–10",items:[r(3,"burpees"),r(8,"pompes"),r(10,"jump squats")]},
+        {tag:"MIN 11–15",items:[r(4,"burpees"),r(10,"pompes"),r(12,"jump squats")]},
+        {tag:"MIN 16–20",items:[r(5,"burpees"),r(12,"pompes"),r(14,"jump squats")]},
+      ],
+      goal:"Plus tu vas vite au début, plus tu récupères à la fin. Sauf que non." },
+    { name:"Escalier descendant", dur:"20 min", meta:"1 tour = 1 min · 5 tours par bloc · ça allège quand tu fatigues",
+      blocks:[
+        {tag:"MIN 1–5",items:[r(5,"burpees"),r(12,"pompes"),r(16,"air squats")]},
+        {tag:"MIN 6–10",items:[r(4,"burpees"),r(10,"pompes"),r(14,"air squats")]},
+        {tag:"MIN 11–15",items:[r(3,"burpees"),r(8,"pompes"),r(12,"air squats")]},
+        {tag:"MIN 16–20",items:[r(2,"burpees"),r(6,"pompes"),r(10,"air squats")]},
+      ],
+      goal:"La dette est payée d'avance. Pars fort, tiens la ligne." },
+    { name:"Escalier ouvert", dur:"20 min", meta:"20 min · +1 rep par exercice à chaque tour",
+      blocks:[
+        {tag:"ROUND 1",items:[r(1,"burpee"),r(2,"pompes"),r(3,"air squats")]},
+        {tag:"ROUND 2",items:[r(2,"burpees"),r(3,"pompes"),r(4,"air squats")]},
+        {tag:"ROUND 3",items:[r(3,"burpees"),r(4,"pompes"),r(5,"air squats")]},
+        {tag:"→ SUITE",items:[f("+1 rep partout, jusqu'à la fin des 20 min")]},
+      ],
+      goal:"Retiens le numéro du dernier round terminé. C'est ton score." },
+  ],
+  3: [
+    { name:"5 rounds", dur:"≤ 25 min", meta:"Pour le temps · cap 25 min · repos libre entre les rounds",
+      blocks:[
+        {tag:"1 ROUND",items:[r(40,"mountain climbers"),r(30,"air squats"),r(20,"sit-ups"),r(20,"fentes arrière"),r(10,"pompes"),r(3,"tractions")]},
+        {tag:"× 5",items:[f("Enchaîne 5 fois")]},
+      ],
+      goal:"Note le temps total. C'est le seul chiffre à retenir." },
+    { name:"4 rounds lourds", dur:"≤ 25 min", meta:"Pour le temps · rounds plus longs, moins nombreux",
+      blocks:[
+        {tag:"1 ROUND",items:[r(50,"mountain climbers"),r(40,"air squats"),r(30,"sit-ups"),r(20,"fentes arrière"),r(10,"pompes"),r(5,"tractions")]},
+        {tag:"× 4",items:[f("Enchaîne 4 fois")]},
+      ],
+      goal:"Découpe les mountain climbers en deux séries dès le round 2." },
+    { name:"Chipper", dur:"≤ 25 min", meta:"Une seule descente · une ligne finie avant de passer à la suivante",
+      blocks:[
+        {tag:"1",items:[r(100,"mountain climbers")]},
+        {tag:"2",items:[r(80,"air squats")]},
+        {tag:"3",items:[r(60,"sit-ups")]},
+        {tag:"4",items:[r(40,"fentes arrière")]},
+        {tag:"5",items:[r(30,"pompes")]},
+        {tag:"6",items:[r(20,"burpees")]},
+        {tag:"7",items:[r(10,"tractions")]},
+      ],
+      goal:"Les burpees arrivent quand tu es cuit. C'est exactement le but." },
+  ],
+  4: [
+    { name:"2 × AMRAP 10", dur:"23 min", meta:"Max de tours en 10 min · 3 min de repos entre les blocs",
+      blocks:[
+        {tag:"AMRAP A",items:[r(5,"tractions"),r(10,"pompes"),r(15,"air squats")]},
+        {tag:"REPOS",items:[f("3 min")]},
+        {tag:"AMRAP B",items:[r(10,"fentes arrière"),r(15,"sit-ups"),r(20,"mountain climbers")]},
+      ],
+      goal:"Deux scores : tours du bloc A, tours du bloc B." },
+    { name:"AMRAP 20", dur:"20 min", meta:"Max de tours en 20 min · un seul bloc, pas de pause programmée",
+      blocks:[
+        {tag:"1 TOUR",items:[r(5,"tractions"),r(10,"burpees"),r(15,"pompes"),r(20,"air squats")]},
+      ],
+      goal:"Le rythme des 5 premières minutes décide de tout le reste." },
+    { name:"3 × AMRAP 6", dur:"22 min", meta:"Trois blocs courts · 2 min de repos entre chaque",
+      blocks:[
+        {tag:"BLOC A",items:[r(10,"pompes"),r(10,"sit-ups")]},
+        {tag:"BLOC B",items:[r(8,"fentes arrière"),r(8,"jump squats")]},
+        {tag:"BLOC C",items:[r(3,"tractions"),r(6,"burpees")]},
+      ],
+      goal:"Blocs courts, donc tu peux pousser. Ne garde rien pour la fin." },
+  ],
+  5: [
+    { name:"Test 4 min + finisher", dur:"≈ 23 min", test:true, testLabel:"Burpees en 4 min",
+      meta:"Bloc de mesure, puis du volume propre",
+      blocks:[
+        {tag:"TEST",items:[f("Max de burpees en 4 min")]},
+        {tag:"REPOS",items:[f("3 min")]},
+        {tag:"4 ROUNDS",items:[r(15,"air squats"),r(10,"pompes"),r(5,"tractions"),r(20,"mountain climbers")]},
+      ],
+      goal:"Le chiffre du test est ta seule métrique burpees de la semaine." },
+    { name:"Test 3 min + EMOM 12", dur:"≈ 18 min", test:true, testLabel:"Burpees en 3 min",
+      meta:"Test court et violent, puis 12 min de minuterie",
+      blocks:[
+        {tag:"TEST",items:[f("Max de burpees en 3 min")]},
+        {tag:"REPOS",items:[f("3 min")]},
+        {tag:"MIN 1",items:[r(5,"tractions")]},
+        {tag:"MIN 2",items:[r(20,"mountain climbers")]},
+        {tag:"MIN 3",items:[r(15,"air squats")]},
+        {tag:"× 4",items:[f("Répète le cycle 4 fois")]},
+      ],
+      goal:"Score sur 3 min. À comparer uniquement avec d'autres tests de 3 min." },
+    { name:"50 burpees for time", dur:"≈ 20 min", test:true, testLabel:"Temps sur 50 burpees (secondes)",
+      meta:"Un chrono, un objectif, puis du travail léger",
+      blocks:[
+        {tag:"TEST",items:[f("50 burpees le plus vite possible")]},
+        {tag:"REPOS",items:[f("4 min")]},
+        {tag:"3 ROUNDS",items:[r(10,"pompes"),r(15,"air squats"),r(3,"tractions"),r(15,"sit-ups")]},
+      ],
+      goal:"Note le temps en secondes. Sous 240 s, c'est déjà solide." },
+  ],
+};
+
+const LEVELS = [
+  { id:1, name:"REPRISE", need:0, desc:"Volume de base" },
+  { id:2, name:"RÉGULIER", need:12, desc:"+25 % de reps" },
+  { id:3, name:"SOLIDE", need:16, desc:"+50 % de reps" },
+];
+
+/* --------------------------- Utils --------------------------- */
+function scaleRep(n, lvl) {
+  if (lvl <= 1) return n;
+  const l2 = Math.max(Math.round(n * 1.25), n + 1);
+  return lvl === 2 ? l2 : Math.max(Math.round(n * 1.5), l2 + 1);
+}
+const pad = (x) => String(x).padStart(2, "0");
+const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fromIso = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+function mondayOf(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+  return x;
+}
+const daysBetween = (a,b) => Math.round((b - a) / 86400000);
+const shortFr = (s) => { const d = fromIso(s); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}`; };
+
+/* --------------------------- App --------------------------- */
+function App() {
+  const today = new Date();
+  const todayIso = iso(today);
+  const dow = today.getDay();
+
+  const [tab, setTab] = useState("seance");
+  const [dayKey, setDayKey] = useState(dow >= 1 && dow <= 5 ? dow : 1);
+  const [variant, setVariant] = useState(null);
+  const [runId, setRunId] = useState(0);
+  const [log, setLog] = useState([]);
+  const [level, setLevel] = useState(1);
+  const [saveState, setSaveState] = useState("idle");
+  const [askScore, setAskScore] = useState(false);
+  const [scoreInput, setScoreInput] = useState("");
+  const [recap, setRecap] = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importMsg, setImportMsg] = useState("");
+  const [lastBackup, setLastBackup] = useState(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  useEffect(() => {
+    try { const v = store.get(K_LOG); if (v) setLog(JSON.parse(v)); } catch (e) {}
+    try { const v = store.get(K_SET); if (v) { const s = JSON.parse(v); if (s.level) setLevel(s.level); } } catch (e) {}
+    setLastBackup(store.get(K_BAK));
+  }, []);
+
+  const saveLog = (next) => { setLog(next); return store.set(K_LOG, JSON.stringify(next)); };
+  const saveLevel = (l) => { setLevel(l); store.set(K_SET, JSON.stringify({ level: l })); };
+
+  /* ---- calculs ---- */
+  const last28 = log.filter((e) => daysBetween(fromIso(e.d), today) < 28).length;
+  const suggested = LEVELS.slice().reverse().find((l) => last28 >= l.need).id;
+  const monthCount = log.filter((e) => {
+    const d = fromIso(e.d);
+    return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+  }).length;
+
+  const wkStart = mondayOf(today);
+  const weekDone = {};
+  log.forEach((e) => { const d = fromIso(e.d); if (d >= wkStart) weekDone[((d.getDay()+6)%7)+1] = true; });
+  const weekCount = Object.keys(weekDone).length;
+
+  const weeks = [];
+  for (let i = 7; i >= 0; i--) {
+    const s = new Date(wkStart); s.setDate(s.getDate() - i*7);
+    const e = new Date(s); e.setDate(e.getDate() + 7);
+    weeks.push({
+      label: `${pad(s.getDate())}/${pad(s.getMonth()+1)}`,
+      n: log.filter((x) => { const d = fromIso(x.d); return d >= s && d < e; }).length,
+      current: i === 0,
+    });
+  }
+  const maxWeek = Math.max(5, ...weeks.map((w) => w.n));
+  const tests = log.filter((e) => e.s !== null && e.s !== undefined).sort((a,b) => (a.d < b.d ? 1 : -1));
+  const backupStale = log.length > 0 && (!lastBackup || daysBetween(fromIso(lastBackup), today) > 30);
+
+  /* ---- séance ---- */
+  const day = DAYS.find((d) => d.key === dayKey);
+  const pool = WORKOUTS[dayKey];
+  const wod = variant === null ? null : pool[variant];
+  const accent = wod && wod.test ? C.ember : C.lime;
+
+  const generate = () => {
+    let n = Math.floor(Math.random() * pool.length);
+    if (pool.length > 1 && n === variant) n = (n + 1) % pool.length;
+    setVariant(n); setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
+  };
+
+  const finish = () => {
+    if (wod.test && !askScore) { setAskScore(true); return; }
+    const entry = { d: todayIso, day: dayKey, w: wod.name, lvl: level,
+      s: wod.test && scoreInput !== "" ? Number(scoreInput) : null };
+    const ok = saveLog([...log.filter((e) => e.d !== todayIso), entry]);
+    setSaveState(ok ? "done" : "error");
+    setAskScore(false);
+  };
+
+  /* ---- sauvegarde ---- */
+  const download = () => {
+    const data = JSON.stringify({ v: 1, exported: todayIso, level, log }, null, 0);
+    const blob = new Blob([data], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `workout-${todayIso}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    store.set(K_BAK, todayIso); setLastBackup(todayIso);
+  };
+
+  const buildRecap = () => {
+    const recent = log.filter((e) => daysBetween(fromIso(e.d), today) < 35).sort((a,b) => (a.d < b.d ? 1 : -1));
+    const txt = [
+      `RÉCAP ENTRAÎNEMENT — ${shortFr(todayIso)}`,
+      `Niveau : ${LEVELS.find((l) => l.id === level).name} (${level}/3)`,
+      `Séances sur 28 jours : ${last28} · ce mois : ${monthCount}`,
+      `Semaines (ancienne → récente) : ${weeks.map((w) => w.n).join(", ")}`,
+      tests.length ? `Tests : ${tests.slice(0,8).map((t) => `${shortFr(t.d)} = ${t.s}`).join(" | ")}` : "Tests : aucun",
+      "", "DÉTAIL 35 JOURS",
+      ...recent.map((e) => `${shortFr(e.d)} ${DAYS.find((d) => d.key === e.day).short} · ${e.w} · N${e.lvl}${e.s != null ? ` · score ${e.s}` : ""}`),
+    ].join("\n");
+    try { navigator.clipboard.writeText(txt); } catch (e) {}
+    setRecap(txt);
+  };
+
+  const doImport = () => {
+    try {
+      const parsed = JSON.parse(importText);
+      const incoming = Array.isArray(parsed) ? parsed : parsed.log;
+      if (!Array.isArray(incoming)) throw new Error("format");
+      const byDate = {};
+      [...log, ...incoming].forEach((e) => { if (e && e.d) byDate[e.d] = e; });
+      const merged = Object.values(byDate).sort((a,b) => (a.d < b.d ? -1 : 1));
+      saveLog(merged);
+      if (parsed.level) saveLevel(parsed.level);
+      setImportMsg(`${merged.length} séances au total après fusion.`);
+      setImportText("");
+    } catch (e) {
+      setImportMsg("Ce texte n'est pas une sauvegarde valide. Colle le contenu d'un fichier workout-….json.");
+    }
+  };
+
+  /* --------------------------- rendu --------------------------- */
+  const Tab = ({ id, label }) => (
+    <button onClick={() => setTab(id)} style={{ flex:1, padding:"10px 0", fontFamily:MONO, fontSize:11,
+      fontWeight:700, letterSpacing:".12em", background: tab===id?C.bone:"transparent",
+      color: tab===id?C.ink:C.ash, border:`1px solid ${tab===id?C.bone:C.line}`, borderRadius:2 }}>{label}</button>
+  );
+  const Label = ({ children, color }) => (
+    <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color: color||C.ash, marginBottom:8 }}>{children}</div>
+  );
+
+  return (
+    <div style={{ display:"flex", justifyContent:"center", minHeight:"100vh" }}>
+      <div style={{ width:"100%", maxWidth:460, padding:"max(24px, env(safe-area-inset-top)) 20px 150px" }}>
+
+        <div style={{ display:"flex", justifyContent:"space-between", fontFamily:MONO, fontSize:10,
+          letterSpacing:".14em", color:C.ash, marginBottom:16 }}>
+          <span>{today.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}).toUpperCase()}</span>
+          <span style={{ color: level>1 ? C.lime : C.ash }}>N{level} · {LEVELS.find((l)=>l.id===level).name}</span>
+        </div>
+
+        <div style={{ display:"flex", gap:6, marginBottom:28 }}>
+          <Tab id="seance" label="SÉANCE" /><Tab id="suivi" label="SUIVI" />
+        </div>
+
+        {backupStale && tab === "suivi" && (
+          <div style={{ padding:12, marginBottom:20, border:`1px solid ${C.ember}`, borderRadius:2,
+            fontSize:12.5, lineHeight:1.5, color:C.bone }}>
+            Aucune sauvegarde depuis plus de 30 jours. Télécharge le fichier plus bas.
+          </div>
+        )}
+
+        {tab === "seance" ? (
+          <React.Fragment>
+            <div style={{ display:"flex", gap:6, marginBottom:28 }}>
+              {DAYS.map((d) => {
+                const on = d.key === dayKey, done = weekDone[d.key];
+                return (
+                  <button key={d.key} onClick={() => { setDayKey(d.key); setVariant(null); setSaveState("idle"); }}
+                    style={{ flex:1, padding:"8px 0", position:"relative", fontFamily:MONO, fontSize:11, fontWeight:700,
+                      background:on?C.bone:"transparent", color:on?C.ink:(done?C.bone:C.ash),
+                      border:`1px solid ${on?C.bone:C.line}`, borderRadius:2 }}>
+                    {d.short}
+                    {done && <span style={{ position:"absolute", bottom:3, left:"50%", transform:"translateX(-50%)",
+                      width:12, height:2, background:on?C.ink:C.lime }} />}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ fontFamily:DISPLAY, fontSize:46, lineHeight:.92 }}>{day.long}</div>
+            <div style={{ fontFamily:MONO, fontSize:11, letterSpacing:".1em", color:accent, margin:"4px 0 24px" }}>
+              {day.theme.toUpperCase()}
+            </div>
+
+            <div style={{ borderLeft:`2px solid ${C.line}`, paddingLeft:12, marginBottom:24,
+              fontSize:12.5, color:C.ash, lineHeight:1.5 }}>
+              <span style={{ color:C.bone }}>Avant.</span> Squats latéraux, élévations latérales de jambe,
+              puis tes isométries kiné.
+            </div>
+
+            {wod ? (
+              <div key={runId}>
+                <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between",
+                  borderTop:`1px solid ${C.line}`, paddingTop:18, marginBottom:4 }}>
+                  <span style={{ fontFamily:DISPLAY, fontSize:30, lineHeight:1 }}>{wod.name}</span>
+                  <span style={{ fontFamily:MONO, fontSize:12, fontWeight:700, color:accent }}>{wod.dur}</span>
+                </div>
+                <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"0 0 24px" }}>{wod.meta}</p>
+
+                <div style={{ borderLeft:`1px solid ${C.line}`, marginLeft:6 }}>
+                  {wod.blocks.map((b,i) => (
+                    <div key={i} style={{ position:"relative", paddingLeft:20, paddingBottom:20,
+                      opacity: reduced?1:0, animation: reduced?"none":`wodIn 320ms cubic-bezier(.2,.7,.3,1) ${i*55}ms forwards` }}>
+                      <span style={{ position:"absolute", left:-4, top:5, width:7, height:7, background:accent, borderRadius:1 }} />
+                      <div style={{ fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".14em", color:C.ash, marginBottom:5 }}>{b.tag}</div>
+                      {b.items.map((it,j) => (
+                        <div key={j} style={{ fontFamily:DISPLAY, fontSize:21, lineHeight:1.24 }}>
+                          {it.txt ? it.txt : (
+                            <React.Fragment>
+                              <span style={{ color: level>1 ? C.lime : C.bone }}>{scaleRep(it.n, level)}</span> {it.t}
+                            </React.Fragment>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background:C.steel, borderRadius:3, padding:16, fontSize:13.5, lineHeight:1.55, marginTop:8 }}>
+                  <span style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:accent }}>OBJECTIF</span>
+                  <div style={{ marginTop:6 }}>{wod.goal}</div>
+                </div>
+
+                {askScore && (
+                  <div style={{ marginTop:12, padding:16, background:C.steel, borderRadius:3, border:`1px solid ${C.ember}` }}>
+                    <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>{wod.testLabel.toUpperCase()}</div>
+                    <input type="number" inputMode="numeric" autoFocus value={scoreInput}
+                      onChange={(e) => setScoreInput(e.target.value)} placeholder="—"
+                      style={{ width:"100%", marginTop:8, padding:"8px 0", background:"transparent", color:C.bone,
+                        fontFamily:DISPLAY, fontSize:34, border:"none", borderBottom:`1px solid ${C.line}`, outline:"none" }} />
+                  </div>
+                )}
+                {saveState === "done" && <div style={{ marginTop:14, fontFamily:MONO, fontSize:11, color:C.lime, letterSpacing:".08em" }}>✓ SÉANCE ENREGISTRÉE</div>}
+                {saveState === "error" && <div style={{ marginTop:14, fontSize:12.5, color:C.ember }}>Enregistrement impossible sur cet appareil. Vérifie que le navigateur n'est pas en navigation privée.</div>}
+
+                <p style={{ marginTop:16, fontSize:12, color:C.ash, lineHeight:1.5 }}>
+                  Tractions trop dures ? Tirages horizontaux à l'espalier, ou des négatives de 5 s à la descente.
+                  Trois tractions propres valent mieux que cinq lancées.
+                </p>
+              </div>
+            ) : (
+              <div style={{ border:`1px dashed ${C.line}`, borderRadius:3, minHeight:200, display:"flex",
+                alignItems:"center", justifyContent:"center", textAlign:"center", padding:"0 24px",
+                color:C.ash, fontSize:13.5, lineHeight:1.6, whiteSpace:"pre-line" }}>
+                {weekDone[dayKey] ? "Séance déjà enregistrée ce jour-là.\nTu peux quand même en tirer une." : "Trois séances possibles pour ce jour.\nAppuie pour en tirer une."}
+              </div>
+            )}
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            <div style={{ display:"flex", gap:24, alignItems:"flex-end", marginBottom:32 }}>
+              <div>
+                <div style={{ fontFamily:DISPLAY, fontSize:60, lineHeight:.85 }}>{monthCount}</div>
+                <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>CE MOIS</div>
+              </div>
+              <div>
+                <div style={{ fontFamily:DISPLAY, fontSize:60, lineHeight:.85 }}>{last28}</div>
+                <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>SUR 28 JOURS</div>
+              </div>
+            </div>
+
+            <Label>CETTE SEMAINE · {weekCount}/5</Label>
+            <div style={{ display:"flex", gap:6, marginBottom:32 }}>
+              {DAYS.map((d) => (
+                <div key={d.key} style={{ flex:1, height:42, display:"flex", alignItems:"center", justifyContent:"center",
+                  background: weekDone[d.key]?C.lime:"transparent", border:`1px solid ${weekDone[d.key]?C.lime:C.line}`,
+                  color: weekDone[d.key]?C.ink:C.ash, fontFamily:MONO, fontSize:11, fontWeight:700, borderRadius:2 }}>
+                  {d.short}
+                </div>
+              ))}
+            </div>
+
+            <Label>8 DERNIÈRES SEMAINES</Label>
+            <div style={{ display:"flex", alignItems:"flex-end", gap:6, height:90, marginBottom:6 }}>
+              {weeks.map((w,i) => (
+                <div key={i} style={{ flex:1, height:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+                  <span style={{ fontFamily:MONO, fontSize:10, color:C.ash, marginBottom:4 }}>{w.n || ""}</span>
+                  <div style={{ width:"100%", height: Math.max((w.n/maxWeek)*68, w.n?4:2),
+                    background: w.n===0?C.line:(w.current?C.lime:C.bone), borderRadius:1 }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ display:"flex", gap:6, marginBottom:32 }}>
+              {weeks.map((w,i) => <div key={i} style={{ flex:1, textAlign:"center", fontFamily:MONO, fontSize:8, color:C.ash }}>{w.label}</div>)}
+            </div>
+
+            <Label>NIVEAU</Label>
+            <div style={{ display:"flex", gap:6, marginBottom:8 }}>
+              {LEVELS.map((l) => {
+                const on = l.id === level, unlocked = last28 >= l.need;
+                return (
+                  <button key={l.id} onClick={() => saveLevel(l.id)}
+                    style={{ flex:1, padding:"12px 4px", background:on?C.lime:"transparent",
+                      color:on?C.ink:(unlocked?C.bone:C.ash), border:`1px solid ${on?C.lime:C.line}`,
+                      borderRadius:2, fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".06em" }}>
+                    {l.name}
+                    <div style={{ fontSize:8, fontWeight:400, marginTop:3, opacity:.75 }}>{l.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"0 0 32px" }}>
+              {suggested > level
+                ? `${last28} séances sur 28 jours : le niveau ${LEVELS.find((l)=>l.id===suggested).name} est atteignable. À toi de décider.`
+                : suggested < level
+                ? `${last28} séances sur 28 jours. Tu es au-dessus du niveau que l'assiduité justifie — garde-le si les séances passent bien.`
+                : `${last28} séances sur 28 jours. Niveau cohérent avec ton assiduité.`}
+            </p>
+
+            <Label color={C.ember}>TESTS DU VENDREDI</Label>
+            {tests.length === 0 ? (
+              <p style={{ fontSize:12.5, color:C.ash, margin:"0 0 32px" }}>Aucun test enregistré. Le premier vendredi donnera ta référence.</p>
+            ) : (
+              <div style={{ marginBottom:32 }}>
+                {tests.slice(0,10).map((t,i) => {
+                  const prev = tests[i+1], delta = prev ? t.s - prev.s : null;
+                  return (
+                    <div key={t.d} style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline",
+                      padding:"10px 0", borderBottom:`1px solid ${C.line}` }}>
+                      <span style={{ fontFamily:MONO, fontSize:11, color:C.ash }}>{shortFr(t.d)} · {t.w}</span>
+                      <span>
+                        <span style={{ fontFamily:DISPLAY, fontSize:22 }}>{t.s}</span>
+                        {delta !== null && <span style={{ fontFamily:MONO, fontSize:11, marginLeft:8,
+                          color: delta>0?C.lime:(delta<0?C.ember:C.ash) }}>{delta>0?`+${delta}`:delta}</span>}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <Label>SAUVEGARDE</Label>
+            <button onClick={download} style={{ width:"100%", padding:"14px 0", marginBottom:8, background:C.bone,
+              color:C.ink, fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em", borderRadius:2 }}>
+              TÉLÉCHARGER LE FICHIER
+            </button>
+            <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+              <button onClick={buildRecap} style={{ flex:1, padding:"12px 0", border:`1px solid ${C.line}`,
+                color:C.bone, fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".08em", borderRadius:2 }}>
+                COPIER LE RÉCAP
+              </button>
+              <button onClick={() => { setImportOpen(!importOpen); setImportMsg(""); }}
+                style={{ flex:1, padding:"12px 0", border:`1px solid ${C.line}`, color:C.bone,
+                  fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".08em", borderRadius:2 }}>
+                RESTAURER
+              </button>
+            </div>
+            <p style={{ fontSize:11.5, color:C.ash, lineHeight:1.5, margin:"0 0 12px" }}>
+              {lastBackup ? `Dernière sauvegarde : ${shortFr(lastBackup)}.` : "Aucune sauvegarde encore téléchargée."} Le
+              fichier .json est ta seule copie hors du téléphone. Le récap est une version texte à coller dans une conversation.
+            </p>
+
+            {recap && (
+              <textarea readOnly value={recap} onFocus={(e) => e.target.select()}
+                style={{ width:"100%", height:150, padding:12, marginBottom:12, background:C.steel, color:C.ash,
+                  fontFamily:MONO, fontSize:10, lineHeight:1.6, border:`1px solid ${C.line}`, borderRadius:2 }} />
+            )}
+
+            {importOpen && (
+              <div style={{ marginBottom:20 }}>
+                <textarea value={importText} onChange={(e) => setImportText(e.target.value)}
+                  placeholder="Colle ici le contenu d'un fichier workout-….json"
+                  style={{ width:"100%", height:110, padding:12, background:C.steel, color:C.bone,
+                    fontFamily:MONO, fontSize:10, lineHeight:1.6, border:`1px solid ${C.line}`, borderRadius:2 }} />
+                <button onClick={doImport} style={{ width:"100%", padding:"12px 0", marginTop:8, background:C.lime,
+                  color:C.ink, fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".1em", borderRadius:2 }}>
+                  FUSIONNER AVEC L'HISTORIQUE
+                </button>
+                <p style={{ fontSize:11.5, color: importMsg.startsWith("Ce texte") ? C.ember : C.ash, lineHeight:1.5, marginTop:8 }}>
+                  {importMsg || "La fusion garde une séance par date, rien n'est écrasé au hasard."}
+                </p>
+              </div>
+            )}
+
+            <div style={{ marginTop:24 }}>
+              {confirmReset ? (
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={() => { saveLog([]); setConfirmReset(false); }}
+                    style={{ flex:1, padding:"12px 0", background:C.ember, color:C.ink, fontFamily:MONO, fontSize:10, fontWeight:700, borderRadius:2 }}>
+                    EFFACER {log.length} SÉANCES
+                  </button>
+                  <button onClick={() => setConfirmReset(false)}
+                    style={{ flex:1, padding:"12px 0", border:`1px solid ${C.line}`, color:C.ash, fontFamily:MONO, fontSize:10, borderRadius:2 }}>
+                    ANNULER
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmReset(true)} style={{ fontFamily:MONO, fontSize:10, color:C.line, letterSpacing:".1em" }}>
+                  EFFACER L'HISTORIQUE
+                </button>
+              )}
+            </div>
+          </React.Fragment>
+        )}
+      </div>
+
+      {tab === "seance" && (
+        <div style={{ position:"fixed", bottom:0, left:0, right:0, display:"flex", justifyContent:"center",
+          padding:"16px 20px calc(20px + env(safe-area-inset-bottom))",
+          background:`linear-gradient(to top, ${C.ink} 62%, rgba(11,11,12,0))` }}>
+          <div style={{ width:"100%", maxWidth:460, display:"flex", gap:8 }}>
+            <button onClick={generate} style={{ flex: wod ? "0 0 42%" : 1, padding:"16px 0",
+              background: wod ? "transparent" : accent, border: wod ? `1px solid ${C.line}` : "none",
+              color: wod ? C.bone : C.ink, fontFamily:DISPLAY, fontSize: wod?15:20, letterSpacing:".04em", borderRadius:2 }}>
+              {wod ? "AUTRE SÉANCE" : "GÉNÉRER LA SÉANCE"}
+            </button>
+            {wod && (
+              <button onClick={finish} disabled={saveState === "done"}
+                style={{ flex:1, padding:"16px 0", background: saveState==="done"?C.steel:accent,
+                  color: saveState==="done"?C.ash:C.ink, fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 }}>
+                {saveState === "done" ? "ENREGISTRÉE" : askScore ? "VALIDER LE SCORE" : "SÉANCE FAITE"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
