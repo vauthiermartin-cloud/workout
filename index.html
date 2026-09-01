@@ -68,7 +68,7 @@ const WORKOUTS = {
         {tag:"MIN 2",items:[r(15,"air squats")]},
         {tag:"MIN 3",items:[r(12,"pompes")]},
         {tag:"MIN 4",items:[r(20,"fentes arrière")]},
-        {tag:"MIN 5",items:[r(4,"tractions")]},
+        {tag:"MIN 5",items:[r(4,"pull-ups")]},
       ],
       goal:"Ne rate aucun départ de minute. Si tu finis en moins de 25 s, tu es sous-dosé." },
     { name:"EMOM 20", dur:"20 min", meta:"4 blocs × 5 min · une station par minute",
@@ -76,7 +76,7 @@ const WORKOUTS = {
         {tag:"MIN 1",items:[r(10,"burpees")]},
         {tag:"MIN 2",items:[r(20,"fentes arrière")]},
         {tag:"MIN 3",items:[r(12,"pompes")]},
-        {tag:"MIN 4",items:[r(5,"tractions")]},
+        {tag:"MIN 4",items:[r(5,"chin-ups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps.")]},
         {tag:"MIN 5",items:[r(30,"mountain climbers")]},
       ],
       goal:"Le bloc 3 est le mur. Passe-le sans casser le rythme." },
@@ -84,7 +84,7 @@ const WORKOUTS = {
       blocks:[
         {tag:"MIN 1",items:[r(8,"burpees")]},
         {tag:"MIN 2",items:[r(12,"pompes")]},
-        {tag:"MIN 3",items:[r(3,"tractions")]},
+        {tag:"MIN 3",items:[r(3,"pull-ups")]},
       ],
       goal:"Sept passages sur les burpees. Même cadence du bloc 1 au bloc 7." },
     { name:"EMOM 20 explosif", dur:"20 min", meta:"4 blocs × 5 min · tout est en puissance, sauf la planche",
@@ -93,7 +93,7 @@ const WORKOUTS = {
         {tag:"MIN 2",items:[r(16,"fentes marchées","Tu avances à chaque répétition. 16 = 8 par jambe. Pas de place ? Fentes arrière sur place.")]},
         {tag:"MIN 3",items:[r(12,"jump squats")]},
         {tag:"MIN 4",items:[f("30 s de planche","Le reste de la minute est ta récup")]},
-        {tag:"MIN 5",items:[r(4,"tractions")]},
+        {tag:"MIN 5",items:[r(4,"pull-ups")]},
       ],
       goal:"Chaque saut est une répétition à part entière. Si tu enchaînes mou, réduis le nombre." },
     { name:"EMOM 20 sol", dur:"20 min", meta:"4 blocs × 5 min · rien en position debout, la barre en renfort",
@@ -142,28 +142,28 @@ const WORKOUTS = {
         {tag:"MIN 16–20",items:[r(5,"burpees genou diagonal"), r(16,"fentes croisées")]},
       ],
       goal:"70 burpees sans un seul saut. Tes genoux te remercieront, ton cardio pas du tout." },
-    { name:"Escalier tirage", dur:"20 min", meta:"1 tour = 1 min · 5 tours par bloc · l'espalier travaille autant que toi",
+    { name:"Escalier tirage", dur:"20 min", meta:"1 tour = 1 min · 5 tours par bloc · la barre en première moitié",
       blocks:[
         {tag:"MIN 1–5",items:[
           r(2,"burpees"),
-          r(5,"tirages australiens","Allongé sous un barreau bas de l'espalier, corps gainé en ligne, tu tires la poitrine vers la barre. Plus les pieds sont loin, plus c'est dur."),
+          r(3,"chin-ups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps."),
         ]},
-        {tag:"MIN 6–10",items:[r(3,"burpees"), r(5,"tirages australiens")]},
+        {tag:"MIN 6–10",items:[r(3,"burpees"), r(3,"chin-ups")]},
         {tag:"MIN 11–15",items:[r(4,"burpees"), r(20,"montées sur pointes","Debout, tu montes sur la pointe des pieds et tu redescends lentement. Sur une jambe pour durcir.")]},
         {tag:"MIN 16–20",items:[r(5,"burpees"), r(20,"montées sur pointes")]},
       ],
-      goal:"La seule séance qui tire à l'horizontale et qui travaille les mollets. Elle a sa place dans chaque semaine." },
+      goal:"30 chin-ups étalés sur dix minutes, plus les mollets. La seule séance qui fait les deux." },
   ],
   3: [
     { name:"5 rounds", dur:"≤ 25 min", meta:"Pour le temps · cap 25 min · repos libre entre les rounds",
       blocks:[
-        {tag:"1 ROUND",items:[r(40,"mountain climbers"),r(30,"air squats"),r(20,"sit-ups"),r(20,"fentes arrière"),r(10,"pompes"),r(3,"tractions")]},
+        {tag:"1 ROUND",items:[r(40,"mountain climbers"),r(30,"air squats"),r(20,"sit-ups"),r(20,"fentes arrière"),r(10,"pompes"),r(3,"pull-ups")]},
         {tag:"× 5",items:[f("Enchaîne 5 fois")]},
       ],
       goal:"Note le temps total. C'est le seul chiffre à retenir." },
     { name:"4 rounds lourds", dur:"≤ 25 min", meta:"Pour le temps · rounds plus longs, moins nombreux",
       blocks:[
-        {tag:"1 ROUND",items:[r(50,"mountain climbers"),r(40,"air squats"),r(30,"sit-ups"),r(20,"fentes arrière"),r(10,"pompes"),r(5,"tractions")]},
+        {tag:"1 ROUND",items:[r(50,"mountain climbers"),r(40,"air squats"),r(30,"sit-ups"),r(20,"fentes arrière"),r(10,"pompes"),r(5,"chin-ups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps.")]},
         {tag:"× 4",items:[f("Enchaîne 4 fois")]},
       ],
       goal:"Découpe les mountain climbers en deux séries dès le round 2." },
@@ -175,7 +175,7 @@ const WORKOUTS = {
         {tag:"4",items:[r(40,"fentes arrière")]},
         {tag:"5",items:[r(30,"pompes")]},
         {tag:"6",items:[r(20,"burpees")]},
-        {tag:"7",items:[r(10,"tractions")]},
+        {tag:"7",items:[r(10,"pull-ups")]},
       ],
       goal:"Les burpees arrivent quand tu es cuit. C'est exactement le but." },
     { name:"Tours explosifs", dur:"≤ 25 min", meta:"4 tours · pour le temps · beaucoup de saut, repos libre entre les tours",
@@ -207,21 +207,21 @@ const WORKOUTS = {
   4: [
     { name:"2 × AMRAP 10", dur:"23 min", meta:"Max de tours en 10 min · 3 min de repos entre les blocs",
       blocks:[
-        {tag:"AMRAP A",items:[r(5,"tractions"),r(10,"pompes"),r(15,"air squats")]},
+        {tag:"AMRAP A",items:[r(5,"pull-ups"),r(10,"pompes"),r(15,"air squats")]},
         {tag:"REPOS",items:[f("3 min")]},
         {tag:"AMRAP B",items:[r(10,"fentes arrière"),r(15,"sit-ups"),r(20,"mountain climbers")]},
       ],
       goal:"Deux scores : tours du bloc A, tours du bloc B." },
     { name:"AMRAP 20", dur:"20 min", meta:"Max de tours en 20 min · un seul bloc, pas de pause programmée",
       blocks:[
-        {tag:"1 TOUR",items:[r(5,"tractions"),r(10,"burpees"),r(15,"pompes"),r(20,"air squats")]},
+        {tag:"1 TOUR",items:[r(5,"pull-ups"),r(10,"burpees"),r(15,"pompes"),r(20,"air squats")]},
       ],
       goal:"Le rythme des 5 premières minutes décide de tout le reste." },
     { name:"3 × AMRAP 6", dur:"22 min", meta:"Trois blocs courts · 2 min de repos entre chaque",
       blocks:[
         {tag:"BLOC A",items:[r(10,"pompes"),r(10,"sit-ups")]},
         {tag:"BLOC B",items:[r(8,"fentes arrière"),r(8,"jump squats")]},
-        {tag:"BLOC C",items:[r(3,"tractions"),r(6,"burpees")]},
+        {tag:"BLOC C",items:[r(3,"pull-ups"),r(6,"burpees")]},
       ],
       goal:"Blocs courts, donc tu peux pousser. Ne garde rien pour la fin." },
     { name:"AMRAP 18 au sol", dur:"18 min", meta:"Max de tours en 18 min · tout se passe au ras du sol",
@@ -234,16 +234,16 @@ const WORKOUTS = {
         ]},
       ],
       goal:"Le sweep est le mouvement le plus technique du lot. Si tu perds la forme, ralentis-le au lieu de le sauter." },
-    { name:"AMRAP 20 poussée-tirage", dur:"20 min", meta:"Max de tours en 20 min · la seule séance qui pousse à la verticale",
+    { name:"AMRAP 20 poussée-tirage", dur:"20 min", meta:"Max de tours en 20 min · poussée verticale et les deux prises à la barre",
       blocks:[
         {tag:"1 TOUR",items:[
-          r(6,"pompes piquées","Bassin haut, tête vers le sol entre les mains, tu descends puis tu pousses. Pieds sur un barreau de l'espalier pour durcir."),
-          r(8,"tirages australiens","Allongé sous un barreau bas de l'espalier, corps gainé, tu tires la poitrine vers la barre."),
-          r(4,"tractions"),
+          r(6,"pompes piquées","Bassin haut, tête vers le sol entre les mains, tu descends puis tu pousses. Pieds surélevés pour durcir."),
+          r(4,"pull-ups","Paumes vers l'avant, mains un peu plus large que les épaules"),
+          r(4,"chin-ups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps."),
           r(10,"pompes"),
         ]},
       ],
-      goal:"Poussée verticale, poussée horizontale, tirage vertical, tirage horizontal. Les quatre en un tour." },
+      goal:"Poussée verticale, poussée horizontale, pronation, supination. Tout dans un tour." },
   ],
   5: [
     { name:"Test 4 min + finisher", dur:"≈ 23 min", test:true, testLabel:"Burpees en 4 min",
@@ -251,7 +251,7 @@ const WORKOUTS = {
       blocks:[
         {tag:"TEST",items:[f("Max de burpees en 4 min")]},
         {tag:"REPOS",items:[f("3 min")]},
-        {tag:"4 ROUNDS",items:[r(15,"air squats"),r(10,"pompes"),r(5,"tractions"),r(20,"mountain climbers")]},
+        {tag:"4 ROUNDS",items:[r(15,"air squats"),r(10,"pompes"),r(5,"pull-ups"),r(20,"mountain climbers")]},
       ],
       goal:"Le chiffre du test est ta seule métrique burpees de la semaine." },
     { name:"Test 3 min + EMOM 12", dur:"≈ 18 min", test:true, testLabel:"Burpees en 3 min",
@@ -259,7 +259,7 @@ const WORKOUTS = {
       blocks:[
         {tag:"TEST",items:[f("Max de burpees en 3 min")]},
         {tag:"REPOS",items:[f("3 min")]},
-        {tag:"MIN 1",items:[r(5,"tractions")]},
+        {tag:"MIN 1",items:[r(5,"chin-ups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps.")]},
         {tag:"MIN 2",items:[r(20,"mountain climbers")]},
         {tag:"MIN 3",items:[r(15,"air squats")]},
         {tag:"× 4",items:[f("Répète le cycle 4 fois")]},
@@ -270,7 +270,7 @@ const WORKOUTS = {
       blocks:[
         {tag:"TEST",items:[f("50 burpees le plus vite possible")]},
         {tag:"REPOS",items:[f("4 min")]},
-        {tag:"3 ROUNDS",items:[r(10,"pompes"),r(15,"air squats"),r(3,"tractions"),r(15,"sit-ups")]},
+        {tag:"3 ROUNDS",items:[r(10,"pompes"),r(15,"air squats"),r(3,"pull-ups"),r(15,"sit-ups")]},
       ],
       goal:"Note le temps en secondes. Sous 240 s, c'est déjà solide." },
     { name:"Test 4 min + sangle", dur:"≈ 22 min", test:true, testLabel:"Burpees en 4 min",
@@ -537,14 +537,14 @@ const TIMERS = {
   /* Lundi */
   "EMOM 25": [{ t:"cycle", sec:60, label:"EMOM 25", stations:[
     st(r(8,"burpees")), st(r(15,"air squats")), st(r(12,"pompes")),
-    st(r(20,"fentes arrière")), st(r(4,"tractions")),
+    st(r(20,"fentes arrière")), st(r(4,"pull-ups")),
   ], loops:5 }],
   "EMOM 20": [{ t:"cycle", sec:60, label:"EMOM 20", stations:[
     st(r(10,"burpees")), st(r(20,"fentes arrière")), st(r(12,"pompes")),
-    st(r(5,"tractions")), st(r(30,"mountain climbers")),
+    st(r(5,"chin-ups")), st(r(30,"mountain climbers")),
   ], loops:4 }],
   "EMOM 21": [{ t:"cycle", sec:60, label:"EMOM 21", stations:[
-    st(r(8,"burpees")), st(r(12,"pompes")), st(r(3,"tractions")),
+    st(r(8,"burpees")), st(r(12,"pompes")), st(r(3,"pull-ups")),
   ], loops:7 }],
   "EMOM 20 sol": [{ t:"cycle", sec:60, label:"EMOM 20 sol", stations:[
     st(r(12,"swings latéraux")), st(r(20,"sauts mogul")), st(r(8,"hollow to sweep")),
@@ -552,7 +552,7 @@ const TIMERS = {
   ], loops:4 }],
   "EMOM 20 explosif": [{ t:"cycle", sec:60, label:"EMOM 20 explosif", stations:[
     st(r(6,"burpees sautés en longueur")), st(r(16,"fentes marchées")), st(r(12,"jump squats")),
-    st(f("30 s de planche")), st(r(4,"tractions")),
+    st(f("30 s de planche")), st(r(4,"pull-ups")),
   ], loops:4 }],
 
   /* Mardi */
@@ -578,8 +578,8 @@ const TIMERS = {
     ...x5(st(r(5,"burpees genou diagonal"), r(16,"fentes croisées"))),
   ], loops:1 }],
   "Escalier tirage": [{ t:"cycle", sec:60, label:"Escalier tirage", stations:[
-    ...x5(st(r(2,"burpees"), r(5,"tirages australiens"))),
-    ...x5(st(r(3,"burpees"), r(5,"tirages australiens"))),
+    ...x5(st(r(2,"burpees"), r(3,"chin-ups"))),
+    ...x5(st(r(3,"burpees"), r(3,"chin-ups"))),
     ...x5(st(r(4,"burpees"), r(20,"montées sur pointes"))),
     ...x5(st(r(5,"burpees"), r(20,"montées sur pointes"))),
   ], loops:1 }],
@@ -587,15 +587,15 @@ const TIMERS = {
   /* Mercredi */
   "5 rounds": [{ t:"up", cap:1500, label:"5 rounds", sub:"1 tour, à répéter 5 fois", list:[
     r(40,"mountain climbers"), r(30,"air squats"), r(20,"sit-ups"),
-    r(20,"fentes arrière"), r(10,"pompes"), r(3,"tractions"),
+    r(20,"fentes arrière"), r(10,"pompes"), r(3,"pull-ups"),
   ] }],
   "4 rounds lourds": [{ t:"up", cap:1500, label:"4 rounds", sub:"1 tour, à répéter 4 fois", list:[
     r(50,"mountain climbers"), r(40,"air squats"), r(30,"sit-ups"),
-    r(20,"fentes arrière"), r(10,"pompes"), r(5,"tractions"),
+    r(20,"fentes arrière"), r(10,"pompes"), r(5,"chin-ups"),
   ] }],
   "Chipper": [{ t:"up", cap:1500, label:"Chipper", sub:"Dans l'ordre, une ligne à la fois", list:[
     r(100,"mountain climbers"), r(80,"air squats"), r(60,"sit-ups"),
-    r(40,"fentes arrière"), r(30,"pompes"), r(20,"burpees"), r(10,"tractions"),
+    r(40,"fentes arrière"), r(30,"pompes"), r(20,"burpees"), r(10,"pull-ups"),
   ] }],
   "Tours explosifs": [{ t:"up", cap:1500, label:"4 tours explosifs", sub:"1 tour, à répéter 4 fois", list:[
     r(12,"burpees sautés en longueur"), r(20,"fentes marchées"), r(20,"jump squats"),
@@ -610,26 +610,26 @@ const TIMERS = {
   /* Jeudi */
   "2 × AMRAP 10": [
     { t:"down", sec:600, label:"AMRAP A", sub:"Max de tours", list:[
-      r(5,"tractions"), r(10,"pompes"), r(15,"air squats") ] },
+      r(5,"pull-ups"), r(10,"pompes"), r(15,"air squats") ] },
     { t:"rest", sec:180, label:"Repos" },
     { t:"down", sec:600, label:"AMRAP B", sub:"Max de tours", list:[
       r(10,"fentes arrière"), r(15,"sit-ups"), r(20,"mountain climbers") ] },
   ],
   "AMRAP 20": [{ t:"down", sec:1200, label:"AMRAP 20", sub:"Max de tours", list:[
-    r(5,"tractions"), r(10,"burpees"), r(15,"pompes"), r(20,"air squats"),
+    r(5,"pull-ups"), r(10,"burpees"), r(15,"pompes"), r(20,"air squats"),
   ] }],
   "3 × AMRAP 6": [
     { t:"down", sec:360, label:"Bloc A", sub:"Max de tours", list:[r(10,"pompes"), r(10,"sit-ups")] },
     { t:"rest", sec:120, label:"Repos" },
     { t:"down", sec:360, label:"Bloc B", sub:"Max de tours", list:[r(8,"fentes arrière"), r(8,"jump squats")] },
     { t:"rest", sec:120, label:"Repos" },
-    { t:"down", sec:360, label:"Bloc C", sub:"Max de tours", list:[r(3,"tractions"), r(6,"burpees")] },
+    { t:"down", sec:360, label:"Bloc C", sub:"Max de tours", list:[r(3,"pull-ups"), r(6,"burpees")] },
   ],
   "AMRAP 18 au sol": [{ t:"down", sec:1080, label:"AMRAP 18", sub:"Max de tours", list:[
     r(12,"sauts mogul"), r(8,"sweeps"), r(10,"V-ups"), r(8,"pompes"),
   ] }],
   "AMRAP 20 poussée-tirage": [{ t:"down", sec:1200, label:"AMRAP 20", sub:"Max de tours", list:[
-    r(6,"pompes piquées"), r(8,"tirages australiens"), r(4,"tractions"), r(10,"pompes"),
+    r(6,"pompes piquées"), r(4,"pull-ups"), r(4,"chin-ups"), r(10,"pompes"),
   ] }],
 
   /* Vendredi */
@@ -637,20 +637,20 @@ const TIMERS = {
     { t:"down", sec:240, label:"TEST", sub:"Max de burpees", test:true },
     { t:"rest", sec:180, label:"Repos" },
     { t:"up", cap:900, label:"4 rounds", sub:"1 tour, à répéter 4 fois", list:[
-      r(15,"air squats"), r(10,"pompes"), r(5,"tractions"), r(20,"mountain climbers") ] },
+      r(15,"air squats"), r(10,"pompes"), r(5,"pull-ups"), r(20,"mountain climbers") ] },
   ],
   "Test 3 min + EMOM 12": [
     { t:"down", sec:180, label:"TEST", sub:"Max de burpees", test:true },
     { t:"rest", sec:180, label:"Repos" },
     { t:"cycle", sec:60, label:"EMOM 12", stations:[
-      st(r(5,"tractions")), st(r(20,"mountain climbers")), st(r(15,"air squats")),
+      st(r(5,"chin-ups")), st(r(20,"mountain climbers")), st(r(15,"air squats")),
     ], loops:4 },
   ],
   "50 burpees for time": [
     { t:"up", cap:480, label:"TEST", sub:"50 burpees le plus vite possible", test:true },
     { t:"rest", sec:240, label:"Repos" },
     { t:"up", cap:480, label:"3 rounds", sub:"1 tour, à répéter 3 fois", list:[
-      r(10,"pompes"), r(15,"air squats"), r(3,"tractions"), r(15,"sit-ups") ] },
+      r(10,"pompes"), r(15,"air squats"), r(3,"pull-ups"), r(15,"sit-ups") ] },
   ],
 
   "Test 4 min + sangle": [
@@ -746,6 +746,7 @@ const TIMERS = {
 const PATTERNS = [
   { id:"poussee", label:"POUSSÉE" },
   { id:"tirage", label:"TIRAGE" },
+  { id:"supination", label:"SUPINATION" },
   { id:"squat", label:"SQUAT" },
   { id:"unilat", label:"UNILATÉRAL" },
   { id:"hinge", label:"POSTÉRIEURE" },
@@ -758,8 +759,8 @@ const PATTERNS = [
 const EX_PATTERNS = {
   "pompes":["poussee"],
   "pompes piquées":["poussee"],
-  "tractions":["tirage"],
-  "tirages australiens":["tirage"],
+  "pull-ups":["tirage"],
+  "chin-ups":["tirage","supination"],
   "relevés de genoux suspendu":["tirage","core"],
   "air squats":["squat"],
   "jump squats":["squat","cardio"],
@@ -1065,6 +1066,7 @@ function App() {
   const [tab, setTab] = useState("seance");
   const [dayKey, setDayKey] = useState(dow >= 1 && dow <= 5 ? dow : 1);
   const [variant, setVariant] = useState(null);
+  const [seen, setSeen] = useState([]);
   const [runId, setRunId] = useState(0);
   const [log, setLog] = useState([]);
   const [level, setLevel] = useState(1);
@@ -1136,19 +1138,25 @@ function App() {
   const wod = variant === null ? null : pool[variant];
   const accent = wod && wod.test ? C.ember : C.lime;
 
+  /* Le premier tirage cherche la meilleure couverture. Les suivants parcourent
+     les autres variantes du jour avant d'en reproposer une déjà vue. */
   const generate = () => {
-    const scored = pool.map((w, i) => ({
+    const vus = variant === null ? [] : seen;
+    let dispo = pool.map((_, i) => i).filter((i) => !vus.includes(i));
+    if (!dispo.length) dispo = pool.map((_, i) => i).filter((i) => i !== variant);
+    if (!dispo.length) dispo = pool.map((_, i) => i);
+
+    const scored = dispo.map((i) => ({
       i,
-      neuf: patternsOfWorkout(w).filter((p) => !weekPatterns.has(p)).length,
+      neuf: patternsOfWorkout(pool[i]).filter((p) => !weekPatterns.has(p)).length,
     }));
     const best = Math.max(...scored.map((s) => s.neuf));
-    let candidats = scored.filter((s) => s.neuf === best).map((s) => s.i);
-    if (candidats.length > 1 && variant !== null) {
-      const sansRepet = candidats.filter((i) => i !== variant);
-      if (sansRepet.length) candidats = sansRepet;
-    }
+    const candidats = scored.filter((s) => s.neuf === best).map((s) => s.i);
     const n = candidats[Math.floor(Math.random() * candidats.length)];
-    setVariant(n); setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
+
+    setVariant(n);
+    setSeen(vus.includes(n) ? [n] : [...vus, n]);
+    setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
     setFinisher(null); setStretch(null);
   };
 
@@ -1296,7 +1304,7 @@ function App() {
               {DAYS.map((d) => {
                 const on = d.key === dayKey, done = weekDone[d.key];
                 return (
-                  <button key={d.key} onClick={() => { setDayKey(d.key); setVariant(null); setSaveState("idle"); setFinisher(null); setStretch(null); }}
+                  <button key={d.key} onClick={() => { setDayKey(d.key); setVariant(null); setSeen([]); setSaveState("idle"); setFinisher(null); setStretch(null); }}
                     style={{ flex:1, padding:"8px 0", position:"relative", fontFamily:MONO, fontSize:11, fontWeight:700,
                       background:on?C.bone:"transparent", color:on?C.ink:(done?C.bone:C.ash),
                       border:`1px solid ${on?C.bone:C.line}`, borderRadius:2 }}>
@@ -1363,8 +1371,9 @@ function App() {
                 {saveState === "error" && <div style={{ marginTop:14, fontSize:12.5, color:C.ember }}>Enregistrement impossible sur cet appareil. Vérifie que le navigateur n'est pas en navigation privée.</div>}
 
                 <p style={{ marginTop:16, fontSize:12, color:C.ash, lineHeight:1.5 }}>
-                  Tractions trop dures ? Tirages horizontaux à l'espalier, ou des négatives de 5 s à la descente.
-                  Trois tractions propres valent mieux que cinq lancées.
+                  Barre trop dure ? Fais des négatives : tu montes en sautant, tu descends en 5 s.
+                  Trois répétitions propres valent mieux que cinq lancées. Les chin-ups passent souvent
+                  mieux que les pull-ups, garde-les pour les jours fatigués.
                 </p>
 
                 {/* ---- En plus ---- */}
@@ -1610,7 +1619,7 @@ function App() {
               <button onClick={generate} style={{ flex: wod ? "0 0 42%" : 1, padding:"16px 0",
                 background: wod ? "transparent" : accent, border: wod ? `1px solid ${C.line}` : "none",
                 color: wod ? C.bone : C.ink, fontFamily:DISPLAY, fontSize: wod?15:20, letterSpacing:".04em", borderRadius:2 }}>
-                {wod ? "AUTRE SÉANCE" : "GÉNÉRER LA SÉANCE"}
+                {wod ? `AUTRE SÉANCE${pool.length > 1 ? ` (${seen.length}/${pool.length})` : ""}` : "GÉNÉRER LA SÉANCE"}
               </button>
               {wod && (
                 <button onClick={finish} disabled={saveState === "done"}
