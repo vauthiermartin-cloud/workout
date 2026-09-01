@@ -1,4 +1,4 @@
-const CACHE = "workout-v16";
+const CACHE = "workout-v17";
 const CORE = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {

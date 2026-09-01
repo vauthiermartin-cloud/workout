@@ -861,6 +861,46 @@ function Rail({ blocks, accent, level, reduced }) {
 const WORKOUT_BY_NAME = {};
 Object.values(WORKOUTS).flat().forEach((w) => { WORKOUT_BY_NAME[w.name] = w; });
 
+/* --------------------------- Bilan de fin de séance --------------------------- */
+/* Le nombre de tours se lit dans le libellé de la phase, pas dans une donnée
+   séparée : impossible que les deux se désynchronisent. */
+function roundsOfPhase(p) {
+  if (!p.list) return 0;
+  const m = (p.sub || "").match(/à répéter (\d+) fois/);
+  if (m) return Number(m[1]);
+  if (/une ligne à la fois/.test(p.sub || "")) return 1;
+  return null; // AMRAP : le nombre de tours est le score, pas une consigne
+}
+
+function volumeOf(name, level) {
+  const phs = TIMERS[name] || [];
+  let total = 0, amrap = false;
+  phs.forEach((p) => {
+    if (p.t === "cycle") {
+      const parTour = p.stations.reduce(
+        (a, s) => a + s.reduce((b, it) => b + (it.n ? scaleRep(it.n, level) : 0), 0), 0);
+      total += parTour * (p.loops || 1);
+    } else if (p.list) {
+      const n = roundsOfPhase(p);
+      const parTour = p.list.reduce((a, it) => a + (it.n ? scaleRep(it.n, level) : 0), 0);
+      if (n === null) { amrap = true; total += parTour; } else total += parTour * n;
+    }
+  });
+  return { total, amrap };
+}
+
+function streakOf(log, today) {
+  const jours = new Set(log.map((e) => e.d));
+  let n = 0;
+  const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  for (let garde = 0; garde < 400; garde++) {
+    const dow = d.getDay();
+    if (dow === 0 || dow === 6) { d.setDate(d.getDate() - 1); continue; }
+    if (jours.has(iso(d))) { n++; d.setDate(d.getDate() - 1); } else break;
+  }
+  return n;
+}
+
 /* --------------------------- Chrono --------------------------- */
 const mmss = (s) => {
   s = Math.max(0, Math.ceil(s));
@@ -1077,8 +1117,11 @@ function App() {
   const [stretch, setStretch] = useState(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [warmup, setWarmup] = useState(true);
-  const [stretchEnd, setStretchEnd] = useState(true);
   const [phases, setPhases] = useState(null);
+  const [segment, setSegment] = useState(null);
+  const [endOpen, setEndOpen] = useState(false);
+  const [endStage, setEndStage] = useState("workout");
+  const [propose, setPropose] = useState(null);
   const [recap, setRecap] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
@@ -1157,7 +1200,7 @@ function App() {
     setVariant(n);
     setSeen(vus.includes(n) ? [n] : [...vus, n]);
     setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
-    setFinisher(null); setStretch(null);
+    setFinisher(null); setStretch(null); setPropose(null); setEndOpen(false);
   };
 
   /* Le tirage penche vers les abdos les jours déjà chargés en burpees,
@@ -1168,23 +1211,24 @@ function App() {
     const fam = Math.random() < 0.7 ? biased : other;
     const list = FINISHERS[fam];
     let pick = list[Math.floor(Math.random() * list.length)];
-    if (finisher && list.length > 1 && pick.name === finisher.name) {
+    if (propose && list.length > 1 && pick.name === propose.name) {
       pick = list[(list.indexOf(pick) + 1) % list.length];
     }
-    setFinisher({ ...pick, fam });
+    setPropose({ ...pick, fam, kind: "finisher" });
   };
 
   const drawStretch = () => {
-    if (!stretch) {
-      setStretch(STRETCHES.find((s) => s.id === STRETCH_BY_DAY[dayKey]) || STRETCHES[0]);
+    if (!propose || propose.kind !== "stretch") {
+      const base = STRETCHES.find((s) => s.id === STRETCH_BY_DAY[dayKey]) || STRETCHES[0];
+      setPropose({ ...base, kind: "stretch" });
       return;
     }
-    const i = STRETCHES.findIndex((s) => s.id === stretch.id);
-    setStretch(STRETCHES[(i + 1) % STRETCHES.length]);
+    const i = STRETCHES.findIndex((s) => s.id === propose.id);
+    setPropose({ ...STRETCHES[(i + 1) % STRETCHES.length], kind: "stretch" });
   };
 
-  /* Le plan se construit à partir de ce qui est à l'écran :
-     échauffement optionnel, séance, finisher s'il y en a un, étirements optionnels. */
+  /* Le plan ne contient plus que l'échauffement et la séance.
+     Le finisher et les étirements se décident à la fin, sur l'écran de bilan. */
   const startTimer = () => {
     const p = [];
     if (warmup) p.push({ t:"down", sec:300, label:"Échauffement", sub:"À ton rythme", list:[
@@ -1192,30 +1236,60 @@ function App() {
     ] });
     const w = TIMERS[wod.name];
     if (w) p.push(...w); else p.push({ t:"up", cap:1500, label:wod.name, sub:"Chrono libre" });
-    if (finisher) {
-      p.push({ t:"rest", sec:120, label:"Transition", sub:"Tu souffles avant le finisher" });
-      const fz = TIMERS[finisher.name];
-      if (fz) p.push(...fz); else p.push({ t:"up", cap:600, label:finisher.name, sub:"Chrono libre" });
-    }
-    if (stretchEnd) {
-      p.push({ t:"down", sec:300, label:"Étirements",
-        sub: stretch ? stretch.name : "Séquence libre",
-        list: stretch
-          ? stretch.blocks.map((b) => f(`${b.items[0].txt} — ${b.tag.toLowerCase()}`))
-          : [f("Pince debout"), f("Fente basse"), f("Écart facial"), f("Posture de l'enfant")] });
-    }
     beep(660, 120);
+    setSegment("workout");
     setPhases(p);
     setSetupOpen(false);
   };
 
-  const finish = () => {
-    if (wod.test && !askScore) { setAskScore(true); return; }
-    const entry = { d: todayIso, day: dayKey, w: wod.name, lvl: level,
-      fin: finisher ? finisher.name : null, str: stretch ? stretch.name : null,
-      s: wod.test && scoreInput !== "" ? Number(scoreInput) : null };
+  const logSession = (opts) => {
+    const o = opts || {};
+    const avant = log.find((e) => e.d === todayIso);
+    const entry = {
+      d: todayIso, day: dayKey, w: wod.name, lvl: level,
+      fin: ("fin" in o ? o.fin : finisher ? finisher.name : (avant && avant.fin) || null),
+      str: ("str" in o ? o.str : stretch ? stretch.name : (avant && avant.str) || null),
+      s: "s" in o ? o.s
+        : scoreInput !== "" ? Number(scoreInput)
+        : avant && avant.s != null ? avant.s
+        : null,
+    };
     const ok = saveLog([...log.filter((e) => e.d !== todayIso), entry]);
     setSaveState(ok ? "done" : "error");
+  };
+
+  /* Fin d'un segment de chrono */
+  const segmentDone = () => {
+    setPhases(null);
+    if (segment === "finisher") { setEndStage("finisher"); logSession({}); }
+    else if (segment === "stretch") { setEndStage(endStage === "workout" ? "workout" : "finisher"); logSession({}); }
+    else { setEndStage("workout"); if (!wod.test) logSession({ s: null }); }
+    setSegment(null);
+    setPropose(null);
+    setEndOpen(true);
+  };
+
+  const lancerFinisher = () => {
+    const fz = TIMERS[propose.name] || [{ t:"up", cap:600, label:propose.name, sub:"Chrono libre" }];
+    setFinisher(propose);
+    setSegment("finisher");
+    setPhases([{ t:"rest", sec:90, label:"Transition", sub:"Tu souffles avant le finisher" }, ...fz]);
+    setEndOpen(false);
+    beep(660, 120);
+  };
+
+  const lancerStretch = () => {
+    setStretch(propose);
+    setSegment("stretch");
+    setPhases([{ t:"down", sec:300, label:"Étirements", sub:propose.name,
+      list: propose.blocks.map((b) => f(`${b.items[0].txt} — ${b.tag.toLowerCase()}`)) }]);
+    setEndOpen(false);
+    beep(660, 120);
+  };
+
+  const finish = () => {
+    if (wod.test && !askScore) { setAskScore(true); return; }
+    logSession({});
     setAskScore(false);
   };
 
@@ -1304,7 +1378,7 @@ function App() {
               {DAYS.map((d) => {
                 const on = d.key === dayKey, done = weekDone[d.key];
                 return (
-                  <button key={d.key} onClick={() => { setDayKey(d.key); setVariant(null); setSeen([]); setSaveState("idle"); setFinisher(null); setStretch(null); }}
+                  <button key={d.key} onClick={() => { setDayKey(d.key); setVariant(null); setSeen([]); setSaveState("idle"); setFinisher(null); setStretch(null); setPropose(null); setEndOpen(false); }}
                     style={{ flex:1, padding:"8px 0", position:"relative", fontFamily:MONO, fontSize:11, fontWeight:700,
                       background:on?C.bone:"transparent", color:on?C.ink:(done?C.bone:C.ash),
                       border:`1px solid ${on?C.bone:C.line}`, borderRadius:2 }}>
@@ -1376,54 +1450,6 @@ function App() {
                   mieux que les pull-ups, garde-les pour les jours fatigués.
                 </p>
 
-                {/* ---- En plus ---- */}
-                <div style={{ borderTop:`1px solid ${C.line}`, marginTop:28, paddingTop:20 }}>
-                  <Label>EN PLUS, SI TU AS DU JUS</Label>
-                  <div style={{ display:"flex", gap:8 }}>
-                    <button onClick={drawFinisher} style={{ flex:1, padding:"12px 0",
-                      border:`1px solid ${finisher ? C.line : C.bone}`, color: finisher ? C.ash : C.bone,
-                      fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".08em", borderRadius:2 }}>
-                      {finisher ? "AUTRE FINISHER" : "+ FINISHER"}
-                    </button>
-                    <button onClick={drawStretch} style={{ flex:1, padding:"12px 0",
-                      border:`1px solid ${stretch ? C.line : C.bone}`, color: stretch ? C.ash : C.bone,
-                      fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".08em", borderRadius:2 }}>
-                      {stretch ? "AUTRE SÉQUENCE" : "+ STRETCHING"}
-                    </button>
-                  </div>
-                </div>
-
-                {finisher && (
-                  <div key={`f-${finisher.name}`} style={{ marginTop:28 }}>
-                    <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.lime, marginBottom:6 }}>
-                      FINISHER · {finisher.fam === "cardio" ? "CARDIO" : "ABDOS"}
-                    </div>
-                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:4 }}>
-                      <span style={{ fontFamily:DISPLAY, fontSize:26, lineHeight:1 }}>{finisher.name}</span>
-                      <span style={{ fontFamily:MONO, fontSize:12, fontWeight:700, color:C.lime }}>{finisher.dur}</span>
-                    </div>
-                    <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"0 0 20px" }}>{finisher.meta}</p>
-                    <Rail blocks={finisher.blocks} accent={C.lime} level={level} reduced={reduced} />
-                  </div>
-                )}
-
-                {stretch && (
-                  <div key={`s-${stretch.id}`} style={{ marginTop:28 }}>
-                    <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginBottom:6 }}>
-                      STRETCHING
-                    </div>
-                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:4 }}>
-                      <span style={{ fontFamily:DISPLAY, fontSize:26, lineHeight:1 }}>{stretch.name}</span>
-                      <span style={{ fontFamily:MONO, fontSize:12, fontWeight:700, color:C.ash }}>{stretch.dur}</span>
-                    </div>
-                    <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"0 0 20px" }}>{stretch.meta}</p>
-                    <Rail blocks={stretch.blocks} accent={C.ash} level={1} reduced={reduced} />
-                    <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, marginTop:4 }}>
-                      Tu respires pendant tout l'étirement. Si tu retiens ton souffle, tu es allé trop loin :
-                      remonte d'un cran et reste-y.
-                    </p>
-                  </div>
-                )}
               </div>
             ) : (
               <div style={{ border:`1px dashed ${C.line}`, borderRadius:3, minHeight:200, display:"flex",
@@ -1644,28 +1670,24 @@ function App() {
               AVANT DE LANCER
             </div>
 
-            {[
-              { on:warmup, set:setWarmup, t:"Échauffement", d:"5 min au début. Tu peux le passer à tout moment." },
-              { on:stretchEnd, set:setStretchEnd, t:"Étirements", d:"5 min enchaînés à la fin de la séance." },
-            ].map((o, i) => (
-              <button key={i} onClick={() => o.set(!o.on)} style={{ width:"100%", display:"flex", alignItems:"center",
-                gap:14, padding:"14px 0", borderBottom:`1px solid ${C.line}`, textAlign:"left" }}>
-                <span style={{ width:22, height:22, flexShrink:0, borderRadius:2,
-                  border:`1px solid ${o.on ? C.lime : C.line}`, background: o.on ? C.lime : "transparent",
-                  color:C.ink, fontFamily:MONO, fontSize:13, fontWeight:700, lineHeight:"21px", textAlign:"center" }}>
-                  {o.on ? "✓" : ""}
+            <button onClick={() => setWarmup(!warmup)} style={{ width:"100%", display:"flex", alignItems:"center",
+              gap:14, padding:"14px 0", borderBottom:`1px solid ${C.line}`, textAlign:"left" }}>
+              <span style={{ width:22, height:22, flexShrink:0, borderRadius:2,
+                border:`1px solid ${warmup ? C.lime : C.line}`, background: warmup ? C.lime : "transparent",
+                color:C.ink, fontFamily:MONO, fontSize:13, fontWeight:700, lineHeight:"21px", textAlign:"center" }}>
+                {warmup ? "✓" : ""}
+              </span>
+              <span>
+                <span style={{ fontFamily:DISPLAY, fontSize:19 }}>Échauffement</span>
+                <span style={{ display:"block", fontSize:12, color:C.ash, lineHeight:1.4, marginTop:2 }}>
+                  5 min au début. Tu peux le passer à tout moment.
                 </span>
-                <span>
-                  <span style={{ fontFamily:DISPLAY, fontSize:19 }}>{o.t}</span>
-                  <span style={{ display:"block", fontSize:12, color:C.ash, lineHeight:1.4, marginTop:2 }}>{o.d}</span>
-                </span>
-              </button>
-            ))}
+              </span>
+            </button>
 
             <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, margin:"16px 0 18px" }}>
-              Le chrono suit {wod.name}
-              {finisher ? `, puis ${finisher.name}` : ""}. Trois bips avant chaque bascule.
-              Garde le téléphone déverrouillé, le son activé.
+              Le chrono suit {wod.name}. Trois bips avant chaque bascule. À la fin, il te proposera
+              un finisher et des étirements. Garde le téléphone déverrouillé, le son activé.
             </p>
 
             <button onClick={startTimer} style={{ width:"100%", padding:"16px 0", background:accent, color:C.ink,
@@ -1676,7 +1698,163 @@ function App() {
         </div>
       )}
 
-      {phases && <Timer phases={phases} level={level} onDone={() => setPhases(null)} />}
+      {phases && <Timer phases={phases} level={level} onDone={segmentDone} />}
+
+      {/* ---- Écran de fin ---- */}
+      {endOpen && wod && (() => {
+        const vol = volumeOf(wod.name, level);
+        const volFin = finisher ? volumeOf(finisher.name, level) : null;
+        const streak = streakOf(log, today);
+        const pats = patternsOfWorkout(wod);
+        const manque = PATTERNS.filter((p) => !weekPatterns.has(p.id));
+        const entryToday = log.find((e) => e.d === todayIso);
+        const besoinScore = wod.test && !(entryToday && entryToday.s != null);
+
+        return (
+          <div style={{ position:"fixed", inset:0, zIndex:45, background:C.ink, overflowY:"auto",
+            padding:"max(28px, env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom))" }}>
+            <div style={{ maxWidth:460, margin:"0 auto" }}>
+
+              <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".16em", color:C.lime, marginBottom:10 }}>
+                {endStage === "finisher" ? "FINISHER TERMINÉ" : "SÉANCE TERMINÉE"}
+              </div>
+              <div style={{ fontFamily:DISPLAY, fontSize:44, lineHeight:.95, marginBottom:6 }}>
+                {endStage === "finisher" ? "TU EN AS REMIS UNE COUCHE" : "C'EST FAIT"}
+              </div>
+              <p style={{ fontSize:13.5, color:C.ash, lineHeight:1.5, margin:"0 0 28px" }}>
+                {wod.name}{finisher ? ` + ${finisher.name}` : ""}{stretch ? ` + ${stretch.name}` : ""}
+              </p>
+
+              {/* Chiffres */}
+              <div style={{ display:"flex", gap:10, marginBottom:24 }}>
+                {[
+                  { n: vol.total + (volFin ? volFin.total : 0), l: vol.amrap || (volFin && volFin.amrap) ? "REPS PAR TOUR" : "RÉPÉTITIONS" },
+                  { n: streak, l: streak === 1 ? "JOUR D'AFFILÉE" : "JOURS D'AFFILÉE" },
+                  { n: `${weekCount}/5`, l: "CETTE SEMAINE" },
+                ].map((k, i) => (
+                  <div key={i} style={{ flex:1, background:C.steel, borderRadius:3, padding:"14px 12px" }}>
+                    <div style={{ fontFamily:DISPLAY, fontSize:32, lineHeight:.9 }}>{k.n}</div>
+                    <div style={{ fontFamily:MONO, fontSize:8, letterSpacing:".1em", color:C.ash, marginTop:6 }}>{k.l}</div>
+                  </div>
+                ))}
+              </div>
+              {vol.amrap && (
+                <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, margin:"-14px 0 24px" }}>
+                  Format AMRAP : le total affiché est celui d'un seul tour. Multiplie par tes tours.
+                </p>
+              )}
+
+              {/* Schémas */}
+              <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginBottom:8 }}>
+                TRAVAILLÉ AUJOURD'HUI
+              </div>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:12 }}>
+                {pats.map((p) => (
+                  <span key={p} style={{ fontFamily:MONO, fontSize:9, letterSpacing:".1em", padding:"5px 8px",
+                    borderRadius:2, background:C.lime, color:C.ink }}>
+                    {PATTERNS.find((x) => x.id === p).label}
+                  </span>
+                ))}
+              </div>
+              <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"0 0 28px" }}>
+                {manque.length === 0
+                  ? "Semaine complète : les dix schémas moteurs sont couverts."
+                  : `Il reste ${manque.map((p) => p.label.toLowerCase()).join(", ")} à couvrir cette semaine.`}
+              </p>
+
+              {/* Score du test */}
+              {besoinScore && (
+                <div style={{ padding:16, marginBottom:20, background:C.steel, borderRadius:3,
+                  border:`1px solid ${C.ember}` }}>
+                  <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>
+                    {wod.testLabel.toUpperCase()}
+                  </div>
+                  <input type="number" inputMode="numeric" value={scoreInput}
+                    onChange={(e) => setScoreInput(e.target.value)} placeholder="—"
+                    style={{ width:"100%", marginTop:8, padding:"8px 0", background:"transparent", color:C.bone,
+                      fontFamily:DISPLAY, fontSize:34, border:"none", borderBottom:`1px solid ${C.line}`, outline:"none" }} />
+                  <button onClick={() => logSession({})} style={{ width:"100%", padding:"12px 0", marginTop:12,
+                    background:C.ember, color:C.ink, fontFamily:MONO, fontSize:10, fontWeight:700,
+                    letterSpacing:".1em", borderRadius:2 }}>
+                    ENREGISTRER LE SCORE
+                  </button>
+                </div>
+              )}
+
+              {/* Proposition */}
+              {propose && (
+                <div style={{ borderTop:`1px solid ${C.line}`, paddingTop:20, marginBottom:20 }}>
+                  <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em",
+                    color: propose.kind === "finisher" ? C.lime : C.ash, marginBottom:6 }}>
+                    {propose.kind === "finisher"
+                      ? `FINISHER · ${propose.fam === "cardio" ? "CARDIO" : "ABDOS"}`
+                      : "ÉTIREMENTS"}
+                  </div>
+                  <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:4 }}>
+                    <span style={{ fontFamily:DISPLAY, fontSize:26, lineHeight:1 }}>{propose.name}</span>
+                    <span style={{ fontFamily:MONO, fontSize:12, fontWeight:700,
+                      color: propose.kind === "finisher" ? C.lime : C.ash }}>
+                      {propose.kind === "finisher" ? propose.dur : "5 min"}
+                    </span>
+                  </div>
+                  <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"0 0 18px" }}>{propose.meta}</p>
+                  <Rail blocks={propose.blocks} accent={propose.kind === "finisher" ? C.lime : C.ash}
+                    level={propose.kind === "finisher" ? level : 1} reduced={reduced} />
+                  <div style={{ display:"flex", gap:8, marginTop:4 }}>
+                    <button onClick={propose.kind === "finisher" ? lancerFinisher : lancerStretch}
+                      style={{ flex:1, padding:"15px 0", background: propose.kind === "finisher" ? C.lime : C.bone,
+                        color:C.ink, fontFamily:DISPLAY, fontSize:16, letterSpacing:".04em", borderRadius:2 }}>
+                      ▶ LANCER
+                    </button>
+                    <button onClick={propose.kind === "finisher" ? drawFinisher : drawStretch}
+                      style={{ flex:"0 0 38%", padding:"15px 0", border:`1px solid ${C.line}`, color:C.bone,
+                        fontFamily:DISPLAY, fontSize:14, letterSpacing:".04em", borderRadius:2 }}>
+                      EN TIRER UN AUTRE
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              {!propose && (
+                <div style={{ borderTop:`1px solid ${C.line}`, paddingTop:20 }}>
+                  {endStage === "workout" && !finisher && (
+                    <>
+                      <p style={{ fontSize:13.5, lineHeight:1.5, margin:"0 0 14px" }}>
+                        Encore du jus ? Un finisher de 10 minutes maximum.
+                      </p>
+                      <button onClick={drawFinisher} style={{ width:"100%", padding:"16px 0", marginBottom:8,
+                        background:C.lime, color:C.ink, fontFamily:DISPLAY, fontSize:18,
+                        letterSpacing:".04em", borderRadius:2 }}>
+                        AJOUTER UN FINISHER
+                      </button>
+                    </>
+                  )}
+                  {!stretch && (
+                    <button onClick={drawStretch} style={{ width:"100%", padding:"15px 0", marginBottom:8,
+                      border:`1px solid ${C.bone}`, color:C.bone, fontFamily:DISPLAY, fontSize:16,
+                      letterSpacing:".04em", borderRadius:2 }}>
+                      ÉTIREMENTS · 5 MIN
+                    </button>
+                  )}
+                  <button onClick={() => { setEndOpen(false); setTab("suivi"); }}
+                    style={{ width:"100%", padding:"15px 0", marginBottom:8,
+                      background: endStage === "finisher" && stretch ? C.bone : "transparent",
+                      border:`1px solid ${C.line}`,
+                      color: endStage === "finisher" && stretch ? C.ink : C.bone,
+                      fontFamily:DISPLAY, fontSize:16, letterSpacing:".04em", borderRadius:2 }}>
+                    VOIR MES STATS
+                  </button>
+                  <button onClick={() => setEndOpen(false)} style={{ width:"100%", padding:"12px 0",
+                    fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>
+                    FERMER
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
