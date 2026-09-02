@@ -9,21 +9,21 @@ export const TIMERS = {
   /* Lundi */
   "EMOM 25": [{ t:"cycle", sec:60, label:"EMOM 25", stations:[
     st(r(8,"burpees")), st(r(15,"air squats")), st(r(12,"pompes")),
-    st(r(20,"fentes arrière")), st(r(4,"pull-ups")),
+    st(r(16,"soulevés de terre une jambe")), st(r(4,"pull-ups")),
   ], loops:5 }],
   "EMOM 20": [{ t:"cycle", sec:60, label:"EMOM 20", stations:[
     st(r(10,"burpees")), st(r(20,"fentes arrière")), st(r(12,"pompes")),
-    st(r(5,"chin-ups")), st(r(30,"mountain climbers")),
+    st(r(5,"chin-ups")), st(r(20,"hip thrusts")),
   ], loops:4 }],
   "EMOM 21": [{ t:"cycle", sec:60, label:"EMOM 21", stations:[
     st(r(8,"burpees")), st(r(12,"pompes")), st(r(3,"pull-ups")),
   ], loops:7 }],
   "EMOM 20 sol": [{ t:"cycle", sec:60, label:"EMOM 20 sol", stations:[
     st(r(12,"swings latéraux")), st(r(20,"sauts mogul")), st(r(8,"hollow to sweep")),
-    st(r(8,"relevés de genoux suspendu")), st(r(20,"shoulder taps en gainage")),
+    st(r(8,"relevés de genoux suspendu")), st(r(20,"hip thrusts")),
   ], loops:4 }],
   "EMOM 20 explosif": [{ t:"cycle", sec:60, label:"EMOM 20 explosif", stations:[
-    st(r(6,"burpees sautés en longueur")), st(r(16,"fentes marchées")), st(r(12,"jump squats")),
+    st(r(6,"burpees sautés en longueur")), st(r(16,"soulevés de terre une jambe")), st(r(12,"jump squats")),
     st(f("30 s de planche")), st(r(4,"pull-ups")),
   ], loops:4 }],
 
@@ -37,8 +37,8 @@ export const TIMERS = {
   "Escalier descendant": [{ t:"cycle", sec:60, bloc:5, label:"Escalier descendant", stations:[
     ...x5(st(r(5,"burpees"), r(12,"pompes"), r(16,"air squats"))),
     ...x5(st(r(4,"burpees"), r(10,"pompes"), r(14,"air squats"))),
-    ...x5(st(r(3,"burpees"), r(8,"pompes"), r(12,"air squats"))),
-    ...x5(st(r(2,"burpees"), r(6,"pompes"), r(10,"air squats"))),
+    ...x5(st(r(3,"burpees"), r(8,"pompes"), r(16,"hip thrusts"))),
+    ...x5(st(r(2,"burpees"), r(6,"pompes"), r(20,"hip thrusts"))),
   ], loops:1 }],
   "Escalier ouvert": [{ t:"down", sec:1200, label:"Escalier ouvert", sub:"Round 1, puis +1 rep partout", list:[
     r(1,"burpee"), r(2,"pompes"), r(3,"air squats"),
@@ -50,8 +50,8 @@ export const TIMERS = {
     ...x5(st(r(5,"burpees genou diagonal"), r(16,"fentes croisées"))),
   ], loops:1 }],
   "Escalier tirage": [{ t:"cycle", sec:60, bloc:5, label:"Escalier tirage", stations:[
-    ...x5(st(r(2,"burpees"), r(3,"chin-ups"))),
-    ...x5(st(r(3,"burpees"), r(3,"chin-ups"))),
+    ...x5(st(r(2,"burpees"), r(3,"chin-ups"), r(12,"hip thrusts"))),
+    ...x5(st(r(3,"burpees"), r(3,"chin-ups"), r(12,"hip thrusts"))),
     ...x5(st(r(4,"burpees"), r(20,"montées sur pointes"))),
     ...x5(st(r(5,"burpees"), r(20,"montées sur pointes"))),
   ], loops:1 }],
@@ -73,8 +73,9 @@ export const TIMERS = {
     r(12,"burpees sautés en longueur"), r(20,"fentes marchées"), r(20,"jump squats"),
     r(30,"mountain climbers"), f("30 s de planche"),
   ] }],
+
   "Tours au sol": [{ t:"up", cap:1500, label:"4 tours au sol", sub:"1 tour, à répéter 4 fois", list:[
-    r(6,"bear crawl to thread the needle"), r(20,"ponts fessiers"), r(10,"ponts fessiers sur une jambe"),
+    r(6,"bear crawl to thread the needle"), r(20,"hip thrusts"), r(10,"hip thrusts sur une jambe"),
     r(20,"mountain climbers croisés"), r(12,"superman"), r(10,"pompes"),
   ] }],
 
@@ -84,20 +85,20 @@ export const TIMERS = {
       r(5,"pull-ups"), r(10,"pompes"), r(15,"air squats") ] },
     { t:"rest", sec:180, label:"Repos" },
     { t:"down", sec:600, label:"AMRAP B", sub:"Max de tours", list:[
-      r(10,"fentes arrière"), r(15,"sit-ups"), r(20,"mountain climbers") ] },
+      r(10,"fentes arrière"), r(15,"hip thrusts"), r(15,"sit-ups"), r(20,"mountain climbers") ] },
   ],
   "AMRAP 20": [{ t:"down", sec:1200, label:"AMRAP 20", sub:"Max de tours", list:[
-    r(5,"pull-ups"), r(10,"burpees"), r(15,"pompes"), r(20,"air squats"),
+    r(5,"pull-ups"), r(10,"burpees"), r(15,"pompes"), r(20,"air squats"), r(15,"hip thrusts"),
   ] }],
   "3 × AMRAP 6": [
     { t:"down", sec:360, label:"Bloc A", sub:"Max de tours", list:[r(10,"pompes"), r(10,"sit-ups")] },
     { t:"rest", sec:120, label:"Repos" },
-    { t:"down", sec:360, label:"Bloc B", sub:"Max de tours", list:[r(8,"fentes arrière"), r(8,"jump squats")] },
+    { t:"down", sec:360, label:"Bloc B", sub:"Max de tours", list:[r(8,"fentes arrière"), r(8,"jump squats"), r(12,"hip thrusts")] },
     { t:"rest", sec:120, label:"Repos" },
     { t:"down", sec:360, label:"Bloc C", sub:"Max de tours", list:[r(3,"pull-ups"), r(6,"burpees")] },
   ],
   "AMRAP 18 au sol": [{ t:"down", sec:1080, label:"AMRAP 18", sub:"Max de tours", list:[
-    r(12,"sauts mogul"), r(8,"sweeps"), r(10,"V-ups"), r(8,"pompes"),
+    r(12,"sauts mogul"), r(8,"sweeps"), r(10,"V-ups"), r(15,"hip thrusts"), r(8,"pompes"),
   ] }],
   "AMRAP 20 poussée-tirage": [{ t:"down", sec:1200, label:"AMRAP 20", sub:"Max de tours", list:[
     r(6,"pompes piquées"), r(4,"pull-ups"), r(4,"chin-ups"), r(10,"pompes"),
@@ -123,6 +124,7 @@ export const TIMERS = {
     { t:"up", cap:480, label:"3 rounds", sub:"1 tour, à répéter 3 fois", list:[
       r(10,"pompes"), r(15,"air squats"), r(3,"pull-ups"), r(15,"sit-ups") ] },
   ],
+
   "Test 4 min + sangle": [
     { t:"down", sec:240, label:"TEST", sub:"Max de burpees", test:true },
     { t:"rest", sec:180, label:"Repos" },
@@ -130,11 +132,12 @@ export const TIMERS = {
       r(12,"corkscrews"), r(16,"dead bugs"), r(20,"russian twists"),
       r(15,"crunchs inversés"), r(15,"relevés de jambes au sol"), r(20,"ciseaux") ] },
   ],
+
   "Test 4 min + chaîne postérieure": [
     { t:"down", sec:240, label:"TEST", sub:"Max de burpees", test:true },
     { t:"rest", sec:180, label:"Repos" },
     { t:"up", cap:900, label:"4 rounds", sub:"1 tour, à répéter 4 fois", list:[
-      r(20,"ponts fessiers"), r(10,"ponts fessiers sur une jambe"), r(20,"fentes arrière"),
+      r(20,"hip thrusts"), r(10,"hip thrusts sur une jambe"), r(20,"fentes arrière"),
       r(25,"montées sur pointes"), r(12,"superman") ] },
   ],
 
@@ -197,10 +200,10 @@ export const TIMERS = {
     r(12,"V-ups"), r(20,"sauts mogul"), r(15,"relevés de jambes au sol"),
   ] }],
   "Bassin et vrille": [{ t:"up", cap:540, label:"4 tours", sub:"1 tour, à répéter 4 fois", list:[
-    r(20,"ponts fessiers"), r(12,"corkscrews"), f("30 s de planche"),
+    r(20,"hip thrusts"), r(12,"corkscrews"), f("30 s de planche"),
   ] }],
-  "Pont et gainage": [{ t:"up", cap:480, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
-    r(15,"ponts fessiers"), r(10,"ponts fessiers sur une jambe"), r(10,"corkscrews"),
+  "Hip thrust et gainage": [{ t:"up", cap:480, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[
+    r(15,"hip thrusts"), r(10,"hip thrusts sur une jambe"), r(10,"corkscrews"),
     f("20 s gainage latéral par côté"),
   ] }],
   "Swings": [{ t:"up", cap:540, label:"5 tours", sub:"1 tour, à répéter 5 fois", list:[

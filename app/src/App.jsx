@@ -137,6 +137,7 @@ export default function App() {
     const p = [];
     if (warmup) p.push({ t:"down", sec:300, label:"Échauffement", sub:"À ton rythme", list:[
       f("Squats latéraux"), f("Élévations latérales de jambe"), f("Isométries kiné"),
+      f("30 s de deep squat", "Talons au sol, coudes contre l'intérieur des genoux, tu pousses vers l'extérieur"),
     ] });
     const w = TIMERS[wod.name];
     if (w) p.push(...w); else p.push({ t:"up", cap:1500, label:wod.name, sub:"Chrono libre" });
@@ -302,7 +303,7 @@ export default function App() {
             <div style={{ borderLeft:`2px solid ${C.line}`, paddingLeft:12, marginBottom:24,
               fontSize:12.5, color:C.ash, lineHeight:1.5 }}>
               <span style={{ color:C.bone }}>Avant.</span> Squats latéraux, élévations latérales de jambe,
-              puis tes isométries kiné.
+              isométries kiné, puis 30 s de deep squat.
             </div>
 
             {wod ? (

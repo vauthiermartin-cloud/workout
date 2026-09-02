@@ -134,17 +134,17 @@ export const FINISHERS = {
     { name:"Bassin et vrille", dur:"≤ 9 min", meta:"4 tours · fessiers et obliques, rien de sauté",
       blocks:[
         {tag:"1 TOUR",items:[
-          r(20,"ponts fessiers","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin jusqu'à l'alignement épaules-hanches-genoux et tu serres 1 s en haut."),
+          r(20,"hip thrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin jusqu'à l'alignement épaules-hanches-genoux et tu serres 1 s en haut."),
           r(12,"corkscrews","Sur le dos, jambes tendues vers le plafond. Tu décolles le bassin en vrillant vers un côté, puis vers l'autre. 12 = 6 par côté."),
           f("30 s de planche","Coudes sous les épaules, fessiers serrés"),
         ]},
         {tag:"× 4",items:[f("Enchaîne 4 tours")]},
       ] },
-    { name:"Pont et gainage", dur:"≤ 8 min", meta:"5 tours · chaîne postérieure et sangle profonde",
+    { name:"Hip thrust et gainage", dur:"≤ 8 min", meta:"5 tours · chaîne postérieure et sangle profonde",
       blocks:[
         {tag:"1 TOUR",items:[
-          r(15,"ponts fessiers","Genoux pliés, pieds à plat, tu serres les fessiers en haut"),
-          r(10,"ponts fessiers sur une jambe","Même mouvement, une jambe tendue en l'air. 10 = 5 par jambe."),
+          r(15,"hip thrusts","Genoux pliés, pieds à plat, tu serres les fessiers en haut"),
+          r(10,"hip thrusts sur une jambe","Même mouvement, une jambe tendue en l'air. 10 = 5 par jambe."),
           r(10,"corkscrews"),
           f("20 s gainage latéral par côté"),
         ]},

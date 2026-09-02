@@ -34,9 +34,10 @@ describe("bibliothèque", () => {
     expect(exerciseNames().filter((n) => !EX_PATTERNS[n])).toEqual([]);
   });
 
-  it("aucun exercice absent des séances principales", () => {
-    const utilises = new Set();
-    allWorkouts.forEach((w) => w.blocks.forEach((b) => b.items.forEach((it) => { if (it.t) utilises.add(it.t); })));
+  /* Une classification que plus aucun exercice n'utilise signale soit une
+     faute de frappe, soit un exercice retiré sans nettoyer derrière. */
+  it("aucune classification morte", () => {
+    const utilises = new Set(exerciseNames());
     expect(Object.keys(EX_PATTERNS).filter((n) => !utilises.has(n))).toEqual([]);
   });
 
