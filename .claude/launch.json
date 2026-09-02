@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "app",
+      "runtimeExecutable": "/Users/martinvauthier/.local/node/bin/node",
+      "runtimeArgs": ["app/node_modules/vite/bin/vite.js", "app"],
+      "port": 5173
+    },
+    {
+      "name": "dist",
+      "runtimeExecutable": "/Users/martinvauthier/.local/node/bin/node",
+      "runtimeArgs": ["app/node_modules/vite/bin/vite.js", "preview", "app", "--port", "4173"],
+      "port": 4173
+    }
+  ]
+}
