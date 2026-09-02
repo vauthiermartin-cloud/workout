@@ -1,0 +1,10 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin:0; padding:0; background:#0B0B0C; color:#F2F2EE;
+  font-family:'Inter',-apple-system,system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+button { font:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+input, textarea { font:inherit; }
+#root { min-height:100vh; }
+@keyframes wodIn { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:none} }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline:2px solid #D9FF3D; outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+.boot { padding:40px 24px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#75787E; letter-spacing:.14em; }

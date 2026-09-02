@@ -1,0 +1,51 @@
+import { f } from "./items.js";
+
+export const STRETCHES = [
+  { id:"post", name:"Chaîne postérieure", dur:"7 min", meta:"Ischios, mollets, bas du dos · après les jours de jambes",
+    blocks:[
+      {tag:"60 S",items:[f("Pince debout","Mains derrière les chevilles, genoux souples, nuque relâchée")]},
+      {tag:"45 S / CÔTÉ",items:[f("Fente basse, genou arrière au sol","Bassin qui descend, buste droit")]},
+      {tag:"90 S",items:[f("Écart facial assis","Mains au sol devant toi, dos long, tu descends sans arrondir")]},
+      {tag:"45 S / CÔTÉ",items:[f("Torsion assise","Coude contre le genou opposé, regard derrière l'épaule")]},
+      {tag:"45 S",items:[f("Sphinx puis cobra","Bassin au sol, coudes puis mains, épaules basses")]},
+      {tag:"60 S",items:[f("Posture de l'enfant","Genoux écartés, bras tendus devant, front au sol")]},
+    ] },
+  { id:"hanches", name:"Hanches", dur:"8 min", meta:"Fléchisseurs, fessiers, adducteurs · après squats et fentes",
+    blocks:[
+      {tag:"90 S",items:[f("Squat profond talons au sol","Coudes contre l'intérieur des genoux, tu pousses vers l'extérieur")]},
+      {tag:"60 S / CÔTÉ",items:[f("Pigeon","Tibia avant parallèle au sol si possible, hanche arrière qui s'ouvre")]},
+      {tag:"60 S",items:[f("Papillon assis","Plantes de pieds jointes, coudes sur les cuisses, dos long")]},
+      {tag:"45 S / CÔTÉ",items:[f("Fente basse avec rotation","Main au sol côté intérieur, bras opposé qui monte au ciel")]},
+      {tag:"45 S / CÔTÉ",items:[f("Torsion allongée","Sur le dos, genoux qui tombent d'un côté, épaules qui restent au sol")]},
+      {tag:"60 S",items:[f("Posture de l'enfant","Respiration dans le bas du dos")]},
+    ] },
+  { id:"haut", name:"Haut du corps", dur:"8 min", meta:"Épaules, pecs, dorsaux · après tractions et pompes",
+    blocks:[
+      {tag:"30 S / CÔTÉ",items:[f("Bras croisé devant la poitrine","Coude tiré vers toi, épaule basse")]},
+      {tag:"45 S / CÔTÉ",items:[f("Ouverture pectorale à l'espalier","Main sur un barreau derrière toi, tu pivotes doucement")]},
+      {tag:"60 S",items:[f("Chien tête en bas","Talons vers le sol, dos long, tu pousses le sol loin de toi")]},
+      {tag:"45 S",items:[f("Sphinx","Coudes sous les épaules, ouverture de la poitrine")]},
+      {tag:"45 S / CÔTÉ",items:[f("Thread the needle","À quatre pattes, un bras tendu passe sous le corps jusqu'à poser l'épaule et la tempe au sol")]},
+      {tag:"30 S / CÔTÉ",items:[f("Triceps bras derrière la tête","Coude vers le plafond, main entre les omoplates")]},
+      {tag:"45 S",items:[f("Suspension passive à la barre","Bras tendus, épaules relâchées, tu laisses pendre")]},
+      {tag:"60 S",items:[f("Posture de l'enfant, bras sur le côté","Bras tendus vers la gauche, puis vers la droite")]},
+    ] },
+  { id:"flow", name:"Enchaînement complet", dur:"9 min", meta:"La séquence entière, du debout au sol",
+    blocks:[
+      {tag:"45 S",items:[f("Pince debout","Mains derrière les chevilles")]},
+      {tag:"45 S / CÔTÉ",items:[f("Fente basse, bras au ciel","Ouverture thoracique, regard qui suit la main")]},
+      {tag:"60 S",items:[f("Chien tête en bas")]},
+      {tag:"45 S",items:[f("Cobra, bassin au sol","Épaules loin des oreilles")]},
+      {tag:"90 S",items:[f("Écart facial assis","Mains au sol devant, tu descends progressivement")]},
+      {tag:"45 S / CÔTÉ",items:[f("Torsion assise, coude contre le genou")]},
+      {tag:"60 S",items:[f("Ouverture antérieure assis","Assis jambes fléchies, mains au sol derrière toi, poitrine vers le haut")]},
+      {tag:"90 S",items:[f("Posture de l'enfant","La plus longue. Tu ne fais que respirer.")]},
+    ] },
+  { id:"express", name:"Express", dur:"4 min", meta:"Le minimum viable quand tu n'as plus de temps",
+    blocks:[
+      {tag:"45 S",items:[f("Pince debout")]},
+      {tag:"30 S / CÔTÉ",items:[f("Fente basse, genou arrière au sol")]},
+      {tag:"60 S",items:[f("Écart facial assis")]},
+      {tag:"60 S",items:[f("Posture de l'enfant")]},
+    ] },
+];
