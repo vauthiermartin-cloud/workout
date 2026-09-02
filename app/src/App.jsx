@@ -360,7 +360,7 @@ export default function App() {
               <div style={{ border:`1px dashed ${C.line}`, borderRadius:3, minHeight:200, display:"flex",
                 alignItems:"center", justifyContent:"center", textAlign:"center", padding:"0 24px",
                 color:C.ash, fontSize:13.5, lineHeight:1.6, whiteSpace:"pre-line" }}>
-                {weekDone[dayKey] ? "Séance déjà enregistrée ce jour-là.\nTu peux quand même en tirer une." : "Trois séances possibles pour ce jour.\nAppuie pour en tirer une."}
+                {weekDone[dayKey] ? "Séance déjà enregistrée ce jour-là.\nTu peux quand même en tirer une." : `${pool.length} séances possibles pour ce jour.\nAppuie pour en tirer une.`}
               </div>
             )}
           </React.Fragment>
