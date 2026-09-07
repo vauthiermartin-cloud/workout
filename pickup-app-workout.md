@@ -41,6 +41,24 @@ Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 1
 
 ## Prochaines actions, dans l'ordre
 
+### À prendre maintenant — « le point 4 de la liste »
+
+Une liste de quatre demandes a été formulée le 2026-09-07 sur l'écran de fin de séance. Les
+trois premières sont livrées (le retour parlé au ressenti, le bloc rendu visible, « trop
+facile » qui ne tire plus de finisher). **Le point 4 est le seul qui reste, et c'est la
+prochaine étape :**
+
+> « Faudrait un bouton sur ce même écran qui valide la séance pour de bon, et que l'écran
+> suivant soit un passage obligatoire par tes perfs. Et c'est là que tu peux éditer les
+> valeurs. "Ajuste si tu as fait plus ou moins que prévu". »
+
+**La spécification est en section 6.1 du brief**, avec la décision d'architecture qui compte :
+la séance reste écrite dès la fin du chrono, et l'écran de perfs **corrige** la ligne au lieu
+de la créer — sinon une séance quittée avant cet écran serait perdue, ce que « local d'abord »
+interdit. Sa dépendance au typage des unités est levée depuis le 2026-09-07. Deux points
+restent à trancher dans cette étape : le champ « nombre de tours » pour l'AMRAP du jeudi, et
+le score du test du vendredi, qui doit devenir une donnée au lieu de vivre dans une phrase.
+
 **L'ordre de travail complet est en tête de `brief-v2-multi-user.md`, section « Phasage ».**
 Douze étapes. Les deux premières sont faites :
 
@@ -105,6 +123,11 @@ Ce qui reste réellement ouvert :
   différentes avec la même forme. Acceptable en l'état, à revoir si la confusion se produit
   vraiment pendant l'effort. Ne pas supprimer la jauge de blocs pour autant : elle est la
   seule à dire le bloc en cours.
+- **Le récapitulatif texte de l'onglet SUIVI a reçu une ligne « Ressentis : … » qui n'était pas
+  demandée**, ajoutée le 2026-09-07 en même temps que le signal de ressenti, plus une mention
+  du ressenti sur chaque jour listé. Signalé, jamais arbitré : à garder ou à retirer. Le
+  trancher au moment de refondre les stats (étape 11), qui reprendra ce récapitulatif de toute
+  façon.
 - **Mollets** : encore fragiles, présents seulement mardi et vendredi, 2 variantes sur 25. À répartir comme la chaîne postérieure l'a été. La question a été posée, jamais tranchée.
 - **Interprétation de trois mouvements** issus de captures vidéo, à confirmer visuellement : les passages de jambes latéraux, le gainage cuillère vers balayage, et la marche de l'ours et passage de bras. Ce sont les trois qui ouvrent la liste du chantier illustration.
 - **Badges du podium** : le premier est « THE GOAT », les deux autres restent à nommer. « THE BEAST » entrerait en collision avec le nom du mode BEAST. Sujet de phase 2, ne bloque rien.
@@ -117,14 +140,14 @@ Ordre de lecture recommandé pour reprendre le projet :
 
 1. `pickup-app-workout.md` — cette note, l'état technique.
 2. `brief-v2-multi-user.md` — l'intention produit, toutes décisions tranchées, ordre de travail en douze étapes.
-3. `table-nommage-exercices.md` — les 35 exercices avec leur label français, leur label court pour le chrono et leur terme anglais. Référence pour le remplacement dans les données.
+3. `table-nommage-exercices.md` — les labels français, les labels courts pour le chrono et les termes anglais. Référence pour l'étape 4. **Lire l'avertissement en tête** : sa colonne « clé technique » n'est pas l'identifiant du code, et trois maintiens n'y figurent pas.
 
 Fichiers du projet :
 
-4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit.
+4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des 37 exercices, tout le reste la cite par identifiant. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
 5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures.
 6. `app/src/App.jsx` et `app/src/components/` — les écrans.
-7. `app/test/` — trois fichiers : cohérence de la bibliothèque, générateur, chrono. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
+7. `app/test/` — cinq fichiers, 62 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, ressenti. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
 8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
 9. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 10. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.
