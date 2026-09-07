@@ -157,6 +157,23 @@ export function Timer({ initial, level, onPersist, onDone }) {
   const faits = determine ? durs.slice(0, run.idx).reduce((a, b) => a + b, 0) : 0;
   const pct = determine ? Math.min(100, Math.round(((faits + Math.min(elapsed, durs[run.idx])) / totalSec) * 100)) : null;
 
+  /* Jauge de séance : un segment par phase, large comme sa durée. Elle porte à
+     elle seule les trois repères qu'il fallait lire séparément — où j'en suis,
+     dans quelle phase, et combien il en reste. Essoufflé, téléphone par terre,
+     un pourcentage en petit ne se lit pas.
+
+     Sur un plan dont une phase dépend du pratiquant, la progression réelle est
+     inconnue : largeurs égales, phase courante soulignée, aucun remplissage.
+     On garde la structure et on ne prétend pas mesurer ce qu'on ignore. */
+  const gauge = phases.map((p, i) => ({
+    grow: determine ? durs[i] : 1,
+    done: i < run.idx,
+    fill: i < run.idx ? 1
+      : i > run.idx || !determine ? 0
+      : Math.min(elapsed, durs[i]) / durs[i],
+    marque: !determine && i === run.idx,
+  }));
+
   /* Bips : trois avant la bascule, un long à la bascule */
   useEffect(() => {
     if (!running || remaining === null) return;
@@ -174,15 +191,29 @@ export function Timer({ initial, level, onPersist, onDone }) {
 
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
         fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash }}>
-        <span>PHASE {run.idx + 1} / {phases.length}{pct !== null ? ` · ${pct} %` : ""}</span>
+        <span>PHASE {run.idx + 1} / {phases.length}</span>
         <button onClick={() => setConfirmClose(true)} style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash }}>FERMER ✕</button>
       </div>
 
       {pct !== null && (
-        <div style={{ height:3, background:C.line, borderRadius:2, marginTop:10, overflow:"hidden" }}>
-          <div style={{ height:"100%", width:`${pct}%`, background:accent, transition:"width .3s linear" }} />
+        <div style={{ fontFamily:MONO, fontSize:13, letterSpacing:".06em", color:C.ash,
+          textAlign:"right", marginTop:10, flexShrink:0, fontVariantNumeric:"tabular-nums" }}>
+          {pct} %
         </div>
       )}
+
+      {/* `flexShrink: 0` n'est pas cosmétique : dans cette colonne, un élément
+          de 7 px est le premier que le navigateur écrase quand le contenu
+          déborde, et la jauge disparaissait entièrement. */}
+      <div style={{ display:"flex", gap:2, height:7, marginTop:8, flexShrink:0 }}>
+        {gauge.map((g, i) => (
+          <div key={i} style={{ flexGrow:g.grow, flexBasis:0, background:C.line, borderRadius:2,
+            overflow:"hidden", boxShadow: g.marque ? `inset 0 -2px 0 ${accent}` : undefined }}>
+            <div style={{ height:"100%", width:`${g.fill * 100}%`,
+              background: g.done ? C.bone : accent, transition:"width .3s linear" }} />
+          </div>
+        ))}
+      </div>
 
       <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", textAlign:"center" }}>
         <div style={{ fontFamily:MONO, fontSize:11, letterSpacing:".16em", color:accent, marginBottom:6 }}>

@@ -63,6 +63,16 @@ référer.
 
 Ce qui reste réellement ouvert :
 
+- **Le haut de l'écran du chrono porte trois lectures**, alors que la jauge de séance était
+  censée les remplacer : `PHASE x / y`, le pourcentage, et la jauge elle-même. Gardé tel quel
+  le 2026-09-07 après essai — à rouvrir si à l'usage le regard ne sait pas où se poser. La
+  piste écartée ce jour-là : jauge seule, collée au bord supérieur de l'écran comme une barre
+  de chargement, `FERMER ✕` seul sur sa ligne.
+- **Deux jauges de même grammaire visuelle** cohabitent sur l'écran du chrono : celle de la
+  séance en haut, celle des blocs de 5 min sous `BLOC x / 4`. Elles disent deux choses
+  différentes avec la même forme. Acceptable en l'état, à revoir si la confusion se produit
+  vraiment pendant l'effort. Ne pas supprimer la jauge de blocs pour autant : elle est la
+  seule à dire le bloc en cours.
 - **Mollets** : encore fragiles, présents seulement mardi et vendredi, 2 variantes sur 25. À répartir comme la chaîne postérieure l'a été. La question a été posée, jamais tranchée.
 - **Interprétation de trois mouvements** issus de captures vidéo, à confirmer visuellement : les passages de jambes latéraux, le gainage cuillère vers balayage, et la marche de l'ours et passage de bras. Ce sont les trois qui ouvrent la liste du chantier illustration.
 - **Badges du podium** : le premier est « THE GOAT », les deux autres restent à nommer. « THE BEAST » entrerait en collision avec le nom du mode BEAST. Sujet de phase 2, ne bloque rien.
