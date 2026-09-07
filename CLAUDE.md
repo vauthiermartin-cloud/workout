@@ -62,8 +62,13 @@ sur une séance. C'est ce qui garantit qu'elles ne dérivent pas quand on ajoute
 ## Ton des textes affichés
 
 Français, direct, sans jargon anglophone en label principal. Le terme anglais peut figurer en
-seconde ligne sur la fiche et dans la bibliothèque, jamais dans le chrono. Une seule exception
-assumée : le message de fin de séance, « Well done, player! ».
+seconde ligne sur la fiche et dans la bibliothèque, jamais dans le chrono.
+
+**Les adresses au pratiquant échappent à cette règle, et c'est assumé.** Ce sont les seuls
+textes où l'app parle à quelqu'un plutôt que de décrire un mouvement : « Well done, player! »
+à la fin de la séance, et les trois retours au ressenti — « Ok beast! On va monter d'un
+cran. », « Dans ta zone, Player! », « Ok le sang. On adapte la suite. » La règle du français
+vaut pour le contenu ; le ton de l'app, lui, est celui d'une salle de sport.
 
 Pendant l'effort, l'écran ne montre que le nom de l'exercice et les répétitions, en grand.
 Rien d'autre.

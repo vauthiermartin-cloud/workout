@@ -320,12 +320,28 @@ toujours dans les 25 minutes en mode BEAST.
 
 Le message devient **« Well done, player! »**.
 
-Note : le reste de l'app est en français. Un message en anglais à cet endroit précis est un
-choix assumé de ton, pas un oubli — à confirmer.
+Note : le reste de l'app est en français. **Les adresses au pratiquant sont une exception de
+ton assumée** (confirmé le 2026-09-07) : ce message et les trois retours au ressenti.
 
 L'écran conserve ce qu'il affiche déjà : volume de répétitions, série de jours, progression
 dans la semaine, schémas moteurs travaillés, ce qui manque à la semaine. Puis la proposition
 de finisher, d'étirements, ou de terminer.
+
+### 6.1 Validation de la séance et écran de perfs — décidé le 2026-09-07, à faire
+
+Un bouton qui **valide la séance pour de bon**, et l'écran suivant est un **passage obligé par
+les perfs** : la liste de ce qui était prescrit, éditable. « Ajuste si tu as fait plus ou moins
+que prévu. »
+
+**La séance reste écrite dès la fin du chrono ; l'écran de perfs corrige la ligne au lieu de la
+créer.** Si la validation conditionnait l'enregistrement, une séance faite puis quittée avant
+cet écran serait perdue — ce que « local d'abord, jamais perdue » interdit. La validation
+marque donc la ligne comme relue, elle ne la fait pas naître.
+
+**Dépend du typage des unités** (section 8) : sans lui, on saurait éditer `r(10,"burpees")`
+mais pas `f("30 s de planche")`, où la durée est dans la chaîne, ni trancher si l'on édite 16
+ou 8 sur un mouvement compté par côté. Le format AMRAP du jeudi demande en outre un champ
+distinct : ce qu'on ajuste est le **nombre de tours**, pas les répétitions d'un tour.
 
 ---
 
@@ -344,6 +360,13 @@ l'assiduité, pas la capacité. Quelqu'un peut venir régulièrement en survivan
   aveu d'avoir eu du jus.
 - Usage de la pause et des sauts de phase pendant le chrono. Beaucoup de pauses veut dire que
   le dosage actuel est déjà limite.
+
+**Décidé le 2026-09-07 — une première règle, courte, avant le moteur complet.** Trois « trop
+facile » et **quelque chose doit se passer**. Sans ça le retour « Ok beast! On va monter d'un
+cran. » annonce une conséquence qui n'arrive jamais, et la question redevient un sondage au
+bout de trois semaines. À écrire une fois le typage des unités posé, et à tenir par un test.
+Restent à trancher au moment de l'écrire : trois d'affilée ou trois sur une fenêtre glissante,
+et ce qui se passe exactement — proposer la montée de mode, ou l'appliquer en l'annonçant.
 
 ### 7.1 Le retour de fin de séance — FAIT (2026-09-07)
 
