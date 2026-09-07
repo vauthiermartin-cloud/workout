@@ -1,18 +1,22 @@
 ---
 topic: app-workout-25
-date: 2026-09-02
+date: 2026-09-07
 status: in-progress
 ---
 
-# Pickup — App workout « 25 » : migration vers Supabase
+# Pickup — App workout « 25 » : état technique
 
 ## État actuel (TL;DR)
 
-Une PWA de séances au poids du corps est **en production et fonctionnelle**, hébergée sur GitHub Pages, installée sur l'écran d'accueil iPhone. Un seul fichier `index.html` (~100 Ko, React via CDN + Babel navigateur, aucune étape de build), plus `sw.js`, `manifest.json` et trois icônes. Les données vivent en `localStorage` avec export/import JSON.
+Une PWA de séances au poids du corps est **en production et fonctionnelle**, hébergée sur GitHub Pages, installée sur l'écran d'accueil iPhone. Les données vivent en `localStorage` avec export/import JSON.
+
+**Le code vit dans `app/` : Vite 8 + React 19, testé sous Vitest.** Le mono-fichier de 100 Ko avec Babel dans le navigateur appartient au passé. Le déploiement passe par `.github/workflows/deploy.yml` : `npm ci`, `npm test`, `npm run build`, publication de `app/dist` sur Pages. **Les tests sont un garde-barrière du déploiement** — un échec bloque la mise en production.
 
 Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 finishers, 5 séquences d'étirement, 35 exercices. Un chrono adaptatif (EMOM / Tabata / compte à rebours / chrono libre) et un générateur qui choisit la séance selon les schémas moteurs non encore couverts dans la semaine.
 
-Ce qui reste : **passer sur une vraie base (Supabase), ajouter des comptes utilisateurs, un leaderboard, et pouvoir partager l'app.** Rien de cette partie n'est commencé.
+**Le chrono est reprenable** (étape 1, faite le 2026-09-07). `app/src/lib/chrono.js` sépare deux notions : le `run`, enregistrement d'une séance en cours écrit dans une clé unique (`workout.run`), et le `beat`, dernier battement réellement observé. Un trou de plus de 4 s entre deux battements ne peut venir que d'une app endormie : le chrono gèle, ne valide rien, et demande. Reprise proposée au démarrage sous 4 h, enregistrement ou abandon au-delà.
+
+Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 12 du brief). **Phase 2** — Supabase, comptes, leaderboard — reste en pause et n'est pas commencée.
 
 ## Ce qui est décidé (ne pas rouvrir sans raison)
 
@@ -33,19 +37,25 @@ Ce qui reste : **passer sur une vraie base (Supabase), ajouter des comptes utili
 ## Prochaines actions, dans l'ordre
 
 **L'ordre de travail complet est en tête de `brief-v2-multi-user.md`, section « Phasage ».**
-Douze étapes, dont les deux premières sont la seule chose à attaquer maintenant :
+Douze étapes. Les deux premières sont faites :
 
-1. **Réparer la reprise du chrono** (brief section 0). Le seul défaut qui gâche réellement une
-   séance en cours. Diagnostic complet fourni.
-2. **Migrer vers Vite + tests**, en profitant de la migration pour faire des exercices de
-   vraies entités. Les dix étapes suivantes en dépendent.
+1. ~~Réparer la reprise du chrono~~ (brief section 0). **Fait.** Les quatre points du brief
+   sont couverts, `app/test/chrono.test.js` les tient.
+2. **Migrer vers Vite + tests. Fait pour la chaîne de build, pas pour les données.** Le volet
+   « faire des exercices de vraies entités » (brief section 8) n'a pas été traité : un
+   exercice est toujours une chaîne de caractères, reliée aux schémas moteurs par la table de
+   `app/src/data/patterns.js`. **C'est donc le vrai préalable aux étapes 3 à 6**, à faire
+   avant les chaînes de régressions.
 
-Ne pas lancer les douze en une fois.
+L'étape suivante à attaquer est donc ce reliquat d'entités, puis l'étape 3 (chaînes de
+régressions et substitution sans barre de traction).
 
-**Attention au déploiement.** GitHub Pages sert aujourd'hui `index.html` depuis la racine de
-`main`. Après la migration Vite il faudra un build et un workflow de publication. Garder le
-fichier actuel fonctionnel sur `main` jusqu'à ce que la nouvelle chaîne de déploiement
-fonctionne, pour ne jamais se retrouver sans app sur le téléphone.
+Ne pas lancer plusieurs étapes en une fois.
+
+**Le déploiement n'est plus un sujet.** Il est automatisé et vérifié. Le seul piège restant :
+`index.html` et `sw.js` traînent encore à la racine du dépôt, vestiges du mono-fichier. Ils ne
+sont plus servis par personne. À supprimer une fois qu'on est certain de ne plus vouloir s'y
+référer.
 
 ## Questions ouvertes
 
@@ -69,12 +79,18 @@ Ordre de lecture recommandé pour reprendre le projet :
 
 Fichiers du projet :
 
-4. `index.html` — l'app entière : données, chrono, générateur, écrans. Point de départ de la migration.
-5. `sw.js` — service worker, cache versionné (`workout-v21`). **Incrémenter la version à chaque déploiement**, sinon l'app servie reste en cache.
-6. `manifest.json`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` — inchangés depuis le début.
-7. Export JSON de l'onglet SUIVI — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.
-8. Dépôt GitHub `workout` (public, Pages activé sur `main` / racine).
-9. `.claude/skills/video-to-sequence/` — skill de découpage des vidéos d'exercices en planches de positions. Chantier reporté en fin de parcours, le skill est prêt.
+4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit.
+5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours.
+6. `app/src/App.jsx` et `app/src/components/` — les écrans.
+7. `app/test/` — trois fichiers : cohérence de la bibliothèque, générateur, chrono. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
+8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
+9. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
+10. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.
+11. Dépôt GitHub `workout` (public, Pages publié par GitHub Actions depuis `app/dist`).
+12. `.claude/skills/video-to-sequence/` — skill de découpage des vidéos d'exercices en planches de positions. Chantier reporté en fin de parcours, le skill est prêt.
+
+**Node n'est pas dans le PATH par défaut** sur cette machine (pas de Homebrew) :
+`export PATH="$HOME/.local/node/bin:$PATH"`.
 
 ## Hors périmètre (ne pas s'y perdre)
 

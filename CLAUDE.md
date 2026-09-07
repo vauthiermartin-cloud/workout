@@ -16,13 +16,17 @@ Les décisions produit de ces documents sont tranchées. Ne pas les rouvrir sans
 **Une étape à la fois.** L'ordre de travail du brief compte douze étapes. Ne jamais en
 attaquer plusieurs dans la même conversation : le résultat devient impossible à relire.
 
-**Toujours incrémenter la version du cache dans `sw.js`** quand un fichier servi change.
-Sans ça le téléphone continue de servir l'ancienne version et on cherche un bug qui n'existe
-pas. C'est le piège le plus fréquent de ce projet.
+**Tout le code vit dans `app/` (Vite + React).** `index.html` et `sw.js` à la racine du dépôt
+sont des vestiges du mono-fichier, plus servis par personne : ne pas les modifier en croyant
+corriger l'app. Node n'est pas dans le PATH par défaut : `export PATH="$HOME/.local/node/bin:$PATH"`.
 
-**Ne jamais laisser l'app cassée sur `main`.** Elle est utilisée tous les matins. Pendant la
-migration Vite, garder le déploiement actuel fonctionnel jusqu'à ce que la nouvelle chaîne de
-publication soit vérifiée.
+**La version du cache du service worker est automatique.** `app/vite.config.js` la dérive d'un
+hash du build ; il n'y a plus rien à incrémenter à la main. (C'était le piège le plus fréquent
+du projet, il est fermé.)
+
+**Ne jamais laisser l'app cassée sur `main`.** Elle est utilisée tous les matins, et un push
+sur `main` déclenche le déploiement. Les tests sont le garde-barrière : ils tournent dans le
+workflow avant le build.
 
 **Vérifier avant de livrer.** Le projet a des contrôles de cohérence à faire tourner après
 toute modification des données de séances :
@@ -33,8 +37,9 @@ toute modification des données de séances :
 - la fiche et le chrono affichent les mêmes exercices et les mêmes répétitions ;
 - la couverture hebdomadaire des schémas moteurs reste à 10 sur 10 en simulation.
 
-Ces contrôles existent aujourd'hui sous forme de scripts jetables. Les porter en tests
-(Vitest) fait partie de l'étape 2.
+Ces contrôles sont des tests Vitest : `npm test` dans `app/`. S'y ajoute
+`app/test/chrono.test.js`, qui tient la reprise du chrono — non-cascade après un bond de
+temps, position retenue au dernier battement, écran de fin inatteignable par accident.
 
 ## Contraintes du domaine
 

@@ -23,12 +23,11 @@ afficher publiquement plus tard.
 
 ### Ordre de travail recommandé
 
-1. **Réparer la reprise du chrono** (section 0). C'est le seul défaut qui gâche réellement une
-   séance en cours.
-2. **Migrer vers Vite + tests.** Le fichier unique de 100 Ko avec Babel dans le navigateur est
-   ce qui ralentit chaque itération. Ce n'est pas du travail multi-utilisateurs, c'est de
-   l'hygiène, et ça débloque tout le reste. **Profiter de cette migration pour faire des
-   exercices de vraies entités** (section 8) : les quatre chantiers suivants en dépendent.
+1. ~~**Réparer la reprise du chrono**~~ (section 0). **Fait le 2026-09-07.**
+2. **Migrer vers Vite + tests.** *Chaîne de build faite* : `app/` tourne sous Vite 8 + React 19,
+   les tests Vitest bloquent le déploiement. **Reste le volet données : faire des exercices de
+   vraies entités** (section 8). Un exercice est encore une chaîne de caractères ; les quatre
+   chantiers suivants en dépendent, c'est donc le prochain morceau à prendre.
 3. **Chaînes de régressions et substitutions permanentes** (section 8.1), **plus la
    substitution sans barre de traction** (section 2.1). C'est ce qui rend l'app utilisable par
    quelqu'un qui ne fait pas encore de traction ou qui n'a rien où se suspendre, donc par la
@@ -59,7 +58,27 @@ l'état dans plusieurs clés de stockage local ad hoc.
 
 ---
 
-## 0. Priorité absolue : le chrono doit être reprenable
+## 0. Priorité absolue : le chrono doit être reprenable — FAIT (2026-09-07)
+
+> **Livré.** Les quatre points ci-dessous sont couverts et vérifiés, `app/test/chrono.test.js`
+> les tient. Le diagnostic reste ici parce qu'il explique pourquoi le chrono est écrit comme
+> il l'est.
+>
+> **La logique est dans `app/src/lib/chrono.js`, sans dépendance à React**, ce qui la rend
+> testable sans monter de composant. Elle distingue le `run` — enregistrement d'une séance en
+> cours, façonné comme une ligne de table, écrit dans la clé unique `workout.run` — du `beat`,
+> dernier battement réellement observé.
+>
+> **Le déclencheur retenu n'est pas celui du brief, il est plus large.** Le brief proposait de
+> détecter un dépassement de la fin de phase ; ça laisse passer une suspension en milieu de
+> phase (écran verrouillé à 10 minutes de la fin d'une phase de 25 : le temps est mangé en
+> silence). Le chrono compare donc l'écart entre deux battements consécutifs : au-delà de 4 s
+> (`SUSPEND_GAP`), à 100 ms de cadence, l'app a dormi. Le dépassement de fin de phase est
+> conservé en second garde-fou.
+>
+> **La position annoncée exclut l'échauffement** : les 25 minutes que promet le nom de l'app
+> sont celles de la séance. Une phase marquée `warm: true` sort du décompte, et pendant
+> l'échauffement l'écran dit « tu étais dans l'échauffement » plutôt qu'un numéro de minute.
 
 Ce matin, l'écran du téléphone s'est verrouillé pendant une séance. Au retour, l'app
 affichait l'écran de fin qui proposait un finisher. La séance en cours était perdue.
