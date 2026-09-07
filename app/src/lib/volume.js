@@ -7,6 +7,9 @@ import { iso } from "./dates.js";
    séparée : impossible que les deux se désynchronisent. */
 export function roundsOfPhase(p) {
   if (!p.list) return 0;
+  /* Un test se fait une fois. Sans ce cas, les 50 burpees devenus ligne de
+     travail auraient fait passer le vendredi pour un format à tours ouverts. */
+  if (p.test) return 1;
   const m = (p.sub || "").match(/à répéter (\d+) fois/);
   if (m) return Number(m[1]);
   if (/une ligne à la fois/.test(p.sub || "")) return 1;

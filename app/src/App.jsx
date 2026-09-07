@@ -5,6 +5,7 @@ import { newBeat, newRun, position, record, resumableKind } from "./lib/chrono.j
 import { iso, fromIso, mondayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
 import { beep } from "./lib/audio.js";
 import { volumeOf, streakOf } from "./lib/volume.js";
+import { volumeReel } from "./lib/perfs.js";
 import { pickVariant } from "./lib/generator.js";
 import { RESSENTIS, askRessenti, finisherStance, retourDe } from "./lib/ressenti.js";
 import { DAYS, STRETCH_BY_DAY, FINISHER_BIAS } from "./data/days.js";
@@ -17,6 +18,7 @@ import { LEVELS } from "./data/levels.js";
 import { f } from "./data/items.js";
 import { Rail } from "./components/Rail.jsx";
 import { Timer } from "./components/Timer.jsx";
+import { Perfs } from "./components/Perfs.jsx";
 
 export default function App() {
   const today = new Date();
@@ -40,6 +42,7 @@ export default function App() {
   const [run, setRun] = useState(null);
   const [pending, setPending] = useState(null);
   const [endOpen, setEndOpen] = useState(false);
+  const [perfsOpen, setPerfsOpen] = useState(false);
   const [endStage, setEndStage] = useState("workout");
   const [aborted, setAborted] = useState(false);
   const [propose, setPropose] = useState(null);
@@ -114,6 +117,7 @@ export default function App() {
     setSeen(next.seen);
     setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
     setFinisher(null); setStretch(null); setPropose(null); setEndOpen(false); setAborted(false);
+    setPerfsOpen(false);
   };
 
   /* Le tirage penche vers les abdos les jours déjà chargés en burpees,
@@ -190,6 +194,12 @@ export default function App() {
          Reporté d'une écriture à l'autre comme le finisher, sinon enchaîner un
          finisher effacerait la réponse donnée juste avant. */
       ressenti: "ressenti" in o ? o.ressenti : (avant && avant.ressenti) || null,
+      /* Ce qui a réellement été fait, quand la séance a été relue. Reporté
+         comme le reste : enchaîner un finisher ne doit pas effacer une
+         relecture faite juste avant. `valide` dit que la ligne a été relue, pas
+         qu'elle existe — elle existe depuis la fin du chrono. */
+      perfs: "perfs" in o ? o.perfs : (avant && avant.perfs) || null,
+      valide: "valide" in o ? o.valide : !!(avant && avant.valide),
     });
   };
 
@@ -201,7 +211,11 @@ export default function App() {
     setAborted(!!(how && how.aborted));
     if (seg === "finisher") { setEndStage("finisher"); logSession({}); }
     else if (seg === "stretch") { setEndStage(endStage === "workout" ? "workout" : "finisher"); logSession({}); }
-    else { setEndStage("workout"); if (!wod.test) logSession({ s: null }); }
+    /* La séance s'écrit ici, à la fin du chrono, et pas plus tard. Le vendredi
+       attendait auparavant le score pour être enregistré : une séance quittée
+       avant de le saisir disparaissait. Le score reste simplement vide jusqu'à
+       la relecture des perfs. */
+    else { setEndStage("workout"); logSession({}); }
     setPropose(null);
     setEndOpen(true);
   };
@@ -221,6 +235,18 @@ export default function App() {
   const answerRessenti = (v) => {
     logSession({ ressenti: v });
     if (finisherStance(v) === "aucun" && propose && propose.kind === "finisher") setPropose(null);
+  };
+
+  /* La validation corrige la ligne du jour et la marque relue. Elle ne la crée
+     pas : elle existe depuis la fin du chrono.
+
+     Elle ramène au bilan plutôt qu'aux stats. Enchaîner sur les stats fermait
+     l'écran de fin, donc emportait l'offre de finisher avec lui — et le bouton
+     de validation, qui est le plus visible des trois, aurait fait perdre le
+     finisher à qui le tape en premier. */
+  const validerPerfs = (o) => {
+    logSession({ ...o, valide: true });
+    setPerfsOpen(false);
   };
 
   const lancerStretch = () => {
@@ -725,11 +751,19 @@ export default function App() {
         const pats = patternsOfWorkout(wod);
         const manque = PATTERNS.filter((p) => !weekPatterns.has(p.id));
         const entryToday = log.find((e) => e.d === todayIso);
-        const besoinScore = wod.test && !(entryToday && entryToday.s != null);
         const ressenti = (entryToday && entryToday.ressenti) || null;
         const stance = finisherStance(ressenti);
+        /* Une fois la séance relue, le total montre ce qui a été fait. Avant, il
+           ne peut montrer que ce qui était prescrit — et sur un format à tours
+           ouverts, seulement le contenu d'un tour. */
+        const reel = entryToday && entryToday.valide
+          ? volumeReel(wod.name, level, entryToday.perfs, entryToday.s) : null;
+        const fait = reel && reel.complet;
+        const valide = !!(entryToday && entryToday.valide);
+        const besoinScore = wod.test && !(entryToday && entryToday.s != null);
 
         return (
+          <>
           <div style={{ position:"fixed", inset:0, zIndex:45, background:C.ink, overflowY:"auto",
             padding:"max(28px, env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom))" }}>
             <div style={{ maxWidth:460, margin:"0 auto" }}>
@@ -747,7 +781,9 @@ export default function App() {
               {/* Chiffres */}
               <div style={{ display:"flex", gap:10, marginBottom:24 }}>
                 {[
-                  { n: vol.total + (volFin ? volFin.total : 0), l: vol.amrap || (volFin && volFin.amrap) ? "REPS PAR TOUR" : "RÉPÉTITIONS" },
+                  { n: (fait ? reel.total : vol.total) + (volFin ? volFin.total : 0),
+                    l: fait ? "RÉPÉTITIONS FAITES"
+                      : vol.amrap || (volFin && volFin.amrap) ? "REPS PAR TOUR" : "RÉPÉTITIONS" },
                   { n: streak, l: streak === 1 ? "JOUR D'AFFILÉE" : "JOURS D'AFFILÉE" },
                   { n: `${weekCount}/5`, l: "CETTE SEMAINE" },
                 ].map((k, i) => (
@@ -757,9 +793,10 @@ export default function App() {
                   </div>
                 ))}
               </div>
-              {vol.amrap && (
+              {vol.amrap && !fait && (
                 <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, margin:"-14px 0 24px" }}>
-                  Format AMRAP : le total affiché est celui d'un seul tour. Multiplie par tes tours.
+                  Format AMRAP : le total affiché est celui d'un seul tour. Dis tes tours en
+                  validant la séance et le total devient le vrai.
                 </p>
               )}
 
@@ -822,25 +859,6 @@ export default function App() {
                   ? "Semaine complète : les dix schémas moteurs sont couverts."
                   : `Il reste ${manque.map((p) => p.label.toLowerCase()).join(", ")} à couvrir cette semaine.`}
               </p>
-
-              {/* Score du test */}
-              {besoinScore && (
-                <div style={{ padding:16, marginBottom:20, background:C.steel, borderRadius:3,
-                  border:`1px solid ${C.ember}` }}>
-                  <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>
-                    {wod.testLabel.toUpperCase()}
-                  </div>
-                  <input type="number" inputMode="numeric" value={scoreInput}
-                    onChange={(e) => setScoreInput(e.target.value)} placeholder="—"
-                    style={{ width:"100%", marginTop:8, padding:"8px 0", background:"transparent", color:C.bone,
-                      fontFamily:DISPLAY, fontSize:34, border:"none", borderBottom:`1px solid ${C.line}`, outline:"none" }} />
-                  <button onClick={() => logSession({})} style={{ width:"100%", padding:"12px 0", marginTop:12,
-                    background:C.ember, color:C.ink, fontFamily:MONO, fontSize:10, fontWeight:700,
-                    letterSpacing:".1em", borderRadius:2 }}>
-                    ENREGISTRER LE SCORE
-                  </button>
-                </div>
-              )}
 
               {/* Proposition */}
               {propose && (
@@ -905,17 +923,52 @@ export default function App() {
                   )}
                   {!stretch && (
                     <button onClick={drawStretch} style={{ width:"100%", padding:"15px 0", marginBottom:8,
-                      background: stance === "aucun" ? C.bone : "transparent",
-                      border:`1px solid ${C.bone}`, color: stance === "aucun" ? C.ink : C.bone,
+                      background: stance === "aucun" && valide ? C.bone : "transparent",
+                      border:`1px solid ${C.bone}`, color: stance === "aucun" && valide ? C.ink : C.bone,
                       fontFamily:DISPLAY, fontSize:16, letterSpacing:".04em", borderRadius:2 }}>
                       ÉTIREMENTS · 5 MIN
                     </button>
                   )}
+
+                  {/* Valider ne crée pas la ligne du jour : elle est écrite depuis
+                      la fin du chrono. Ce bouton dit qu'elle a été relue, et il
+                      est le seul chemin vers les perfs — donc, le vendredi, vers
+                      le score du test. Tant qu'il reste à faire, c'est lui qui
+                      porte le plein : les autres actions passent en contour. */}
+                  {valide ? (
+                    <>
+                      <div style={{ padding:"15px 0", marginBottom:2, textAlign:"center",
+                        borderRadius:2, border:`1px solid ${C.line}`, fontFamily:MONO,
+                        fontSize:10, letterSpacing:".14em", color:C.lime }}>
+                        ✓ SÉANCE VALIDÉE
+                      </div>
+                      <button onClick={() => setPerfsOpen(true)} style={{ width:"100%",
+                        padding:"11px 0", marginBottom:8, fontFamily:MONO, fontSize:10,
+                        letterSpacing:".12em", color:C.ash }}>
+                        REVOIR MES PERFS
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => setPerfsOpen(true)} style={{ width:"100%",
+                        padding:"16px 0", marginBottom: besoinScore ? 7 : 8,
+                        background: besoinScore ? C.ember : C.bone, color:C.ink,
+                        fontFamily:DISPLAY, fontSize:18, letterSpacing:".04em", borderRadius:2 }}>
+                        VALIDER LA SÉANCE
+                      </button>
+                      {besoinScore && (
+                        <p style={{ fontSize:12, color:C.ash, lineHeight:1.45, margin:"0 0 12px" }}>
+                          {wod.testLabel} : c'est là que le chiffre se saisit.
+                        </p>
+                      )}
+                    </>
+                  )}
+
                   <button onClick={() => { setEndOpen(false); setTab("suivi"); }}
                     style={{ width:"100%", padding:"15px 0", marginBottom:8,
-                      background: endStage === "finisher" && stretch ? C.bone : "transparent",
+                      background: valide && endStage === "finisher" && stretch ? C.bone : "transparent",
                       border:`1px solid ${C.line}`,
-                      color: endStage === "finisher" && stretch ? C.ink : C.bone,
+                      color: valide && endStage === "finisher" && stretch ? C.ink : C.bone,
                       fontFamily:DISPLAY, fontSize:16, letterSpacing:".04em", borderRadius:2 }}>
                     VOIR MES STATS
                   </button>
@@ -927,6 +980,13 @@ export default function App() {
               )}
             </div>
           </div>
+
+          {perfsOpen && (
+            <Perfs name={wod.name} level={level} entry={entryToday}
+              accent={wod.test ? C.ember : C.lime}
+              onValider={validerPerfs} onRetour={() => setPerfsOpen(false)} />
+          )}
+          </>
         );
       })()}
     </div>

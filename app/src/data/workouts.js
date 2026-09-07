@@ -188,7 +188,12 @@ export const WORKOUTS = {
       goal:"Poussée verticale, poussée horizontale, pronation, supination. Tout dans un tour." },
   ],
   5: [
+    /* `score` dit ce que le chiffre du test est réellement. Sans lui, « Burpees
+       en 4 min » et « Temps sur 50 burpees » se saisissaient dans le même champ
+       nu, et rien ne permettait de savoir que le premier est du volume de
+       burpees — donc que le total de répétitions de la séance en dépend. */
     { name:"Test 4 min + finisher", dur:"≈ 23 min", test:true, testLabel:"Burpees en 4 min",
+      score:{ ex:"burpees", unit:"reps" },
       meta:"Bloc de mesure, puis du volume propre",
       blocks:[
         {tag:"TEST",items:[f("Max de burpees en 4 min")]},
@@ -197,6 +202,7 @@ export const WORKOUTS = {
       ],
       goal:"Le chiffre du test est ta seule métrique burpees de la semaine." },
     { name:"Test 3 min + EMOM 12", dur:"≈ 18 min", test:true, testLabel:"Burpees en 3 min",
+      score:{ ex:"burpees", unit:"reps" },
       meta:"Test court et violent, puis 12 min de minuterie",
       blocks:[
         {tag:"TEST",items:[f("Max de burpees en 3 min")]},
@@ -207,15 +213,20 @@ export const WORKOUTS = {
         {tag:"× 4",items:[f("Répète le cycle 4 fois")]},
       ],
       goal:"Score sur 3 min. À comparer uniquement avec d'autres tests de 3 min." },
-    { name:"50 burpees for time", dur:"≈ 20 min", test:true, testLabel:"Temps sur 50 burpees (secondes)",
+    /* Le seul test dont le volume est prescrit : 50 burpees, et le chiffre
+       mesuré est un temps. La ligne de travail les fait enfin compter — en
+       phrase, ils étaient absents du total de la séance. */
+    { name:"50 burpees for time", dur:"≈ 20 min", test:true, testLabel:"Temps sur 50 burpees",
+      score:{ unit:"secondes" },
       meta:"Un chrono, un objectif, puis du travail léger",
       blocks:[
-        {tag:"TEST",items:[f("50 burpees le plus vite possible")]},
+        {tag:"TEST",items:[r(50,"burpees","Le plus vite possible")]},
         {tag:"REPOS",items:[f("4 min")]},
         {tag:"3 ROUNDS",items:[r(10,"pompes"),r(15,"airSquats"),r(3,"pullups"),r(15,"situps")]},
       ],
       goal:"Note le temps en secondes. Sous 240 s, c'est déjà solide." },
     { name:"Test 4 min + sangle", dur:"≈ 22 min", test:true, testLabel:"Burpees en 4 min",
+      score:{ ex:"burpees", unit:"reps" },
       meta:"Le même test, suivi d'un circuit lent centré sur la sangle abdominale",
       blocks:[
         {tag:"TEST",items:[f("Max de burpees en 4 min")]},
@@ -231,6 +242,7 @@ export const WORKOUTS = {
       ],
       goal:"Même chiffre de test que la version longue, comparable d'une semaine à l'autre." },
     { name:"Test 4 min + chaîne postérieure", dur:"≈ 22 min", test:true, testLabel:"Burpees en 4 min",
+      score:{ ex:"burpees", unit:"reps" },
       meta:"Le même test, suivi de tout ce que la semaine oublie le plus souvent",
       blocks:[
         {tag:"TEST",items:[f("Max de burpees en 4 min")]},

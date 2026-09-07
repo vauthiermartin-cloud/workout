@@ -40,7 +40,10 @@ export const TIMERS = {
     ...x5(st(r(3,"burpees"), r(8,"pompes"), r(16,"hipThrusts"))),
     ...x5(st(r(2,"burpees"), r(6,"pompes"), r(20,"hipThrusts"))),
   ], loops:1 }],
-  "Escalier ouvert": [{ t:"down", sec:1200, label:"Escalier ouvert", sub:"Round 1, puis +1 rep partout", list:[
+  /* `pas` déclare ce que la consigne dit en prose : chaque round ajoute une
+     répétition à chaque ligne. Sans lui, un nombre de tours saisi après coup se
+     multiplierait par le tour 1 et sous-compterait de moitié. */
+  "Escalier ouvert": [{ t:"down", sec:1200, label:"Escalier ouvert", sub:"Round 1, puis +1 rep partout", pas:1, list:[
     r(1,"burpees"), r(2,"pompes"), r(3,"airSquats"),
   ] }],
   "Escalier croisé": [{ t:"cycle", sec:60, bloc:5, label:"Escalier croisé", stations:[
@@ -119,7 +122,7 @@ export const TIMERS = {
     ], loops:4 },
   ],
   "50 burpees for time": [
-    { t:"up", cap:480, label:"TEST", sub:"50 burpees le plus vite possible", test:true },
+    { t:"up", cap:480, label:"TEST", sub:"Le plus vite possible", test:true, list:[r(50,"burpees")] },
     { t:"rest", sec:240, label:"Repos" },
     { t:"up", cap:480, label:"3 rounds", sub:"1 tour, à répéter 3 fois", list:[
       r(10,"pompes"), r(15,"airSquats"), r(3,"pullups"), r(15,"situps") ] },

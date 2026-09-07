@@ -26,9 +26,9 @@ afficher publiquement plus tard.
 1. ~~**Réparer la reprise du chrono**~~ (section 0). **Fait le 2026-09-07.**
 2. ~~**Migrer vers Vite + tests.**~~ **Fait le 2026-09-07**, chaîne de build *et* volet
    données : `app/` tourne sous Vite 8 + React 19, les tests Vitest bloquent le déploiement,
-   et les exercices sont devenus des entités (section 8). Reste dans ce lot **la saisie des
-   répétitions réalisées** avec le cas AMRAP (section 6.1), qui attendait le typage des
-   unités.
+   et les exercices sont devenus des entités (section 8). ~~Reste dans ce lot la saisie des
+   répétitions réalisées avec le cas AMRAP (section 6.1)~~ — **faite le 2026-09-07**, elle
+   attendait le typage des unités. Le lot est clos.
 3. **Chaînes de régressions et substitutions permanentes** (section 8.1), **plus la
    substitution sans barre de traction** (section 2.1). C'est ce qui rend l'app utilisable par
    quelqu'un qui ne fait pas encore de traction ou qui n'a rien où se suspendre, donc par la
@@ -332,7 +332,7 @@ L'écran conserve ce qu'il affiche déjà : volume de répétitions, série de j
 dans la semaine, schémas moteurs travaillés, ce qui manque à la semaine. Puis la proposition
 de finisher, d'étirements, ou de terminer.
 
-### 6.1 Validation de la séance et écran de perfs — décidé le 2026-09-07, à faire
+### 6.1 Validation de la séance et écran de perfs — décidé et fait le 2026-09-07
 
 Un bouton qui **valide la séance pour de bon**, et l'écran suivant est un **passage obligé par
 les perfs** : la liste de ce qui était prescrit, éditable. « Ajuste si tu as fait plus ou moins
@@ -354,15 +354,25 @@ la durée était dans la chaîne. Ce que le typage apporte à cet écran :
 - **La question du côté est tranchée** : sur un mouvement `reparti`, on édite le total, pas la
   moitié — c'est le total qui est la donnée, la note « 8 par côté » n'en est que la lecture.
 
-Restent deux points à traiter dans cette étape :
+Les deux points qui restaient à trancher, tranchés :
 
-- **Le format AMRAP du jeudi demande un champ distinct** : ce qu'on ajuste est le **nombre de
-  tours**, pas les répétitions d'un tour.
-- **Le test du vendredi n'est pas une ligne de travail.** Les 50 burpees vivent dans la phrase
-  de la phase, si bien que `volumeOf` les sous-compte déjà aujourd'hui (les cinq séances du
-  vendredi affichent un total amputé). L'écran de perfs a de toute façon besoin d'un champ
-  pour ce score, qui est la seule métrique de progression conservée : autant le faire devenir
-  une donnée à cette occasion.
+- **Le format AMRAP du jeudi a un champ distinct.** Ce qu'on ajuste est le **nombre de tours**,
+  pas les répétitions d'un tour : un tour se termine ou ne se termine pas. Le champ affiche ce
+  que vaut un tour (« 1 TOUR = 65 REPS ») et le total se recalcule.
+- **Le test du vendredi est devenu une donnée.** Les 50 burpees sont une vraie ligne de
+  travail ; les quatre autres vendredis déclarent `score:{ex, unit}` sur la fiche, parce que
+  leur volume de burpees *est* le score. `volumeOf` ne sous-compte plus.
+
+Ce que l'écran a coûté en plus de ce qui était prévu, et qui vaut d'être retenu :
+
+- **La granularité est le total de la séance, pas la série.** L'escalier du mardi aurait sinon
+  demandé douze champs quotidiens.
+- **Un escalier ouvert monte d'un cran par tour.** Sans le déclarer (`pas`), un nombre de tours
+  saisi après coup multiplie le premier tour et sous-compte de moitié.
+- **Valider ramène au bilan, pas aux stats.** Partir aux stats fermait l'écran de fin et
+  emportait l'offre de finisher avec lui.
+- **Le total affiché ne bascule sur « ce qui a été fait » que si tous les chiffres sont là.**
+  Un total partiel serait plus faux que le prescrit.
 
 ---
 

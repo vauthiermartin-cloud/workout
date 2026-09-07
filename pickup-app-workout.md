@@ -41,23 +41,12 @@ Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 1
 
 ## Prochaines actions, dans l'ordre
 
-### À prendre maintenant — « le point 4 de la liste »
+### À prendre maintenant — étape 3, chaînes de régressions
 
-Une liste de quatre demandes a été formulée le 2026-09-07 sur l'écran de fin de séance. Les
-trois premières sont livrées (le retour parlé au ressenti, le bloc rendu visible, « trop
-facile » qui ne tire plus de finisher). **Le point 4 est le seul qui reste, et c'est la
-prochaine étape :**
-
-> « Faudrait un bouton sur ce même écran qui valide la séance pour de bon, et que l'écran
-> suivant soit un passage obligatoire par tes perfs. Et c'est là que tu peux éditer les
-> valeurs. "Ajuste si tu as fait plus ou moins que prévu". »
-
-**La spécification est en section 6.1 du brief**, avec la décision d'architecture qui compte :
-la séance reste écrite dès la fin du chrono, et l'écran de perfs **corrige** la ligne au lieu
-de la créer — sinon une séance quittée avant cet écran serait perdue, ce que « local d'abord »
-interdit. Sa dépendance au typage des unités est levée depuis le 2026-09-07. Deux points
-restent à trancher dans cette étape : le champ « nombre de tours » pour l'AMRAP du jeudi, et
-le score du test du vendredi, qui doit devenir une donnée au lieu de vivre dans une phrase.
+La liste de quatre demandes formulée le 2026-09-07 sur l'écran de fin de séance **est soldée**.
+Le point 4 — « un bouton qui valide la séance pour de bon, et un passage obligatoire par tes
+perfs » — a été livré le 2026-09-07 (voir ci-dessous). La prochaine étape est donc l'étape 3
+du phasage : chaînes de régressions et substitution sans barre de traction.
 
 **L'ordre de travail complet est en tête de `brief-v2-multi-user.md`, section « Phasage ».**
 Douze étapes. Les deux premières sont faites :
@@ -83,22 +72,39 @@ Deux chantiers ont été remontés hors de leur rang, parce qu'ils ne dépendaie
   semaine de données de calibration perdue** : les règles de montée et de descente de mode
   (étape 12) demandent quatre semaines de ressentis réels, autant que le compteur tourne.
 
-L'ordre convenu pour la suite du lot « 2bis » : ~~entités et typage des unités~~ d'abord,
-puis **la saisie des répétitions avec le cas AMRAP** (brief section 6.1 — c'est l'étape
-suivante), et la logique de recalibrage en dernier — elle ne sera validable qu'avec des
-semaines de données réelles. Vient ensuite l'étape 3 (chaînes de régressions et substitution
-sans barre de traction).
+L'ordre convenu pour la suite du lot « 2bis » : ~~entités et typage des unités~~, puis
+~~la saisie des répétitions avec le cas AMRAP~~ (brief section 6.1), et la logique de
+recalibrage en dernier — elle ne sera validable qu'avec des semaines de données réelles.
+Vient ensuite l'étape 3 (chaînes de régressions et substitution sans barre de traction).
 
-Deux dettes ouvertes par le typage, à traiter dans l'étape qui les concerne :
+- **Validation de séance et écran de perfs.** Fait le 2026-09-07. `app/src/lib/perfs.js` (pur,
+  testé) et `app/src/components/Perfs.jsx`. La ligne du jour gagne deux champs, `perfs` et
+  `valide` ; les clés de champ (`s:<exercice>`, `tours:<n>`, `score`) partent en base, ne pas
+  les renommer. Trois natures de champ : un total de séance par exercice, un nombre de tours
+  pour les formats ouverts, le score du test. Les notes libres n'en sont jamais.
+  - La granularité est le **total de la séance**, pas la série : l'escalier du mardi aurait
+    sinon demandé douze champs par jour.
+  - Les perfs couvrent **la séance seule**, pas le finisher, qui est du travail en plus.
+  - **Valider ramène au bilan**, pas aux stats. Enchaîner sur les stats fermait l'écran de fin
+    et emportait l'offre de finisher avec lui.
+  - Un défaut réel trouvé en vérifiant : `segmentDone` **n'écrivait pas la séance du vendredi**
+    à la fin du chrono, elle attendait le score. Une séance quittée avant la saisie était
+    perdue. Corrigé, c'était une violation directe de « local d'abord ».
+
+Une dette ouverte par le typage, à traiter dans l'étape qui la concerne :
 
 - **Un total `reparti` peut devenir impair sous les coefficients de mode** : `scaleRep(10, 2)`
   donne 13, qui ne se partage pas en deux côtés égaux. L'affichage bascule alors sur « en
   alternant les côtés », qui est honnête mais moins utile. Arrondir ces totaux au pair est du
   ressort de l'étape des modes (étape 5).
-- **`volumeOf` sous-compte le vendredi** : les 50 burpees du test vivent dans la phrase de la
-  phase (`sub`), pas dans une ligne de travail, donc ils n'entrent pas au total. Vaut pour
-  les cinq séances du vendredi. À corriger avec l'écran de perfs, qui a de toute façon besoin
-  d'un champ pour le score.
+
+~~**`volumeOf` sous-compte le vendredi**~~ **Réglé le 2026-09-07.** Les 50 burpees du test
+sont devenus une vraie ligne de travail, et les quatre autres vendredis déclarent
+`score:{ex, unit}` sur la fiche — leur volume de burpees *est* le score, `volumeReel` l'ajoute
+au total une fois la séance relue. Deux pièges au passage, tous deux évités par une donnée
+déclarée plutôt que devinée : sans `test:true`, la ligne de 50 burpees faisait passer le
+vendredi pour un format à tours ouverts ; et sans `pas:1` sur l'escalier ouvert, un nombre de
+tours saisi après coup multipliait le premier tour et sous-comptait de moitié.
 
 Ne pas lancer plusieurs étapes en une fois.
 
