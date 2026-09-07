@@ -12,7 +12,7 @@ Une PWA de séances au poids du corps est **en production et fonctionnelle**, h�
 
 **Le code vit dans `app/` : Vite 8 + React 19, testé sous Vitest.** Le mono-fichier de 100 Ko avec Babel dans le navigateur appartient au passé. Le déploiement passe par `.github/workflows/deploy.yml` : `npm ci`, `npm test`, `npm run build`, publication de `app/dist` sur Pages. **Les tests sont un garde-barrière du déploiement** — un échec bloque la mise en production.
 
-Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 finishers, 5 séquences d'étirement, 37 exercices. Un chrono adaptatif (EMOM / Tabata / compte à rebours / chrono libre) et un générateur qui choisit la séance selon les schémas moteurs non encore couverts dans la semaine.
+Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 finishers, 5 séquences d'étirement, 37 exercices prescrits — plus 17 variantes de régression que le catalogue ne prescrit pas et qu'on n'atteint que par une chaîne. Un chrono adaptatif (EMOM / Tabata / compte à rebours / chrono libre) et un générateur qui choisit la séance selon les schémas moteurs non encore couverts dans la semaine.
 
 **Le chrono est reprenable** (étape 1, faite le 2026-09-07). `app/src/lib/chrono.js` sépare deux notions : le `run`, enregistrement d'une séance en cours écrit dans une clé unique (`workout.run`), et le `beat`, dernier battement réellement observé. Un trou de plus de 4 s entre deux battements ne peut venir que d'une app endormie : le chrono gèle, ne valide rien, et demande. Reprise proposée au démarrage sous 4 h, enregistrement ou abandon au-delà.
 
@@ -28,6 +28,20 @@ Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 1
 - **Étiquetage des schémas moteurs dérivé automatiquement** des exercices, porté par l'entité (champ `patterns`), jamais saisi à la main sur les séances. Empêche toute désynchronisation.
 - **L'unité est déclarée, jamais devinée** : `reps` ou `secondes`. Elle décide de trois choses, et il n'y a pas d'autre endroit où le dire — l'affichage (« 30 s » et non « 30 »), le total de volume (30 s de planche ne sont pas 30 répétitions), et la portée des coefficients de mode (**un maintien garde sa durée en N2 et N3** : sans cette décision explicite il prenait +50 % en silence, et une planche à 45 s déborde de la minute d'EMOM). Qu'ils progressent avec leur propre coefficient reste prévu à l'étape 5, où le plan de chrono devra suivre.
 - **La latéralité se dit une fois, sur l'exercice, et s'affiche sur la fiche seulement.** Deux conventions opposées vivaient dans les consignes en prose : `reparti` signifie que le nombre est un total à partager (16 fentes croisées = 8 par jambe), `chaque` qu'il vaut pour chaque côté (30 s de gainage latéral de chaque côté). La note est calculée, donc elle suit le mode — les « 16 = 8 par jambe » écrits à la main restaient faux dès qu'on montait de niveau, ils ont été retirés. Pendant l'effort, le chrono ne l'affiche pas.
+- **Les régressions sont un axe indépendant des modes, et les chaînes sont écrites.**
+  `app/src/data/chains.js` porte sept chaînes ordonnées du plus accessible au plus dur.
+  Quatre décisions de structure, chacune tenue par un test :
+  - **Un exercice ne porte pas sa chaîne, il en est membre.** L'appartenance se déduit de la
+    liste — écrire la chaîne sur chaque membre donnait cinq copies à maintenir pour les pompes.
+  - **Tous les crans d'une chaîne portent les mêmes schémas moteurs.** Sans ça la couverture
+    hebdomadaire mentirait dès la première substitution. C'est ce contrôle qui a forcé une
+    **chaîne de chin-ups distincte de celle des pull-ups** : la supination est suivie à part,
+    et un pull-up assisté substitué à un chin-up la ferait disparaître en silence.
+  - **Pas de « cran de référence » par chaîne.** Le catalogue prescrit deux crans de la chaîne
+    des burpees selon la séance ; la référence est ce que demande la ligne qu'on lit.
+  - **Les 17 variantes vivent dans `EXERCISES`** (54 entrées au total), dans une section
+    séparée : au-dessus ce que le catalogue prescrit, en dessous ce qu'on n'atteint que par une
+    chaîne. Le test d'entrée morte s'appuie sur cette frontière.
 - **10 schémas suivis** : poussée, tirage, supination, squat, unilatéral, chaîne postérieure, sangle, cardio, mobilité, mollets.
 - **Le générateur est conscient de la couverture** : il choisit la variante du jour qui apporte le plus de schémas non encore travaillés dans la semaine. Simulé sur 500 semaines → 10/10 systématiquement.
 - **Fiche et chrono partagent les mêmes données** ; un contrôle automatisé vérifie qu'ils ne divergent pas.
@@ -41,15 +55,25 @@ Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 1
 
 ## Prochaines actions, dans l'ordre
 
-### À prendre maintenant — étape 3, chaînes de régressions
+### À prendre maintenant — étape 4, table de nommage
 
-La liste de quatre demandes formulée le 2026-09-07 sur l'écran de fin de séance **est soldée**.
-Le point 4 — « un bouton qui valide la séance pour de bon, et un passage obligatoire par tes
-perfs » — a été livré le 2026-09-07 (voir ci-dessous). La prochaine étape est donc l'étape 3
-du phasage : chaînes de régressions et substitution sans barre de traction.
+**L'étape 3 n'est faite qu'à moitié, volontairement.** Les chaînes de régressions sont
+écrites, testées, et invisibles : rien dans l'app ne les affiche encore, et rien ne substitue.
+**L'attente est assumée** (2026-09-07) — la piste d'un affichage provisoire du cran d'en
+dessous sur la fiche a été écartée, elle aurait été refaite à l'étape 9. Deux morceaux de
+l'étape 3 sont reportés, chacun pour une raison différente.
+
+- **La substitution permanente attend la bibliothèque** (étape 9). C'est de là qu'elle se
+  règle — le pratiquant choisit sa variante une fois, par exercice. La poser avant l'écran qui
+  la commande donnerait un réglage sans endroit où le régler.
+- **La substitution sans barre de traction** (brief section 2.1) **attend l'onboarding**
+  (étape 8). Elle ne dépend pas des chaînes mais du matériel déclaré, et elle demande en plus
+  d'adapter la grille de couverture : sans barre, *tirage* et *supination* ne sont pas
+  couvrables au même niveau, et afficher une case que personne ne peut remplir est pire que
+  de ne pas l'afficher.
 
 **L'ordre de travail complet est en tête de `brief-v2-multi-user.md`, section « Phasage ».**
-Douze étapes. Les deux premières sont faites :
+Douze étapes. Les trois premières sont faites, la troisième partiellement :
 
 1. ~~Réparer la reprise du chrono~~ (brief section 0). **Fait.** Les quatre points du brief
    sont couverts, `app/test/chrono.test.js` les tient.
@@ -61,6 +85,22 @@ Douze étapes. Les deux premières sont faites :
    texte libre attrapé par une expression régulière ; et un contrôle de cohérence passait à
    vide depuis le renommage d'un champ, donc ne contrôlait plus rien — d'où le garde-fou qui
    vérifie qu'il reste des lignes à contrôler.
+3. ~~Chaînes de régressions~~ (brief section 8.1). **Socle fait le 2026-09-07**, sans aucune
+   substitution — voir ci-dessus ce qui est reporté et pourquoi. `app/src/data/chains.js` et
+   `app/test/chains.test.js`. Trois écarts avec le texte du brief, tous assumés :
+   - **Les chin-ups ont gagné une chaîne à eux**, que le brief ne demandait pas. Le brief parle
+     de « tractions » en bloc ; garder les schémas moteurs constants le long d'une chaîne l'a
+     interdit.
+   - **La chaîne des soulevés de terre une jambe n'a que deux crans**, et c'est tranché
+     (2026-09-07). Le brief en listait trois — « main en appui → sans appui → amplitude
+     complète » — mais les deux derniers décrivent le même geste : chercher l'amplitude est une
+     consigne d'exécution, pas une marche à franchir. Deux entrées de bibliothèque pour un seul
+     mouvement auraient donné deux libellés que rien ne distingue à l'écran. Ne pas ajouter le
+     troisième cran en croyant réparer un oubli.
+   - **La suspension active reste dans la chaîne bien qu'elle change d'unité** (secondes, là
+     où les pull-ups sont des répétitions). C'est le vrai premier pas de quelqu'un qui ne tient
+     pas à la barre, donc elle reste ; la conversion est une dette de l'étape 9, épinglée par
+     un test qui la nomme.
 
 Deux chantiers ont été remontés hors de leur rang, parce qu'ils ne dépendaient de rien :
 
@@ -75,7 +115,7 @@ Deux chantiers ont été remontés hors de leur rang, parce qu'ils ne dépendaie
 L'ordre convenu pour la suite du lot « 2bis » : ~~entités et typage des unités~~, puis
 ~~la saisie des répétitions avec le cas AMRAP~~ (brief section 6.1), et la logique de
 recalibrage en dernier — elle ne sera validable qu'avec des semaines de données réelles.
-Vient ensuite l'étape 3 (chaînes de régressions et substitution sans barre de traction).
+Le lot est clos, et l'étape 3 a suivi.
 
 - **Validation de séance et écran de perfs.** Fait le 2026-09-07. `app/src/lib/perfs.js` (pur,
   testé) et `app/src/components/Perfs.jsx`. La ligne du jour gagne deux champs, `perfs` et
@@ -91,12 +131,19 @@ Vient ensuite l'étape 3 (chaînes de régressions et substitution sans barre de
     à la fin du chrono, elle attendait le score. Une séance quittée avant la saisie était
     perdue. Corrigé, c'était une violation directe de « local d'abord ».
 
-Une dette ouverte par le typage, à traiter dans l'étape qui la concerne :
+Trois dettes ouvertes, chacune à traiter dans l'étape qui la concerne :
 
 - **Un total `reparti` peut devenir impair sous les coefficients de mode** : `scaleRep(10, 2)`
   donne 13, qui ne se partage pas en deux côtés égaux. L'affichage bascule alors sur « en
   alternant les côtés », qui est honnête mais moins utile. Arrondir ces totaux au pair est du
   ressort de l'étape des modes (étape 5).
+- **Substituer la suspension active à des pull-ups demande une conversion d'unité.** Garder le
+  nombre prescrit donnerait « 4 s de suspension » là où la séance demande 4 tractions. Étape 9,
+  avec la substitution. `app/test/chains.test.js` nomme le cran concerné : il est seul, et le
+  test échouera si un second apparaît.
+- **Une variante peut être latérale quand l'exercice prescrit ne l'est pas** (`vupsUneJambe`
+  contre `vups`). Le nombre ne change pas, ce qu'il veut dire change, et la note de côté doit
+  suivre la substitution. Même étape, même fichier de test.
 
 ~~**`volumeOf` sous-compte le vendredi**~~ **Réglé le 2026-09-07.** Les 50 burpees du test
 sont devenus une vraie ligne de travail, et les quatre autres vendredis déclarent
@@ -150,10 +197,10 @@ Ordre de lecture recommandé pour reprendre le projet :
 
 Fichiers du projet :
 
-4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des 37 exercices, tout le reste la cite par identifiant. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
+4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
 5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures.
 6. `app/src/App.jsx` et `app/src/components/` — les écrans.
-7. `app/test/` — cinq fichiers, 62 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, ressenti. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
+7. `app/test/` — sept fichiers, 89 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
 8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
 9. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 10. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.

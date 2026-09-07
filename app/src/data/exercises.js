@@ -30,9 +30,16 @@
 
    Ce que cette table ne porte pas encore, et qui viendra par les étapes
    prévues : le terme anglais et la consigne longue (étape 4, la table de
-   nommage est à arbitrer ligne par ligne), les chaînes de régressions
-   (étape 3), les planches de positions (étapes 9 et 10). Les champs seront
-   ajoutés au moment où ils auront une valeur à porter, pas avant. */
+   nommage est à arbitrer ligne par ligne), les planches de positions
+   (étapes 9 et 10). Les champs seront ajoutés au moment où ils auront une
+   valeur à porter, pas avant.
+
+   La table se lit en deux parties. Au-dessus, les exercices que le catalogue
+   prescrit. En dessous, les variantes de régression : mêmes entités, mêmes
+   champs, mais aucune séance ne les cite — on ne les atteint que par une
+   chaîne (`chains.js`). La séparation n'est pas décorative, c'est elle que
+   contrôle le test d'entrée morte : au-dessus, une entrée que plus aucune
+   séance n'utilise est un oubli ; en dessous, c'est la règle. */
 
 export const EXERCISES = {
   /* Poussée */
@@ -93,6 +100,50 @@ export const EXERCISES = {
   planche:                { fr:"planche",                         unit:"secondes", patterns:["core"] },
   hollowHold:             { fr:"hollow hold",                     unit:"secondes", patterns:["core"] },
   gainageLateral:         { fr:"gainage latéral",                 unit:"secondes", perSide:"chaque", patterns:["core"] },
+
+  /* Variantes de régression — aucune séance ne les prescrit.
+     ------------------------------------------------------
+     Elles portent les mêmes schémas moteurs que l'exercice qu'elles
+     remplacent, et c'est un contrôle et non une coïncidence : une variante
+     qui classerait autrement ferait mentir la couverture hebdomadaire dès
+     qu'on la substituerait.
+
+     Ce qui manque à ces lignes est ce qui manque à toutes les autres : la
+     consigne. « pull-ups négatifs » vaut par la descente de 5 s, « pompes
+     inclinées » par la hauteur des mains — ces précisions sont des consignes,
+     pas des libellés, et elles attendent le champ de l'étape 4. Les faire
+     tenir dans le nom donnerait des étiquettes que le chrono ne saurait pas
+     afficher. */
+
+  pompesMur:                   { fr:"pompes au mur",                              unit:"reps", patterns:["poussee"] },
+  pompesInclinees:             { fr:"pompes inclinées",                           unit:"reps", patterns:["poussee"] },
+  pompesGenoux:                { fr:"pompes sur les genoux",                      unit:"reps", patterns:["poussee"] },
+  pompesPiedsSureleves:        { fr:"pompes pieds surélevés",                     unit:"reps", patterns:["poussee"] },
+  pompesPiqueesPartielles:     { fr:"pompes piquées amplitude partielle",         unit:"reps", patterns:["poussee"] },
+  pompesPiqueesPiedsSureleves: { fr:"pompes piquées pieds surélevés",             unit:"reps", patterns:["poussee"] },
+
+  /* La suspension active se compte en temps, pas en répétitions : c'est le
+     seul cran d'une chaîne qui change d'unité, et `chains.test.js` le tient
+     pour que la substitution ne le découvre pas par accident. */
+  suspensionActive:            { fr:"suspension active",                          unit:"secondes", patterns:["tirage"] },
+  tiragesOmoplates:            { fr:"tirages d'omoplates",                        unit:"reps", patterns:["tirage"] },
+  pullupsNegatifs:             { fr:"pull-ups négatifs",                          unit:"reps", patterns:["tirage"] },
+  pullupsElastique:            { fr:"pull-ups assistés à l'élastique",            unit:"reps", patterns:["tirage"] },
+
+  /* Les chin-ups ont leur propre chaîne au lieu de partager celle des
+     pull-ups : la supination est un schéma suivi à part, et le seul travail
+     de biceps disponible. Substituer un pull-up assisté à un chin-up le
+     ferait disparaître de la semaine sans que rien ne le dise. */
+  chinupsNegatifs:             { fr:"chin-ups négatifs",                          unit:"reps", patterns:["tirage","supination"] },
+  chinupsElastique:            { fr:"chin-ups assistés à l'élastique",            unit:"reps", patterns:["tirage","supination"] },
+
+  burpeesSansSautNiPompe:      { fr:"burpees sans saut ni pompe",                 unit:"reps", patterns:["cardio"] },
+  burpeesSansPompe:            { fr:"burpees sans pompe",                         unit:"reps", patterns:["cardio"] },
+
+  vupsGenouxFlechis:           { fr:"V-ups genoux fléchis",                       unit:"reps", patterns:["core"] },
+  vupsUneJambe:                { fr:"V-ups une jambe",                            unit:"reps", perSide:"reparti", patterns:["core"] },
+
+  sdtUneJambeAppui:            { fr:"soulevés de terre une jambe, main en appui", unit:"reps", perSide:"reparti", patterns:["hinge","unilat"] },
 };
 
 export const UNITS = ["reps", "secondes"];

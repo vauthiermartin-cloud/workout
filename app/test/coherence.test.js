@@ -3,6 +3,7 @@ import { WORKOUTS, WORKOUT_BY_NAME } from "../src/data/workouts.js";
 import { FINISHERS } from "../src/data/finishers.js";
 import { TIMERS } from "../src/data/timers.js";
 import { EXERCISES, UNITS, PER_SIDE } from "../src/data/exercises.js";
+import { CHAINS, chainOf } from "../src/data/chains.js";
 import { PATTERNS, patternsOfWorkout, patternsOfTimer } from "../src/data/patterns.js";
 
 const allWorkouts = Object.values(WORKOUTS).flat();
@@ -52,9 +53,22 @@ describe("bibliothèque", () => {
   });
 
   /* Une entrée que plus aucune séance n'utilise signale soit une faute de
-     frappe, soit un exercice retiré sans nettoyer derrière. */
+     frappe, soit un exercice retiré sans nettoyer derrière.
+
+     Les variantes de régression sont la seule exception, et elle est bornée :
+     aucune séance ne les prescrit, on ne les atteint que par une chaîne. Une
+     variante hors de toute chaîne, elle, est bien morte — personne ne peut
+     plus la rencontrer. */
   it("aucune entrée morte dans la bibliothèque", () => {
-    expect(Object.keys(EXERCISES).filter((id) => !idsUtilises.has(id))).toEqual([]);
+    const atteignable = (id) => idsUtilises.has(id) || chainOf(id) !== null;
+    expect(Object.keys(EXERCISES).filter((id) => !atteignable(id))).toEqual([]);
+  });
+
+  /* Une chaîne qui ne passerait par aucun exercice prescrit ne serait jamais
+     proposée : la substitution part toujours de ce qu'une séance demande. */
+  it("chaque chaîne passe par un exercice que le catalogue prescrit", () => {
+    const orphelines = CHAINS.filter((c) => !c.some((id) => idsUtilises.has(id)));
+    expect(orphelines).toEqual([]);
   });
 
   it("fiche et chrono couvrent les mêmes qualités", () => {

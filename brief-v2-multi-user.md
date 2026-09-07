@@ -29,10 +29,14 @@ afficher publiquement plus tard.
    et les exercices sont devenus des entités (section 8). ~~Reste dans ce lot la saisie des
    répétitions réalisées avec le cas AMRAP (section 6.1)~~ — **faite le 2026-09-07**, elle
    attendait le typage des unités. Le lot est clos.
-3. **Chaînes de régressions et substitutions permanentes** (section 8.1), **plus la
-   substitution sans barre de traction** (section 2.1). C'est ce qui rend l'app utilisable par
-   quelqu'un qui ne fait pas encore de traction ou qui n'a rien où se suspendre, donc par la
-   plupart des gens à qui tu la montreras.
+3. ~~**Chaînes de régressions**~~ (section 8.1) **faites le 2026-09-07**, `app/src/data/chains.js` :
+   sept chaînes ordonnées, tenues par des tests. **Restent dans cette étape, reportés :** la
+   **substitution permanente**, qui se règle depuis la bibliothèque et part donc avec elle
+   (étape 9), et la **substitution sans barre de traction** (section 2.1), qui dépend du
+   matériel déclaré à l'onboarding (étape 8) et de la grille de couverture, pas des chaînes.
+   C'est ce dernier morceau qui rend l'app utilisable par quelqu'un qui n'a rien où se
+   suspendre, donc par la plupart des gens à qui tu la montreras : il ne doit pas se perdre en
+   route sous prétexte que « l'étape 3 est faite ».
 4. **Table de nommage français** à arbitrer ligne par ligne (section 8.2). Peu de code,
    beaucoup d'effet.
 5. **Renommer les modes, appliquer les coefficients**, et faire progresser les maintiens eux
@@ -532,7 +536,45 @@ Ce que le typage a fait apparaître, et qui n'était pas dans le brief :
 - **Les identifiants ne sont pas les libellés.** C'est ce qui rend la section 8.2 faisable :
   renommer se fait dans une case de table, pas dans 250 lignes de données.
 
-### 8.1 Chaînes de régressions — le plancher d'entrée est trop haut
+### 8.1 Chaînes de régressions — CHAÎNES FAITES (2026-09-07), SUBSTITUTION REPORTÉE
+
+> **Livré : `app/src/data/chains.js`**, sept chaînes ordonnées du plus accessible au plus dur,
+> et 17 variantes ajoutées à la table des exercices dans une section à part — le catalogue ne
+> les prescrit pas, on ne les atteint que par une chaîne.
+>
+> **Un exercice ne porte pas sa chaîne, il en est membre** : l'appartenance se déduit de la
+> liste, comme les schémas moteurs se déduisent de l'exercice. Cinq copies de la chaîne des
+> pompes auraient été cinq occasions de divergence.
+>
+> **Tous les crans d'une chaîne portent les mêmes schémas moteurs**, et c'est un test. Sans
+> cette règle, la grille de couverture hebdomadaire mentirait dès la première substitution.
+> Elle a eu une conséquence que le texte ci-dessous n'avait pas prévue : **les chin-ups ont
+> leur propre chaîne**, séparée de celle des pull-ups. Le brief parle de « tractions » en bloc,
+> mais la supination est un schéma suivi à part — et le seul travail de biceps disponible.
+> Substituer un pull-up assisté à un chin-up le ferait disparaître de la semaine en silence.
+>
+> **Aucun « cran de référence » par chaîne** : le catalogue prescrit deux crans de la chaîne
+> des burpees selon la séance. La référence est ce que demande la ligne qu'on est en train de
+> lire, pas une propriété de la chaîne.
+>
+> **Deux crans mordent sur la substitution, et sont épinglés par des tests** en attendant
+> l'étape 9 : la suspension active se compte en secondes là où les pull-ups sont des
+> répétitions (substituer sans convertir donnerait « 4 s de suspension »), et les V-ups une
+> jambe sont latéraux là où les V-ups ne le sont pas.
+>
+> **Un écart avec le texte ci-dessous, tranché le 2026-09-07** : la chaîne des soulevés de
+> terre une jambe n'a que deux crans, et c'est définitif. « Sans appui » et « amplitude
+> complète » décrivent le même geste, le second n'étant qu'une consigne d'exécution du premier ;
+> deux entrées de bibliothèque pour un seul mouvement auraient donné deux libellés que rien ne
+> distingue à l'écran. Le troisième cran du texte d'origine ne doit pas être rajouté.
+>
+> **Rien n'affiche encore ces chaînes, et l'attente est assumée.** Le pratiquant ne choisit pas
+> sa variante : la substitution permanente se règle depuis la bibliothèque (section 8.4,
+> étape 9), et la poser avant l'écran qui la commande donnerait un réglage sans endroit où le
+> régler. Un affichage provisoire du cran d'en dessous sur la fiche a été proposé puis écarté
+> le 2026-09-07 — il aurait été refait à l'étape 9.
+
+### Texte d'origine — le plancher d'entrée est trop haut
 
 Le mode HUMAN suppose déjà 4 tractions et 12 pompes, ce qui exclut une grande partie des
 débutants. Le problème n'est pas genré et ne doit pas être traité comme tel : une version
