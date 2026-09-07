@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { C, DISPLAY, MONO } from "../lib/theme.js";
-import { scaleRep } from "../data/levels.js";
+import { scaleItem } from "../data/levels.js";
+import { labelOf, quantityOf } from "../data/exercises.js";
 import { mmss } from "../lib/dates.js";
 import { beep } from "../lib/audio.js";
 import {
@@ -250,7 +251,7 @@ export function Timer({ initial, level, onPersist, onDone }) {
               <div key={j} style={{ fontFamily:DISPLAY, fontSize:28, lineHeight:1.2 }}>
                 {it.txt ? it.txt : (
                   <React.Fragment>
-                    <span style={{ color:accent }}>{scaleRep(it.n, level)}</span> {it.t}
+                    <span style={{ color:accent }}>{quantityOf(it.ex, scaleItem(it, level).n)}</span> {labelOf(it.ex)}
                   </React.Fragment>
                 )}
               </div>
@@ -268,7 +269,7 @@ export function Timer({ initial, level, onPersist, onDone }) {
               <div key={j} style={{ fontFamily:DISPLAY, fontSize:23, lineHeight:1.3 }}>
                 {it.txt ? it.txt : (
                   <React.Fragment>
-                    <span style={{ color:accent }}>{scaleRep(it.n, level)}</span> {it.t}
+                    <span style={{ color:accent }}>{quantityOf(it.ex, scaleItem(it, level).n)}</span> {labelOf(it.ex)}
                   </React.Fragment>
                 )}
               </div>
@@ -280,7 +281,8 @@ export function Timer({ initial, level, onPersist, onDone }) {
         )}
         {next && (
           <div style={{ marginTop:18, fontFamily:MONO, fontSize:10, letterSpacing:".1em", color:C.ash }}>
-            ENSUITE · {next.map((it) => it.txt ? it.txt : `${scaleRep(it.n, level)} ${it.t}`).join(" · ")}
+            ENSUITE · {next.map((it) => it.txt ? it.txt
+              : `${quantityOf(it.ex, scaleItem(it, level).n)} ${labelOf(it.ex)}`).join(" · ")}
           </div>
         )}
       </div>

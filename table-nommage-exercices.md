@@ -3,9 +3,28 @@
 Tous les arbitrages sont appliqués. Ce document est la référence pour le remplacement dans
 les données.
 
+**À relire avant d'appliquer cette table (note du 2026-09-07).** Les exercices sont devenus
+des entités : la référence vivante est `app/src/data/exercises.js`. Trois écarts avec ce
+document sont à traiter au moment de l'appliquer.
+
+- **La colonne « clé technique » ci-dessous n'est pas l'identifiant du code.** Elle reprend les
+  anciens libellés en texte libre (« air squats », « pull-ups ») ; les vrais identifiants sont
+  en camelCase (`airSquats`, `pullups`). Faire la correspondance par le libellé, pas par cette
+  colonne. L'intention du document tient toujours, et mieux qu'avant : les identifiants étant
+  désormais indépendants de l'affichage, appliquer cette table ne touche qu'une case par
+  exercice au lieu de réécrire les données de séances.
+- **Trois exercices manquent** : `planche`, `hollowHold`, `gainageLateral`. Ils n'étaient pas
+  des exercices quand ce document a été écrit, seulement du texte libre dans les séances. Leur
+  nommage reste à arbitrer, et « planche » comme « gainage » figurent déjà dans les labels
+  ci-dessous (« Touches d'épaules en planche », « Gainage cuillère vers balayage ») :
+  l'arbitrage doit rester cohérent avec eux.
+- **Un exercice a disparu** : « burpee » et « burpees » étaient deux entrées pour le même
+  mouvement, comptées comme deux exercices distincts. Il n'en reste qu'une.
+
 Quatre colonnes :
 
-- **Clé technique** : l'identifiant dans le code, ne change pas. Aucun rapport avec l'affichage.
+- **Clé technique** : ancien libellé en texte libre, conservé pour retrouver la ligne. Voir la
+  note ci-dessus — ce n'est pas l'identifiant du code.
 - **Label** : ce que l'utilisateur lit sur la fiche et dans la bibliothèque.
 - **Label court** : ce que le chrono affiche pendant l'effort, quand le label dépasse une
   vingtaine de caractères. Un tiret signifie que le label passe tel quel.

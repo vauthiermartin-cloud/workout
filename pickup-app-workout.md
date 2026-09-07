@@ -12,7 +12,7 @@ Une PWA de séances au poids du corps est **en production et fonctionnelle**, h�
 
 **Le code vit dans `app/` : Vite 8 + React 19, testé sous Vitest.** Le mono-fichier de 100 Ko avec Babel dans le navigateur appartient au passé. Le déploiement passe par `.github/workflows/deploy.yml` : `npm ci`, `npm test`, `npm run build`, publication de `app/dist` sur Pages. **Les tests sont un garde-barrière du déploiement** — un échec bloque la mise en production.
 
-Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 finishers, 5 séquences d'étirement, 35 exercices. Un chrono adaptatif (EMOM / Tabata / compte à rebours / chrono libre) et un générateur qui choisit la séance selon les schémas moteurs non encore couverts dans la semaine.
+Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 finishers, 5 séquences d'étirement, 37 exercices. Un chrono adaptatif (EMOM / Tabata / compte à rebours / chrono libre) et un générateur qui choisit la séance selon les schémas moteurs non encore couverts dans la semaine.
 
 **Le chrono est reprenable** (étape 1, faite le 2026-09-07). `app/src/lib/chrono.js` sépare deux notions : le `run`, enregistrement d'une séance en cours écrit dans une clé unique (`workout.run`), et le `beat`, dernier battement réellement observé. Un trou de plus de 4 s entre deux battements ne peut venir que d'une app endormie : le chrono gèle, ne valide rien, et demande. Reprise proposée au démarrage sous 4 h, enregistrement ou abandon au-delà.
 
@@ -24,7 +24,10 @@ Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 1
 - **Matériel disponible** : poids du corps, barre de traction, espalier. **Pas de barre basse ni d'anneaux** → aucun tirage horizontal (les tirages australiens ont été retirés pour cette raison, ne pas les réintroduire).
 - **Un format par jour** : lundi EMOM, mardi volume burpees en escalier, mercredi rounds chronométrés, jeudi AMRAP, vendredi test de burpees + finisher.
 - **Le test de burpees du vendredi est la seule métrique de progression** conservée. Un chiffre par semaine.
-- **Étiquetage des schémas moteurs dérivé automatiquement** des exercices (table `EX_PATTERNS`), jamais saisi à la main sur les séances. Empêche toute désynchronisation.
+- **Un exercice est une entité, pas une chaîne de caractères.** `app/src/data/exercises.js` porte les 37 exercices : identifiant stable, libellé français, unité, latéralité, schémas moteurs. Les séances citent l'identifiant, jamais le libellé — renommer se fait dans une case de table et non dans 250 lignes de données. Les identifiants partent en base dans les exports : ne pas les renommer.
+- **Étiquetage des schémas moteurs dérivé automatiquement** des exercices, porté par l'entité (champ `patterns`), jamais saisi à la main sur les séances. Empêche toute désynchronisation.
+- **L'unité est déclarée, jamais devinée** : `reps` ou `secondes`. Elle décide de trois choses, et il n'y a pas d'autre endroit où le dire — l'affichage (« 30 s » et non « 30 »), le total de volume (30 s de planche ne sont pas 30 répétitions), et la portée des coefficients de mode (**un maintien garde sa durée en N2 et N3** : sans cette décision explicite il prenait +50 % en silence, et une planche à 45 s déborde de la minute d'EMOM). Qu'ils progressent avec leur propre coefficient reste prévu à l'étape 5, où le plan de chrono devra suivre.
+- **La latéralité se dit une fois, sur l'exercice, et s'affiche sur la fiche seulement.** Deux conventions opposées vivaient dans les consignes en prose : `reparti` signifie que le nombre est un total à partager (16 fentes croisées = 8 par jambe), `chaque` qu'il vaut pour chaque côté (30 s de gainage latéral de chaque côté). La note est calculée, donc elle suit le mode — les « 16 = 8 par jambe » écrits à la main restaient faux dès qu'on montait de niveau, ils ont été retirés. Pendant l'effort, le chrono ne l'affiche pas.
 - **10 schémas suivis** : poussée, tirage, supination, squat, unilatéral, chaîne postérieure, sangle, cardio, mobilité, mollets.
 - **Le générateur est conscient de la couverture** : il choisit la variante du jour qui apporte le plus de schémas non encore travaillés dans la semaine. Simulé sur 500 semaines → 10/10 systématiquement.
 - **Fiche et chrono partagent les mêmes données** ; un contrôle automatisé vérifie qu'ils ne divergent pas.
@@ -43,11 +46,14 @@ Douze étapes. Les deux premières sont faites :
 
 1. ~~Réparer la reprise du chrono~~ (brief section 0). **Fait.** Les quatre points du brief
    sont couverts, `app/test/chrono.test.js` les tient.
-2. **Migrer vers Vite + tests. Fait pour la chaîne de build, pas pour les données.** Le volet
-   « faire des exercices de vraies entités » (brief section 8) n'a pas été traité : un
-   exercice est toujours une chaîne de caractères, reliée aux schémas moteurs par la table de
-   `app/src/data/patterns.js`. **C'est donc le vrai préalable aux étapes 3 à 6**, à faire
-   avant les chaînes de régressions.
+2. ~~Migrer vers Vite + tests~~, **y compris le volet données** (« faire des exercices de
+   vraies entités », brief section 8). **Fait le 2026-09-07.** `app/src/data/exercises.js`,
+   les séances citent des identifiants, les unités sont typées, `EX_PATTERNS` a disparu.
+   Trois défauts que ce modèle a fait tomber au passage : « burpee » et « burpees » étaient
+   comptés comme deux exercices ; les maintiens n'étaient pas des exercices du tout, juste du
+   texte libre attrapé par une expression régulière ; et un contrôle de cohérence passait à
+   vide depuis le renommage d'un champ, donc ne contrôlait plus rien — d'où le garde-fou qui
+   vérifie qu'il reste des lignes à contrôler.
 
 Deux chantiers ont été remontés hors de leur rang, parce qu'ils ne dépendaient de rien :
 
@@ -59,11 +65,22 @@ Deux chantiers ont été remontés hors de leur rang, parce qu'ils ne dépendaie
   semaine de données de calibration perdue** : les règles de montée et de descente de mode
   (étape 12) demandent quatre semaines de ressentis réels, autant que le compteur tourne.
 
-L'étape suivante à attaquer est donc ce reliquat d'entités, puis l'étape 3 (chaînes de
-régressions et substitution sans barre de traction). L'ordre convenu pour la suite du lot
-« 2bis » : entités et typage des unités d'abord, puis la saisie des répétitions avec le cas
-AMRAP, et la logique de recalibrage en dernier — elle ne sera validable qu'avec des semaines
-de données réelles.
+L'ordre convenu pour la suite du lot « 2bis » : ~~entités et typage des unités~~ d'abord,
+puis **la saisie des répétitions avec le cas AMRAP** (brief section 6.1 — c'est l'étape
+suivante), et la logique de recalibrage en dernier — elle ne sera validable qu'avec des
+semaines de données réelles. Vient ensuite l'étape 3 (chaînes de régressions et substitution
+sans barre de traction).
+
+Deux dettes ouvertes par le typage, à traiter dans l'étape qui les concerne :
+
+- **Un total `reparti` peut devenir impair sous les coefficients de mode** : `scaleRep(10, 2)`
+  donne 13, qui ne se partage pas en deux côtés égaux. L'affichage bascule alors sur « en
+  alternant les côtés », qui est honnête mais moins utile. Arrondir ces totaux au pair est du
+  ressort de l'étape des modes (étape 5).
+- **`volumeOf` sous-compte le vendredi** : les 50 burpees du test vivent dans la phrase de la
+  phase (`sub`), pas dans une ligne de travail, donc ils n'entrent pas au total. Vaut pour
+  les cinq séances du vendredi. À corriger avec l'écran de perfs, qui a de toute façon besoin
+  d'un champ pour le score.
 
 Ne pas lancer plusieurs étapes en une fois.
 

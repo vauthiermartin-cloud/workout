@@ -1,3 +1,5 @@
+import { EXERCISES } from "./exercises.js";
+
 /* Les étiquettes ne sont jamais saisies à la main sur les séances :
    elles se déduisent des exercices, donc elles ne peuvent pas dériver. */
 export const PATTERNS = [
@@ -13,66 +15,41 @@ export const PATTERNS = [
   { id:"mollets", label:"MOLLETS" },
 ];
 
-export const EX_PATTERNS = {
-  "pompes":["poussee"],
-  "pompes piquées":["poussee"],
-  "pull-ups":["tirage"],
-  "chin-ups":["tirage","supination"],
-  "relevés de genoux suspendu":["tirage","core"],
-  "air squats":["squat"],
-  "jump squats":["squat","cardio"],
-  "fentes arrière":["unilat"],
-  "fentes marchées":["unilat"],
-  "fentes croisées":["unilat"],
-  "hip thrusts":["hinge"],
-  "soulevés de terre une jambe":["hinge","unilat"],
-  "hip thrusts sur une jambe":["hinge","unilat"],
-  "superman":["hinge"],
-  "montées sur pointes":["mollets"],
-  "burpees":["cardio"],
-  "burpee":["cardio"],
-  "burpees sautés en longueur":["cardio"],
-  "burpees genou diagonal":["cardio"],
-  "mountain climbers":["cardio","core"],
-  "mountain climbers croisés":["cardio","core"],
-  "sauts mogul":["cardio","core"],
-  "swings latéraux":["core","mobilite"],
-  "sweeps":["mobilite","core"],
-  "hollow to sweep":["mobilite","core"],
-  "bear crawl to thread the needle":["mobilite","core"],
-  "sit-ups":["core"],
-  "V-ups":["core"],
-  "ciseaux":["core"],
-  "corkscrews":["core"],
-  "dead bugs":["core"],
-  "crunchs inversés":["core"],
-  "relevés de jambes au sol":["core"],
-  "russian twists":["core"],
-  "shoulder taps en gainage":["core"],
-};
+/* Il n'y a plus de table de classification séparée : les schémas moteurs
+   appartiennent à l'entité exercice. Deux tables auraient pu se
+   désynchroniser, et l'une des deux le faisait déjà — « burpee » au singulier
+   y était classé à part de « burpees ». */
+export const patternsOfExercise = (id) => (EXERCISES[id] ? EXERCISES[id].patterns : null);
 
-/* Les lignes en texte libre (« 30 s de planche ») sont classées par mot-clé. */
+/* Il reste des lignes en texte libre qui décrivent du travail sans le compter :
+   les séries en escalier (« 1, 2, 3, 4, 5 burpees »), les tests (« Max de
+   burpees en 4 min »), un nom nu dans un AMRAP. Elles se classent par mot-clé
+   en attendant d'être typées à leur tour.
+
+   La règle sur les maintiens a disparu d'ici : planche, hollow hold et gainage
+   latéral sont des exercices de la bibliothèque, plus des chaînes reconnues au
+   passage. */
 export const TXT_PATTERNS = [
-  [/planche|gainage|hollow/i, ["core"]],
   [/burpee/i, ["cardio"]],
+  [/mountain climbers/i, ["cardio", "core"]],
 ];
+
+const collect = (s) => (it) => {
+  const ps = patternsOfExercise(it.ex);
+  if (ps) ps.forEach((p) => s.add(p));
+  else if (it.txt) TXT_PATTERNS.forEach(([re, x]) => { if (re.test(it.txt)) x.forEach((p) => s.add(p)); });
+};
 
 export function patternsOfWorkout(w) {
   const s = new Set();
-  w.blocks.forEach((b) => b.items.forEach((it) => {
-    if (it.t && EX_PATTERNS[it.t]) EX_PATTERNS[it.t].forEach((p) => s.add(p));
-    else if (it.txt) TXT_PATTERNS.forEach(([re, ps]) => { if (re.test(it.txt)) ps.forEach((p) => s.add(p)); });
-  }));
+  w.blocks.forEach((b) => b.items.forEach(collect(s)));
   return [...s];
 }
 
 /* Mêmes règles, appliquées à un plan de chrono plutôt qu'à une fiche. */
 export function patternsOfTimer(phases) {
   const s = new Set();
-  const item = (it) => {
-    if (it.t && EX_PATTERNS[it.t]) EX_PATTERNS[it.t].forEach((p) => s.add(p));
-    else if (it.txt) TXT_PATTERNS.forEach(([re, ps]) => { if (re.test(it.txt)) ps.forEach((p) => s.add(p)); });
-  };
+  const item = collect(s);
   phases.forEach((p) => {
     if (p.stations) p.stations.forEach((station) => station.forEach(item));
     if (p.list) p.list.forEach(item);

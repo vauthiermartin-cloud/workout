@@ -1,4 +1,5 @@
 import { TIMERS } from "../data/timers.js";
+import { EXERCISES } from "../data/exercises.js";
 import { scaleRep } from "../data/levels.js";
 import { iso } from "./dates.js";
 
@@ -12,17 +13,26 @@ export function roundsOfPhase(p) {
   return null; // AMRAP : le nombre de tours est le score, pas une consigne
 }
 
+/* Un maintien porte un nombre comme une série de répétitions, mais 30 secondes
+   de planche ne sont pas 30 répétitions : seules les lignes comptées en reps
+   entrent dans le total. Avant le typage, les maintiens étaient du texte libre
+   et se trouvaient exclus par accident ; ils le sont maintenant par décision. */
+const repsOf = (it, level) => {
+  const ex = EXERCISES[it.ex];
+  return ex && ex.unit === "reps" && it.n ? scaleRep(it.n, level) : 0;
+};
+
 export function volumeOf(name, level) {
   const phs = TIMERS[name] || [];
   let total = 0, amrap = false;
   phs.forEach((p) => {
     if (p.t === "cycle") {
       const parTour = p.stations.reduce(
-        (a, s) => a + s.reduce((b, it) => b + (it.n ? scaleRep(it.n, level) : 0), 0), 0);
+        (a, s) => a + s.reduce((b, it) => b + repsOf(it, level), 0), 0);
       total += parTour * (p.loops || 1);
     } else if (p.list) {
       const n = roundsOfPhase(p);
-      const parTour = p.list.reduce((a, it) => a + (it.n ? scaleRep(it.n, level) : 0), 0);
+      const parTour = p.list.reduce((a, it) => a + repsOf(it, level), 0);
       if (n === null) { amrap = true; total += parTour; } else total += parTour * n;
     }
   });

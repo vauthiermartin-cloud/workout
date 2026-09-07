@@ -24,18 +24,23 @@ afficher publiquement plus tard.
 ### Ordre de travail recommandé
 
 1. ~~**Réparer la reprise du chrono**~~ (section 0). **Fait le 2026-09-07.**
-2. **Migrer vers Vite + tests.** *Chaîne de build faite* : `app/` tourne sous Vite 8 + React 19,
-   les tests Vitest bloquent le déploiement. **Reste le volet données : faire des exercices de
-   vraies entités** (section 8). Un exercice est encore une chaîne de caractères ; les quatre
-   chantiers suivants en dépendent, c'est donc le prochain morceau à prendre.
+2. ~~**Migrer vers Vite + tests.**~~ **Fait le 2026-09-07**, chaîne de build *et* volet
+   données : `app/` tourne sous Vite 8 + React 19, les tests Vitest bloquent le déploiement,
+   et les exercices sont devenus des entités (section 8). Reste dans ce lot **la saisie des
+   répétitions réalisées** avec le cas AMRAP (section 6.1), qui attendait le typage des
+   unités.
 3. **Chaînes de régressions et substitutions permanentes** (section 8.1), **plus la
    substitution sans barre de traction** (section 2.1). C'est ce qui rend l'app utilisable par
    quelqu'un qui ne fait pas encore de traction ou qui n'a rien où se suspendre, donc par la
    plupart des gens à qui tu la montreras.
 4. **Table de nommage français** à arbitrer ligne par ligne (section 8.2). Peu de code,
    beaucoup d'effet.
-5. **Renommer les modes, appliquer les coefficients**, et typer les maintiens en temps pour
-   qu'ils progressent eux aussi (section 5).
+5. **Renommer les modes, appliquer les coefficients**, et faire progresser les maintiens eux
+   aussi (section 5). *Les maintiens sont désormais typés en secondes, mais le mode ne les
+   touche pas encore* : leur donner un coefficient demande que le plan de chrono suive, la
+   durée des phases ne bougeant pas avec le mode. À faire ici, dans `scaleItem`. Cette étape
+   doit aussi arrondir au pair les totaux répartis entre deux côtés, qu'un coefficient rend
+   impairs (`scaleRep(10, 2)` donne 13, qui ne se partage pas).
 6. ~~**Ajouter le signal de fin de séance** et son effet immédiat sur la proposition de
    finisher (section 7.1).~~ **Fait le 2026-09-07**, remonté avant les étapes 3 à 5 : chaque
    semaine sans lui est une semaine de données de calibration perdue, et il ne dépendait de
@@ -338,10 +343,26 @@ créer.** Si la validation conditionnait l'enregistrement, une séance faite pui
 cet écran serait perdue — ce que « local d'abord, jamais perdue » interdit. La validation
 marque donc la ligne comme relue, elle ne la fait pas naître.
 
-**Dépend du typage des unités** (section 8) : sans lui, on saurait éditer `r(10,"burpees")`
-mais pas `f("30 s de planche")`, où la durée est dans la chaîne, ni trancher si l'on édite 16
-ou 8 sur un mouvement compté par côté. Le format AMRAP du jeudi demande en outre un champ
-distinct : ce qu'on ajuste est le **nombre de tours**, pas les répétitions d'un tour.
+~~Dépend du typage des unités~~ **(section 8, fait le 2026-09-07 — cette dépendance est
+levée).** Sans lui on aurait su éditer `r(10,"burpees")` mais pas `f("30 s de planche")`, où
+la durée était dans la chaîne. Ce que le typage apporte à cet écran :
+
+- **La distinction travail / note est explicite.** `r()` et `h()` sont des lignes de travail,
+  donc éditables ; `f()` est une note de structure, donc pas une ligne à saisir. Auparavant
+  `f()` mélangeait les deux et l'écran n'aurait pas su quoi proposer.
+- **Chaque ligne sait dans quelle unité elle se saisit**, et le clavier peut en tenir compte.
+- **La question du côté est tranchée** : sur un mouvement `reparti`, on édite le total, pas la
+  moitié — c'est le total qui est la donnée, la note « 8 par côté » n'en est que la lecture.
+
+Restent deux points à traiter dans cette étape :
+
+- **Le format AMRAP du jeudi demande un champ distinct** : ce qu'on ajuste est le **nombre de
+  tours**, pas les répétitions d'un tour.
+- **Le test du vendredi n'est pas une ligne de travail.** Les 50 burpees vivent dans la phrase
+  de la phase, si bien que `volumeOf` les sous-compte déjà aujourd'hui (les cinq séances du
+  vendredi affichent un total amputé). L'écran de perfs a de toute façon besoin d'un champ
+  pour ce score, qui est la seule métrique de progression conservée : autant le faire devenir
+  une donnée à cette occasion.
 
 ---
 
@@ -475,12 +496,31 @@ Pistes à arbitrer au moment de la conception de l'écran :
 
 ---
 
-## 8. Les exercices deviennent des entités
+## 8. Les exercices deviennent des entités — SOCLE FAIT (2026-09-07)
 
-Aujourd'hui un exercice est une chaîne de caractères dans un bloc de séance. Les quatre
-chantiers ci-dessous exigent qu'il devienne une entité à part entière, avec identifiant,
-nom français, nom anglais, consigne, média, schémas moteurs et chaîne de régressions.
-**À faire pendant la migration Vite, pas après.**
+Un exercice était une chaîne de caractères dans un bloc de séance. Les quatre chantiers
+ci-dessous exigeaient qu'il devienne une entité à part entière.
+
+**Le socle est posé** : `app/src/data/exercises.js` tient 37 exercices avec identifiant
+stable, libellé français, unité, latéralité et schémas moteurs. Les séances citent
+l'identifiant. Ce qui reste à ajouter sur l'entité relève des sections ci-dessous : le nom
+anglais et la consigne longue (8.2, 8.4), le média (8.3), la chaîne de régressions (8.1).
+
+Ce que le typage a fait apparaître, et qui n'était pas dans le brief :
+
+- **L'unité devait être déclarée.** « 30 s de planche » était du texte libre. Une fois
+  l'exercice devenu une entité, ce texte devenait une ligne de travail portant le nombre 30 —
+  et l'addition naïve l'aurait comptée comme 30 répétitions. L'unité (`reps` ou `secondes`)
+  décide de l'affichage, du total de volume, et du fait qu'**un maintien ne s'allonge pas
+  avec le mode**.
+- **La latéralité aussi.** Onze exercices se pratiquent côté par côté, et les consignes en
+  prose employaient deux conventions opposées : ici le nombre était un total à partager, là
+  il valait pour chaque côté. Désormais déclaré sur l'entité, calculé à l'affichage, donc
+  juste même en N2 et N3 — ce que les « 16 = 8 par jambe » écrits à la main ne pouvaient pas
+  être. La note ne s'affiche que sur la fiche : pendant l'effort, l'écran ne montre que le
+  mouvement et le nombre.
+- **Les identifiants ne sont pas les libellés.** C'est ce qui rend la section 8.2 faisable :
+  renommer se fait dans une case de table, pas dans 250 lignes de données.
 
 ### 8.1 Chaînes de régressions — le plancher d'entrée est trop haut
 
