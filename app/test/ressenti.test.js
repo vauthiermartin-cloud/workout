@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { RESSENTIS, askRessenti, finisherStance, isRessenti } from "../src/lib/ressenti.js";
+import { RESSENTIS, askRessenti, finisherStance, isRessenti, retourDe } from "../src/lib/ressenti.js";
 
 describe("les trois réponses", () => {
   it("trois valeurs, pas plus, et des identifiants stables", () => {
@@ -15,13 +15,30 @@ describe("les trois réponses", () => {
   });
 });
 
+describe("le retour affiché", () => {
+  it("chaque réponse a le sien", () => {
+    expect(RESSENTIS.every((r) => typeof r.retour === "string" && r.retour.length > 0)).toBe(true);
+    expect(retourDe("juste")).toBe("Dans ta zone, Player!");
+  });
+
+  /* Sans réponse, il n'y a rien à dire. */
+  it("rien à afficher sans réponse", () => {
+    expect(retourDe(null)).toBe(null);
+    expect(retourDe("moyen")).toBe(null);
+  });
+});
+
 describe("effet sur la proposition de finisher", () => {
   it("trop dur ne propose aucun finisher", () => {
     expect(finisherStance("dur")).toBe("aucun");
   });
 
-  it("trop facile en fait l'action principale", () => {
-    expect(finisherStance("facile")).toBe("principal");
+  /* « Trop facile » ne tire plus le finisher d'emblée : il est déjà l'action
+     principale de l'écran, et l'ouvrir d'office noyait le retour sous un bloc
+     de séance. Sa conséquence est différée à la montée de mode. */
+  it("trop facile se comporte comme juste", () => {
+    expect(finisherStance("facile")).toBe(finisherStance("juste"));
+    expect(finisherStance("facile")).toBe("normal");
   });
 
   it("juste laisse l'écran tel quel", () => {

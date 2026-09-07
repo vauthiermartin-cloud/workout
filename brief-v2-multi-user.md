@@ -353,15 +353,25 @@ l'assiduité, pas la capacité. Quelqu'un peut venir régulièrement en survivan
 > de séance dans le champ `ressenti`, reporté d'une écriture à l'autre comme le finisher —
 > sans ce report, enchaîner un finisher effaçait la réponse donnée juste avant.
 >
-> Deux écarts au texte ci-dessous, tous deux assumés :
+> **L'effet immédiat de la réponse n'est pas celui du texte d'origine.** Il a d'abord été
+> implémenté à la lettre, essayé, puis revu à l'usage le 2026-09-07 :
 >
-> - « Trop facile » **tire le finisher d'emblée** au lieu de seulement mettre en avant le
->   bouton. Le bouton était déjà l'action principale de l'écran : sans le tirage, la réponse
->   n'aurait rien changé de visible, et la question serait redevenue un sondage.
-> - Ce tirage a obligé à **ouvrir une sortie dans le bloc de proposition** (`SANS FINISHER`).
->   Il n'en avait aucune : tirer une proposition enfermait l'écran, sans étirements, sans
->   stats et sans fermeture. Répondre « trop facile » aurait donc été un geste risqué, ce qui
->   contredit « jamais bloquante ».
+> - **La réponse de l'app est une phrase**, portée par `RESSENTIS[].retour` : « Ok beast! On
+>   va monter d'un cran. » / « Dans ta zone, Player! » / « Ok le sang. On adapte la suite. »
+>   C'est elle qui empêche la question d'être un sondage, pas un changement de mise en page.
+> - **« Trop facile » ne tire pas le finisher** et ne change pas la mise en page : le bouton
+>   est déjà l'action principale de l'écran. Un premier essai le tirait d'emblée ; le bloc de
+>   séance qui s'ouvrait alors juste sous la question noyait la phrase de retour. La
+>   conséquence de « trop facile » est donc **différée à la montée de mode** (étape 12) — le
+>   texte du retour l'annonce, et engage cette étape.
+> - **« Trop dur » reste la seule réponse qui agit sur l'écran** : le finisher est retiré, les
+>   étirements deviennent l'action principale.
+> - **Le bloc porte le liseré d'accent tant qu'il est sans réponse**, et s'éteint une fois
+>   répondu : c'est le seul élément de l'écran de bilan qui attende quelque chose.
+>
+> Un écart de plus, indépendant : **une sortie a été ouverte dans le bloc de proposition**
+> (`SANS FINISHER`). Il n'en avait aucune — tirer une proposition enfermait l'écran, sans
+> étirements, sans stats et sans fermeture. Ce piège préexistait au ressenti.
 >
 > La question ne se pose pas si le chrono a été arrêté par `FERMER ✕` : `Timer` distingue
 > désormais terminer et arrêter en route (`onDone({ aborted })`).

@@ -6,7 +6,7 @@ import { iso, fromIso, mondayOf, daysBetween, shortFr, pad } from "./lib/dates.j
 import { beep } from "./lib/audio.js";
 import { volumeOf, streakOf } from "./lib/volume.js";
 import { pickVariant } from "./lib/generator.js";
-import { RESSENTIS, askRessenti, finisherStance } from "./lib/ressenti.js";
+import { RESSENTIS, askRessenti, finisherStance, retourDe } from "./lib/ressenti.js";
 import { DAYS, STRETCH_BY_DAY, FINISHER_BIAS } from "./data/days.js";
 import { WORKOUTS, WORKOUT_BY_NAME } from "./data/workouts.js";
 import { FINISHERS } from "./data/finishers.js";
@@ -214,14 +214,13 @@ export default function App() {
     setEndOpen(false);
   };
 
-  /* Un tap écrit la réponse sur la ligne de séance, sans validation. Et elle
-     agit tout de suite : sans effet visible, la question ne serait qu'un
-     sondage, et on cesserait d'y répondre au bout de deux semaines. */
+  /* Un tap écrit la réponse sur la ligne de séance, sans validation. L'app
+     répond par une phrase, et seule « trop dur » agit sur l'écran en retirant
+     le finisher : c'est la seule réponse dont ignorer la conséquence tout de
+     suite serait une faute. */
   const answerRessenti = (v) => {
     logSession({ ressenti: v });
-    const stance = finisherStance(v);
-    if (stance === "aucun" && propose && propose.kind === "finisher") setPropose(null);
-    if (stance === "principal" && !finisher && !propose) drawFinisher();
+    if (finisherStance(v) === "aucun" && propose && propose.kind === "finisher") setPropose(null);
   };
 
   const lancerStretch = () => {
@@ -770,8 +769,17 @@ export default function App() {
                   réponse présélectionnée, aucune obligation de répondre : une
                   séance sans réponse est simplement une séance sans signal. */}
               {askRessenti({ stage: endStage, aborted }) && (
-                <div style={{ marginBottom:28 }}>
-                  <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginBottom:8 }}>
+                /* Tant qu'elle est sans réponse, la question est la seule chose
+                   de l'écran qui attende quelque chose : elle le dit avec le
+                   liseré d'accent et l'oeil s'y pose. Répondre l'éteint, et le
+                   bloc redevient un élément de bilan parmi les autres. */
+                <div style={{ marginBottom:28, padding:"15px 16px 16px", borderRadius:3,
+                  background:C.steel, border:`1px solid ${ressenti ? C.line : C.lime}` }}>
+                  <div style={{ fontFamily:MONO, fontSize:9.5, letterSpacing:".16em",
+                    color: ressenti ? C.ash : C.lime, marginBottom:6 }}>
+                    RESSENTI DU JOUR
+                  </div>
+                  <div style={{ fontFamily:DISPLAY, fontSize:26, lineHeight:1, marginBottom:14 }}>
                     C'ÉTAIT COMMENT ?
                   </div>
                   <div style={{ display:"flex", gap:6 }}>
@@ -779,10 +787,10 @@ export default function App() {
                       const on = ressenti === r.id;
                       return (
                         <button key={r.id} onClick={() => answerRessenti(r.id)}
-                          style={{ flex:1, padding:"13px 0", borderRadius:2,
-                            background: on ? C.bone : "transparent",
-                            border:`1px solid ${on ? C.bone : C.line}`,
-                            color: on ? C.ink : C.ash,
+                          style={{ flex:1, padding:"15px 0", borderRadius:2,
+                            background: on ? C.lime : "transparent",
+                            border:`1px solid ${on ? C.lime : C.line}`,
+                            color: on ? C.ink : C.bone,
                             fontFamily:MONO, fontSize:9.5, fontWeight:700, letterSpacing:".07em" }}>
                           {r.label}
                         </button>
@@ -790,10 +798,8 @@ export default function App() {
                     })}
                   </div>
                   {ressenti && (
-                    <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"10px 0 0" }}>
-                      {ressenti === "dur" ? "Noté. Pas de finisher aujourd'hui, on passe aux étirements."
-                        : ressenti === "facile" ? "Noté, tu avais de la marge."
-                        : "Noté."}
+                    <p style={{ fontSize:14, color:C.bone, lineHeight:1.45, margin:"13px 0 0" }}>
+                      {retourDe(ressenti)}
                     </p>
                   )}
                 </div>
@@ -888,9 +894,7 @@ export default function App() {
                   {endStage === "workout" && !finisher && stance !== "aucun" && (
                     <>
                       <p style={{ fontSize:13.5, lineHeight:1.5, margin:"0 0 14px" }}>
-                        {stance === "principal"
-                          ? "Tu avais de la marge. Dix minutes de plus, pas davantage."
-                          : "Encore du jus ? Un finisher de 10 minutes maximum."}
+                        Encore du jus ? Un finisher de 10 minutes maximum.
                       </p>
                       <button onClick={drawFinisher} style={{ width:"100%", padding:"16px 0", marginBottom:8,
                         background:C.lime, color:C.ink, fontFamily:DISPLAY, fontSize:18,
