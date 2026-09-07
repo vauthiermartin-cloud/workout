@@ -80,7 +80,7 @@ export function Timer({ initial, level, onPersist, onDone }) {
   };
 
   const goTo = (i) => {
-    if (i >= phases.length) { onDone(); return; }
+    if (i >= phases.length) { onDone({ aborted: false }); return; }
     const t = Date.now();
     beepRef.current = -1;
     commit(goToPhase(run, i, t), newBeat(t));
@@ -342,7 +342,10 @@ export function Timer({ initial, level, onPersist, onDone }) {
             background:C.lime, color:C.ink, fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
             CONTINUER LA SÉANCE
           </button>
-          <button onClick={() => onDone()} style={{ width:"100%", padding:"16px 0",
+          {/* Arrêter en route n'est pas terminer : l'écran de bilan a besoin de
+              la distinction pour ne pas demander un ressenti sur une séance
+              incomplète. */}
+          <button onClick={() => onDone({ aborted: true })} style={{ width:"100%", padding:"16px 0",
             border:`1px solid ${C.ember}`, color:C.ember, fontFamily:DISPLAY, fontSize:16,
             letterSpacing:".04em", borderRadius:2 }}>
             ARRÊTER

@@ -36,8 +36,10 @@ afficher publiquement plus tard.
    beaucoup d'effet.
 5. **Renommer les modes, appliquer les coefficients**, et typer les maintiens en temps pour
    qu'ils progressent eux aussi (section 5).
-6. **Ajouter le signal de fin de séance** et son effet immédiat sur la proposition de finisher
-   (section 7.1).
+6. ~~**Ajouter le signal de fin de séance** et son effet immédiat sur la proposition de
+   finisher (section 7.1).~~ **Fait le 2026-09-07**, remonté avant les étapes 3 à 5 : chaque
+   semaine sans lui est une semaine de données de calibration perdue, et il ne dépendait de
+   rien.
 7. **Contrat, gel, pause, séries**, en local (section 3).
 8. **Onboarding : ponctuel ou routine**, plus les deux questions de capacité, sans création de
    compte (sections 2 et 8.1).
@@ -343,7 +345,33 @@ l'assiduité, pas la capacité. Quelqu'un peut venir régulièrement en survivan
 - Usage de la pause et des sauts de phase pendant le chrono. Beaucoup de pauses veut dire que
   le dosage actuel est déjà limite.
 
-### 7.1 Le retour de fin de séance — VALIDÉ, à implémenter
+### 7.1 Le retour de fin de séance — FAIT (2026-09-07)
+
+> `app/src/lib/ressenti.js` porte les trois valeurs (`facile` / `juste` / `dur`) et les deux
+> règles pures : ce que la réponse change à l'écran (`finisherStance`) et quand la question se
+> pose (`askRessenti`). `app/test/ressenti.test.js` les tient. La réponse s'écrit sur la ligne
+> de séance dans le champ `ressenti`, reporté d'une écriture à l'autre comme le finisher —
+> sans ce report, enchaîner un finisher effaçait la réponse donnée juste avant.
+>
+> Deux écarts au texte ci-dessous, tous deux assumés :
+>
+> - « Trop facile » **tire le finisher d'emblée** au lieu de seulement mettre en avant le
+>   bouton. Le bouton était déjà l'action principale de l'écran : sans le tirage, la réponse
+>   n'aurait rien changé de visible, et la question serait redevenue un sondage.
+> - Ce tirage a obligé à **ouvrir une sortie dans le bloc de proposition** (`SANS FINISHER`).
+>   Il n'en avait aucune : tirer une proposition enfermait l'écran, sans étirements, sans
+>   stats et sans fermeture. Répondre « trop facile » aurait donc été un geste risqué, ce qui
+>   contredit « jamais bloquante ».
+>
+> La question ne se pose pas si le chrono a été arrêté par `FERMER ✕` : `Timer` distingue
+> désormais terminer et arrêter en route (`onDone({ aborted })`).
+>
+> Reste à faire, hors périmètre de cette étape : l'exploitation statistique (section 7.2) et
+> les règles de montée et de descente de mode (étape 12). En attendant, le récap texte de
+> l'onglet SUIVI affiche la répartition des ressentis et le ressenti de chaque séance : sans
+> ça la donnée existerait sans être lisible nulle part.
+
+**Texte d'origine, conservé comme référence :**
 
 Une question d'un seul geste sur l'écran de fin : **« C'était comment ? »** avec trois
 réponses — **TROP FACILE / JUSTE / TROP DUR**. Un tap, aucune saisie. C'est la donnée qui

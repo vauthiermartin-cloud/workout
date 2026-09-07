@@ -6,6 +6,7 @@ import { iso, fromIso, mondayOf, daysBetween, shortFr, pad } from "./lib/dates.j
 import { beep } from "./lib/audio.js";
 import { volumeOf, streakOf } from "./lib/volume.js";
 import { pickVariant } from "./lib/generator.js";
+import { RESSENTIS, askRessenti, finisherStance } from "./lib/ressenti.js";
 import { DAYS, STRETCH_BY_DAY, FINISHER_BIAS } from "./data/days.js";
 import { WORKOUTS, WORKOUT_BY_NAME } from "./data/workouts.js";
 import { FINISHERS } from "./data/finishers.js";
@@ -40,6 +41,7 @@ export default function App() {
   const [pending, setPending] = useState(null);
   const [endOpen, setEndOpen] = useState(false);
   const [endStage, setEndStage] = useState("workout");
+  const [aborted, setAborted] = useState(false);
   const [propose, setPropose] = useState(null);
   const [recap, setRecap] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -111,7 +113,7 @@ export default function App() {
     setVariant(next.index);
     setSeen(next.seen);
     setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
-    setFinisher(null); setStretch(null); setPropose(null); setEndOpen(false);
+    setFinisher(null); setStretch(null); setPropose(null); setEndOpen(false); setAborted(false);
   };
 
   /* Le tirage penche vers les abdos les jours déjà chargés en burpees,
@@ -183,14 +185,20 @@ export default function App() {
         : scoreInput !== "" ? Number(scoreInput)
         : avant && avant.s != null ? avant.s
         : null,
+      /* Le ressenti vit sur la ligne de séance, à côté du mode : « trop facile
+         en HUMAN » et « trop facile en BEAST » ne disent pas la même chose.
+         Reporté d'une écriture à l'autre comme le finisher, sinon enchaîner un
+         finisher effacerait la réponse donnée juste avant. */
+      ressenti: "ressenti" in o ? o.ressenti : (avant && avant.ressenti) || null,
     });
   };
 
   /* Fin d'un segment de chrono */
-  const segmentDone = () => {
+  const segmentDone = (how) => {
     const seg = run.segment;
     store.del(K_RUN);
     setRun(null);
+    setAborted(!!(how && how.aborted));
     if (seg === "finisher") { setEndStage("finisher"); logSession({}); }
     else if (seg === "stretch") { setEndStage(endStage === "workout" ? "workout" : "finisher"); logSession({}); }
     else { setEndStage("workout"); if (!wod.test) logSession({ s: null }); }
@@ -204,6 +212,16 @@ export default function App() {
     launch([{ t:"rest", sec:90, label:"Transition", sub:"Tu souffles avant le finisher" }, ...fz],
       "finisher", { fin: propose.name });
     setEndOpen(false);
+  };
+
+  /* Un tap écrit la réponse sur la ligne de séance, sans validation. Et elle
+     agit tout de suite : sans effet visible, la question ne serait qu'un
+     sondage, et on cesserait d'y répondre au bout de deux semaines. */
+  const answerRessenti = (v) => {
+    logSession({ ressenti: v });
+    const stance = finisherStance(v);
+    if (stance === "aucun" && propose && propose.kind === "finisher") setPropose(null);
+    if (stance === "principal" && !finisher && !propose) drawFinisher();
   };
 
   const lancerStretch = () => {
@@ -273,9 +291,15 @@ export default function App() {
       tests.length ? `Tests : ${tests.slice(0, 8).map((t) => `${shortFr(t.d)} = ${t.s}`).join(" | ")}` : "Tests : aucun",
       `Couverture de la semaine : ${weekPatterns.size}/${PATTERNS.length} — ${PATTERNS.filter((p) => weekPatterns.has(p.id)).map((p) => p.label.toLowerCase()).join(", ") || "rien"}`,
       `Finishers : ${log.filter((e) => e.fin).length} · stretching : ${log.filter((e) => e.str).length} (sur ${log.length} séances)`,
+      /* Le récap est la seule vue d'ensemble du ressenti tant que l'onglet de
+         suivi n'a pas été repensé. Sans ça, la donnée existerait sans jamais
+         être lisible. */
+      `Ressentis : ${RESSENTIS.map((r) => `${r.label.toLowerCase()} ${log.filter((e) => e.ressenti === r.id).length}`).join(" · ")}`
+        + ` · sans réponse ${log.filter((e) => !e.ressenti).length}`,
       "", "DÉTAIL 35 JOURS",
       ...recent.map((e) => `${shortFr(e.d)} ${DAYS.find((d) => d.key === e.day).short} · ${e.w} · N${e.lvl}`
         + (e.s != null ? ` · score ${e.s}` : "")
+        + (e.ressenti ? ` · ${RESSENTIS.find((r) => r.id === e.ressenti).label.toLowerCase()}` : "")
         + (e.fin ? ` · finisher : ${e.fin}` : "")
         + (e.str ? ` · stretch : ${e.str}` : "")),
     ].join("\n");
@@ -369,7 +393,7 @@ export default function App() {
               {DAYS.map((d) => {
                 const on = d.key === dayKey, done = weekDone[d.key];
                 return (
-                  <button key={d.key} onClick={() => { setDayKey(d.key); setVariant(null); setSeen([]); setSaveState("idle"); setFinisher(null); setStretch(null); setPropose(null); setEndOpen(false); }}
+                  <button key={d.key} onClick={() => { setDayKey(d.key); setVariant(null); setSeen([]); setSaveState("idle"); setFinisher(null); setStretch(null); setPropose(null); setEndOpen(false); setAborted(false); }}
                     style={{ flex:1, padding:"8px 0", position:"relative", fontFamily:MONO, fontSize:11, fontWeight:700,
                       background: on ? C.bone : "transparent", color: on ? C.ink : (done ? C.bone : C.ash),
                       border:`1px solid ${on ? C.bone : C.line}`, borderRadius:2 }}>
@@ -703,6 +727,8 @@ export default function App() {
         const manque = PATTERNS.filter((p) => !weekPatterns.has(p.id));
         const entryToday = log.find((e) => e.d === todayIso);
         const besoinScore = wod.test && !(entryToday && entryToday.s != null);
+        const ressenti = (entryToday && entryToday.ressenti) || null;
+        const stance = finisherStance(ressenti);
 
         return (
           <div style={{ position:"fixed", inset:0, zIndex:45, background:C.ink, overflowY:"auto",
@@ -736,6 +762,41 @@ export default function App() {
                 <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, margin:"-14px 0 24px" }}>
                   Format AMRAP : le total affiché est celui d'un seul tour. Multiplie par tes tours.
                 </p>
+              )}
+
+              {/* Le ressenti. Après les chiffres, il arrive à un moment de recul
+                  naturel. Et il reste loin du chemin du pouce vers les boutons
+                  d'action, pour éviter le tap réflexe sur « juste ». Aucune
+                  réponse présélectionnée, aucune obligation de répondre : une
+                  séance sans réponse est simplement une séance sans signal. */}
+              {askRessenti({ stage: endStage, aborted }) && (
+                <div style={{ marginBottom:28 }}>
+                  <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginBottom:8 }}>
+                    C'ÉTAIT COMMENT ?
+                  </div>
+                  <div style={{ display:"flex", gap:6 }}>
+                    {RESSENTIS.map((r) => {
+                      const on = ressenti === r.id;
+                      return (
+                        <button key={r.id} onClick={() => answerRessenti(r.id)}
+                          style={{ flex:1, padding:"13px 0", borderRadius:2,
+                            background: on ? C.bone : "transparent",
+                            border:`1px solid ${on ? C.bone : C.line}`,
+                            color: on ? C.ink : C.ash,
+                            fontFamily:MONO, fontSize:9.5, fontWeight:700, letterSpacing:".07em" }}>
+                          {r.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {ressenti && (
+                    <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"10px 0 0" }}>
+                      {ressenti === "dur" ? "Noté. Pas de finisher aujourd'hui, on passe aux étirements."
+                        : ressenti === "facile" ? "Noté, tu avais de la marge."
+                        : "Noté."}
+                    </p>
+                  )}
+                </div>
               )}
 
               {/* Schémas */}
@@ -806,16 +867,30 @@ export default function App() {
                       EN TIRER UN AUTRE
                     </button>
                   </div>
+                  {/* Sans cette sortie, tirer une proposition enfermait l'écran :
+                      plus d'étirements, plus de stats, plus de fermeture. Et
+                      répondre « trop facile » devenait un geste risqué. */}
+                  <button onClick={() => setPropose(null)} style={{ width:"100%", padding:"12px 0",
+                    marginTop:6, fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>
+                    {propose.kind === "finisher" ? "SANS FINISHER" : "SANS ÉTIREMENTS"}
+                  </button>
                 </div>
               )}
 
               {/* Actions */}
               {!propose && (
                 <div style={{ borderTop:`1px solid ${C.line}`, paddingTop:20 }}>
-                  {endStage === "workout" && !finisher && (
+                  {/* « Trop dur » retire le finisher au lieu de le proposer plus
+                      doucement : insister auprès de quelqu'un qui vient de dire
+                      que c'était trop dur est le meilleur moyen de le faire
+                      arrêter. Les étirements deviennent alors l'action
+                      principale, il reste quelque chose à faire. */}
+                  {endStage === "workout" && !finisher && stance !== "aucun" && (
                     <>
                       <p style={{ fontSize:13.5, lineHeight:1.5, margin:"0 0 14px" }}>
-                        Encore du jus ? Un finisher de 10 minutes maximum.
+                        {stance === "principal"
+                          ? "Tu avais de la marge. Dix minutes de plus, pas davantage."
+                          : "Encore du jus ? Un finisher de 10 minutes maximum."}
                       </p>
                       <button onClick={drawFinisher} style={{ width:"100%", padding:"16px 0", marginBottom:8,
                         background:C.lime, color:C.ink, fontFamily:DISPLAY, fontSize:18,
@@ -826,8 +901,9 @@ export default function App() {
                   )}
                   {!stretch && (
                     <button onClick={drawStretch} style={{ width:"100%", padding:"15px 0", marginBottom:8,
-                      border:`1px solid ${C.bone}`, color:C.bone, fontFamily:DISPLAY, fontSize:16,
-                      letterSpacing:".04em", borderRadius:2 }}>
+                      background: stance === "aucun" ? C.bone : "transparent",
+                      border:`1px solid ${C.bone}`, color: stance === "aucun" ? C.ink : C.bone,
+                      fontFamily:DISPLAY, fontSize:16, letterSpacing:".04em", borderRadius:2 }}>
                       ÉTIREMENTS · 5 MIN
                     </button>
                   )}

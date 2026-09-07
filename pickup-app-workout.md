@@ -29,6 +29,7 @@ Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 1
 - **Le générateur est conscient de la couverture** : il choisit la variante du jour qui apporte le plus de schémas non encore travaillés dans la semaine. Simulé sur 500 semaines → 10/10 systématiquement.
 - **Fiche et chrono partagent les mêmes données** ; un contrôle automatisé vérifie qu'ils ne divergent pas.
 - **Le finisher se décide à la fin**, jamais avant. Écran de bilan après la séance, puis après le finisher, avec CTA vers les stats.
+- **Le ressenti de fin de séance a un effet immédiat**, jamais seulement statistique : trop facile tire le finisher d'emblée, juste ne change rien, trop dur le retire et met les étirements en avant. Question non bloquante, sans réponse présélectionnée, jamais posée sur une séance arrêtée en route. Les identifiants `facile` / `juste` / `dur` partent en base et se lisent dans les exports déjà sur le disque : ne pas les renommer.
 - **Pull-ups et chin-ups sont deux exercices distincts**, la supination étant un schéma suivi à part (seul travail de biceps disponible).
 - **Local-first obligatoire pour la suite** : écriture locale d'abord, synchro ensuite. Une séance faite sans réseau ne doit jamais être perdue.
 - **Leaderboard uniquement sur des métriques comparables** : un classement par format de test de burpees, et éventuellement les séries de jours. Pas de classement sur le volume de reps (il dépend du niveau) ni sur le nombre de séances.
@@ -47,8 +48,21 @@ Douze étapes. Les deux premières sont faites :
    `app/src/data/patterns.js`. **C'est donc le vrai préalable aux étapes 3 à 6**, à faire
    avant les chaînes de régressions.
 
+Deux chantiers ont été remontés hors de leur rang, parce qu'ils ne dépendaient de rien :
+
+- **Jauge de séance dans le chrono.** Faite le 2026-09-07. Un segment par phase, large comme
+  sa durée ; largeurs égales et aucun remplissage sur un plan dont une phase dépend du
+  pratiquant. Deux réserves visuelles sont consignées en questions ouvertes.
+- **Signal de ressenti de fin de séance** (brief section 7.1, étape 6). Fait le 2026-09-07.
+  `app/src/lib/ressenti.js`, testé. Remonté parce que **chaque semaine sans lui est une
+  semaine de données de calibration perdue** : les règles de montée et de descente de mode
+  (étape 12) demandent quatre semaines de ressentis réels, autant que le compteur tourne.
+
 L'étape suivante à attaquer est donc ce reliquat d'entités, puis l'étape 3 (chaînes de
-régressions et substitution sans barre de traction).
+régressions et substitution sans barre de traction). L'ordre convenu pour la suite du lot
+« 2bis » : entités et typage des unités d'abord, puis la saisie des répétitions avec le cas
+AMRAP, et la logique de recalibrage en dernier — elle ne sera validable qu'avec des semaines
+de données réelles.
 
 Ne pas lancer plusieurs étapes en une fois.
 
@@ -90,7 +104,7 @@ Ordre de lecture recommandé pour reprendre le projet :
 Fichiers du projet :
 
 4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit.
-5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours.
+5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures.
 6. `app/src/App.jsx` et `app/src/components/` — les écrans.
 7. `app/test/` — trois fichiers : cohérence de la bibliothèque, générateur, chrono. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
 8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
