@@ -3,16 +3,31 @@ import { C, DISPLAY, MONO } from "../lib/theme.js";
 import { scaleRep } from "../data/levels.js";
 import { mmss } from "../lib/dates.js";
 import { beep } from "../lib/audio.js";
+import {
+  beatOf, goToPhase, newBeat, pauseRun, phaseDur, position, record, resumeRun, suspendRun, verdict,
+} from "../lib/chrono.js";
 
-export function Timer({ phases, level, onDone }) {
-  const [idx, setIdx] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
-  const [running, setRunning] = useState(true);
-  const startRef = useRef(Date.now());
-  const pausedRef = useRef(0);
+/* Un battement enregistré toutes les 5 s : assez fin pour retrouver sa place
+   après un redémarrage, assez rare pour ne pas marteler le stockage. */
+const SAVE_EVERY = 5000;
+
+export function Timer({ initial, level, onPersist, onDone }) {
+  const [run, setRun] = useState(initial);
+  /* Horloge et dernier battement observé vont ensemble : c'est leur écart qui
+     révèle une app endormie, donc ils changent d'un seul mouvement. */
+  const [pulse, setPulse] = useState(() => ({ now: Date.now(), beat: beatOf(initial) }));
+  const [confirmClose, setConfirmClose] = useState(false);
+  const pulseRef = useRef(pulse);
   const beepRef = useRef(-1);
 
-  const ph = phases[idx];
+  const phases = run.plan;
+  const ph = phases[run.idx];
+  const v = verdict(run, pulse.beat, pulse.now);
+  const elapsed = v.elapsed;
+  const suspended = v.kind === "suspended";
+  const running = v.kind === "running" || v.kind === "complete";
+
+  useEffect(() => { pulseRef.current = pulse; }, [pulse]);
 
   /* Écran allumé pendant la séance */
   useEffect(() => {
@@ -23,7 +38,13 @@ export function Timer({ phases, level, onDone }) {
       } catch {}
     };
     req();
-    const onVis = () => { if (document.visibilityState === "visible") req(); };
+    /* Au retour au premier plan, relire l'horloge tout de suite : le battement
+       peut être mort et c'est là que la suspension doit être détectée. */
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      req();
+      setPulse((p) => ({ ...p, now: Date.now() }));
+    };
     document.addEventListener("visibilitychange", onVis);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
@@ -31,32 +52,61 @@ export function Timer({ phases, level, onDone }) {
     };
   }, []);
 
-  /* Battement : on lit l'horloge plutôt que de compter les ticks,
-     pour rester juste même si le téléphone met l'onglet en veille. */
+  /* Battement : on lit l'horloge plutôt que de compter les ticks, pour rester
+     juste même si le téléphone ralentit l'onglet. Le battement n'avance que
+     tant que la phase tourne pour de bon : c'est lui qui garde la position à
+     laquelle il faudra reprendre. */
   useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setElapsed((Date.now() - startRef.current) / 1000), 100);
+    if (run.paused || run.suspended) return;
+    const id = setInterval(() => setPulse((p) => {
+      const now = Date.now();
+      const cur = verdict(run, p.beat, now);
+      return { now, beat: cur.kind === "running" ? { at: cur.elapsed, seenAt: now } : p.beat };
+    }), 100);
     return () => clearInterval(id);
-  }, [running, idx]);
+  }, [run]);
+
+  /* Écrit la position en cours pour qu'un redémarrage la retrouve. */
+  useEffect(() => {
+    if (run.paused || run.suspended) return;
+    const id = setInterval(() => onPersist(record(run, pulseRef.current.beat)), SAVE_EVERY);
+    return () => clearInterval(id);
+  }, [run]);
+
+  const commit = (next, beat) => {
+    setRun(next);
+    setPulse({ now: Date.now(), beat });
+    onPersist(record(next, beat));
+  };
 
   const goTo = (i) => {
     if (i >= phases.length) { onDone(); return; }
-    setIdx(i); setElapsed(0); beepRef.current = -1;
-    startRef.current = Date.now(); pausedRef.current = 0;
-    setRunning(true);
+    const t = Date.now();
+    beepRef.current = -1;
+    commit(goToPhase(run, i, t), newBeat(t));
   };
 
   const toggle = () => {
-    if (running) { pausedRef.current = elapsed; setRunning(false); }
-    else { startRef.current = Date.now() - pausedRef.current * 1000; setRunning(true); }
+    const t = Date.now();
+    beepRef.current = -1;
+    if (run.paused || run.suspended) {
+      const next = resumeRun(run, t);
+      commit(next, { at: next.at, seenAt: t });
+    } else {
+      commit(pauseRun(run, t), pulse.beat);
+    }
   };
 
-  /* Durée d'une phase, ou null si elle dépend de toi (chrono qui monte) */
-  const phaseDur = (p) =>
-    p.t === "cycle" ? p.sec * p.stations.length * (p.loops || 1)
-    : p.t === "tabata" ? (p.work + p.rest) * p.rounds
-    : p.t === "up" ? null
-    : p.sec;
+  /* Une phase dépassée n'est validée que si le temps s'est écoulé pour de vrai.
+     Sinon l'app a dormi : on gèle, on ne valide rien, on demande. */
+  useEffect(() => {
+    if (v.kind === "complete") { beep(1320, 260); goTo(run.idx + 1); }
+    else if (v.kind === "suspended" && !run.suspended) {
+      const next = suspendRun(run, v.elapsed);
+      setRun(next);
+      onPersist(record(next, pulse.beat));
+    }
+  }, [v.kind]);
 
   const durs = phases.map(phaseDur);
   const determine = durs.every((d) => d !== null);
@@ -64,17 +114,15 @@ export function Timer({ phases, level, onDone }) {
 
   /* État courant de la phase */
   let big = "", label = ph.label, sub = ph.sub || "", progress = "", station = null, next = null;
-  let isRest = ph.t === "rest", isWork = true, remaining = null, done = false;
+  let isRest = ph.t === "rest", isWork = true, remaining = null;
   let segTotal = 0, segCur = 0, segLabel = "";
 
   if (ph.t === "cycle") {
     const total = ph.stations.length * (ph.loops || 1);
-    const i = Math.floor(elapsed / ph.sec);
-    if (i >= total) done = true;
-    const k = Math.min(i, total - 1);
+    const k = Math.min(Math.floor(elapsed / ph.sec), total - 1);
     remaining = ph.sec - (elapsed % ph.sec);
     big = mmss(remaining);
-    progress = `MIN ${Math.min(i + 1, total)} / ${total}`;
+    progress = `MIN ${k + 1} / ${total}`;
     station = ph.stations[k % ph.stations.length];
     next = k + 1 < total ? ph.stations[(k + 1) % ph.stations.length] : null;
     /* Un bloc = un cycle complet de stations, sauf indication contraire */
@@ -86,31 +134,28 @@ export function Timer({ phases, level, onDone }) {
     if (nbBlocs > 1) segLabel = `BLOC ${Math.floor(k / bloc) + 1} / ${nbBlocs}`;
   } else if (ph.t === "tabata") {
     const cyc = ph.work + ph.rest;
-    const i = Math.floor(elapsed / cyc);
-    if (i >= ph.rounds) done = true;
+    const i = Math.min(Math.floor(elapsed / cyc), ph.rounds - 1);
     const inCycle = elapsed % cyc;
     isWork = inCycle < ph.work;
     isRest = !isWork;
     remaining = isWork ? ph.work - inCycle : cyc - inCycle;
     big = mmss(remaining);
-    progress = `ROUND ${Math.min(i + 1, ph.rounds)} / ${ph.rounds}`;
+    progress = `ROUND ${i + 1} / ${ph.rounds}`;
     label = isWork ? ph.label : "Repos";
     segTotal = ph.rounds;
-    segCur = Math.min(i, ph.rounds - 1);
+    segCur = i;
   } else if (ph.t === "down" || ph.t === "rest") {
     remaining = ph.sec - elapsed;
-    if (remaining <= 0) done = true;
     big = mmss(remaining);
     progress = `SUR ${mmss(ph.sec)}`;
   } else if (ph.t === "up") {
     big = mmss(elapsed);
     remaining = ph.cap - elapsed;
-    if (remaining <= 0) done = true;
     progress = `PLAFOND ${mmss(ph.cap)}`;
   }
 
-  const faits = determine ? durs.slice(0, idx).reduce((a, b) => a + b, 0) : 0;
-  const pct = determine ? Math.min(100, Math.round(((faits + Math.min(elapsed, durs[idx])) / totalSec) * 100)) : null;
+  const faits = determine ? durs.slice(0, run.idx).reduce((a, b) => a + b, 0) : 0;
+  const pct = determine ? Math.min(100, Math.round(((faits + Math.min(elapsed, durs[run.idx])) / totalSec) * 100)) : null;
 
   /* Bips : trois avant la bascule, un long à la bascule */
   useEffect(() => {
@@ -119,11 +164,9 @@ export function Timer({ phases, level, onDone }) {
     if (s <= 3 && s >= 1 && beepRef.current !== s) { beepRef.current = s; beep(880, 90); }
   }, [elapsed, running, remaining]);
 
-  useEffect(() => {
-    if (done) { beep(1320, 260); goTo(idx + 1); }
-  }, [done]);
-
   const accent = isRest ? C.ember : C.lime;
+  const pos = position(run, elapsed);
+  const last = run.idx + 1 >= phases.length;
 
   return (
     <div style={{ position:"fixed", inset:0, zIndex:50, background:C.ink, display:"flex",
@@ -131,8 +174,8 @@ export function Timer({ phases, level, onDone }) {
 
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
         fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash }}>
-        <span>PHASE {idx + 1} / {phases.length}{pct !== null ? ` · ${pct} %` : ""}</span>
-        <button onClick={onDone} style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash }}>FERMER ✕</button>
+        <span>PHASE {run.idx + 1} / {phases.length}{pct !== null ? ` · ${pct} %` : ""}</span>
+        <button onClick={() => setConfirmClose(true)} style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash }}>FERMER ✕</button>
       </div>
 
       {pct !== null && (
@@ -217,11 +260,64 @@ export function Timer({ phases, level, onDone }) {
           fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 }}>
           {running ? "PAUSE" : "REPRENDRE"}
         </button>
-        <button onClick={() => goTo(idx + 1)} style={{ flex:1, padding:"18px 0", border:`1px solid ${C.line}`,
+        <button onClick={() => goTo(run.idx + 1)} style={{ flex:1, padding:"18px 0", border:`1px solid ${C.line}`,
           color:C.bone, fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 }}>
-          {idx + 1 >= phases.length ? "TERMINER" : "PASSER"}
+          {last ? "TERMINER" : "PASSER"}
         </button>
       </div>
+
+      {/* L'app a dormi : rien n'est validé, c'est toi qui décides. */}
+      {suspended && !confirmClose && (
+        <div style={{ position:"absolute", inset:0, background:"rgba(11,11,12,.96)", display:"flex",
+          flexDirection:"column", justifyContent:"center",
+          padding:"max(28px, env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom))" }}>
+          <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".16em", color:C.ember, marginBottom:10 }}>
+            CHRONO INTERROMPU
+          </div>
+          <div style={{ fontFamily:DISPLAY, fontSize:38, lineHeight:.95, marginBottom:12 }}>
+            {!pos ? "TU ÉTAIS EN PLEINE SÉANCE"
+              : pos.warm ? "TU ÉTAIS DANS L'ÉCHAUFFEMENT"
+              : `TU ÉTAIS À LA MINUTE ${pos.minute} SUR ${pos.total}`}
+          </div>
+          <p style={{ fontSize:13.5, color:C.ash, lineHeight:1.55, margin:"0 0 26px" }}>
+            L'écran s'est verrouillé ou l'app est passée en arrière-plan. Rien n'a été validé :
+            {ph.label ? ` ${ph.label.toLowerCase()}` : " la phase en cours"} t'attend à {mmss(elapsed)}.
+          </p>
+          <button onClick={toggle} style={{ width:"100%", padding:"18px 0", marginBottom:8, background:C.lime,
+            color:C.ink, fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
+            REPRENDRE ICI
+          </button>
+          <button onClick={() => goTo(run.idx + 1)} style={{ width:"100%", padding:"16px 0",
+            border:`1px solid ${C.line}`, color:C.bone, fontFamily:DISPLAY, fontSize:16,
+            letterSpacing:".04em", borderRadius:2 }}>
+            {last ? "TERMINER LA SÉANCE" : "PASSER À LA PHASE SUIVANTE"}
+          </button>
+        </div>
+      )}
+
+      {confirmClose && (
+        <div style={{ position:"absolute", inset:0, background:"rgba(11,11,12,.96)", display:"flex",
+          flexDirection:"column", justifyContent:"center",
+          padding:"max(28px, env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom))" }}>
+          <div style={{ fontFamily:DISPLAY, fontSize:34, lineHeight:.95, marginBottom:12 }}>
+            ARRÊTER LE CHRONO ?
+          </div>
+          <p style={{ fontSize:13.5, color:C.ash, lineHeight:1.55, margin:"0 0 26px" }}>
+            {!pos ? "" : pos.warm ? "Tu es encore dans l'échauffement. "
+              : `Tu es à la minute ${pos.minute} sur ${pos.total}. `}
+            Le chrono s'arrête et l'écran de bilan s'ouvre.
+          </p>
+          <button onClick={() => setConfirmClose(false)} style={{ width:"100%", padding:"18px 0", marginBottom:8,
+            background:C.lime, color:C.ink, fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
+            CONTINUER LA SÉANCE
+          </button>
+          <button onClick={() => onDone()} style={{ width:"100%", padding:"16px 0",
+            border:`1px solid ${C.ember}`, color:C.ember, fontFamily:DISPLAY, fontSize:16,
+            letterSpacing:".04em", borderRadius:2 }}>
+            ARRÊTER
+          </button>
+        </div>
+      )}
     </div>
   );
 }

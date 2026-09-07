@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { C, DISPLAY, MONO } from "./lib/theme.js";
-import { store, K_LOG, K_SET, K_BAK } from "./lib/store.js";
+import { store, readJson, K_LOG, K_SET, K_BAK, K_RUN } from "./lib/store.js";
+import { newBeat, newRun, position, record, resumableKind } from "./lib/chrono.js";
 import { iso, fromIso, mondayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
 import { beep } from "./lib/audio.js";
 import { volumeOf, streakOf } from "./lib/volume.js";
@@ -35,8 +36,8 @@ export default function App() {
   const [stretch, setStretch] = useState(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [warmup, setWarmup] = useState(true);
-  const [phases, setPhases] = useState(null);
-  const [segment, setSegment] = useState(null);
+  const [run, setRun] = useState(null);
+  const [pending, setPending] = useState(null);
   const [endOpen, setEndOpen] = useState(false);
   const [endStage, setEndStage] = useState("workout");
   const [propose, setPropose] = useState(null);
@@ -52,6 +53,12 @@ export default function App() {
     try { const v = store.get(K_LOG); if (v) setLog(JSON.parse(v)); } catch {}
     try { const v = store.get(K_SET); if (v) { const s = JSON.parse(v); if (s.level) setLevel(s.level); } } catch {}
     setLastBackup(store.get(K_BAK));
+    /* Une séance interrompue se retrouve au démarrage. Trop vieille, elle n'est
+       plus reprenable mais reste enregistrable. */
+    const rec = readJson(K_RUN);
+    const kind = resumableKind(rec);
+    if (kind) setPending({ kind, rec });
+    else if (rec) store.del(K_RUN);
   }, []);
 
   const saveLog = (next) => { setLog(next); return store.set(K_LOG, JSON.stringify(next)); };
@@ -131,26 +138,44 @@ export default function App() {
     setPropose({ ...STRETCHES[(i + 1) % STRETCHES.length], kind: "stretch" });
   };
 
+  const persistRun = (rec) => store.set(K_RUN, JSON.stringify(rec));
+
+  /* Un segment de chrono s'ouvre comme un enregistrement persisté : verrouiller
+     l'écran ou tuer l'app ne fait plus perdre la séance. */
+  const launch = (plan, segment, extra) => {
+    const r = newRun({
+      plan, segment, d: todayIso, day: dayKey, w: wod.name, lvl: level, stage: endStage,
+      fin: finisher ? finisher.name : null, str: stretch ? stretch.name : null,
+      ...extra,
+    });
+    persistRun(record(r, newBeat(r.startedAt)));
+    setRun(r);
+    beep(660, 120);
+  };
+
   /* Le plan ne contient que l'échauffement et la séance.
      Le finisher et les étirements se décident à la fin, sur l'écran de bilan. */
   const startTimer = () => {
     const p = [];
-    if (warmup) p.push({ t:"down", sec:300, label:"Échauffement", sub:"À ton rythme", list:[
+    if (warmup) p.push({ t:"down", sec:300, warm:true, label:"Échauffement", sub:"À ton rythme", list:[
       f("Squats latéraux"), f("Élévations latérales de jambe"), f("Isométries kiné"),
       f("30 s de deep squat", "Talons au sol, coudes contre l'intérieur des genoux, tu pousses vers l'extérieur"),
     ] });
     const w = TIMERS[wod.name];
     if (w) p.push(...w); else p.push({ t:"up", cap:1500, label:wod.name, sub:"Chrono libre" });
-    beep(660, 120);
-    setSegment("workout");
-    setPhases(p);
+    launch(p, "workout");
     setSetupOpen(false);
+  };
+
+  const writeEntry = (entry) => {
+    const ok = saveLog([...log.filter((e) => e.d !== entry.d), entry]);
+    setSaveState(ok ? "done" : "error");
   };
 
   const logSession = (opts) => {
     const o = opts || {};
     const avant = log.find((e) => e.d === todayIso);
-    const entry = {
+    writeEntry({
       d: todayIso, day: dayKey, w: wod.name, lvl: level,
       fin: ("fin" in o ? o.fin : finisher ? finisher.name : (avant && avant.fin) || null),
       str: ("str" in o ? o.str : stretch ? stretch.name : (avant && avant.str) || null),
@@ -158,18 +183,17 @@ export default function App() {
         : scoreInput !== "" ? Number(scoreInput)
         : avant && avant.s != null ? avant.s
         : null,
-    };
-    const ok = saveLog([...log.filter((e) => e.d !== todayIso), entry]);
-    setSaveState(ok ? "done" : "error");
+    });
   };
 
   /* Fin d'un segment de chrono */
   const segmentDone = () => {
-    setPhases(null);
-    if (segment === "finisher") { setEndStage("finisher"); logSession({}); }
-    else if (segment === "stretch") { setEndStage(endStage === "workout" ? "workout" : "finisher"); logSession({}); }
+    const seg = run.segment;
+    store.del(K_RUN);
+    setRun(null);
+    if (seg === "finisher") { setEndStage("finisher"); logSession({}); }
+    else if (seg === "stretch") { setEndStage(endStage === "workout" ? "workout" : "finisher"); logSession({}); }
     else { setEndStage("workout"); if (!wod.test) logSession({ s: null }); }
-    setSegment(null);
     setPropose(null);
     setEndOpen(true);
   };
@@ -177,19 +201,49 @@ export default function App() {
   const lancerFinisher = () => {
     const fz = TIMERS[propose.name] || [{ t:"up", cap:600, label:propose.name, sub:"Chrono libre" }];
     setFinisher(propose);
-    setSegment("finisher");
-    setPhases([{ t:"rest", sec:90, label:"Transition", sub:"Tu souffles avant le finisher" }, ...fz]);
+    launch([{ t:"rest", sec:90, label:"Transition", sub:"Tu souffles avant le finisher" }, ...fz],
+      "finisher", { fin: propose.name });
     setEndOpen(false);
-    beep(660, 120);
   };
 
   const lancerStretch = () => {
     setStretch(propose);
-    setSegment("stretch");
-    setPhases([{ t:"down", sec:300, label:"Étirements", sub:propose.name,
-      list: propose.blocks.map((b) => f(`${b.items[0].txt} — ${b.tag.toLowerCase()}`)) }]);
+    launch([{ t:"down", sec:300, label:"Étirements", sub:propose.name,
+      list: propose.blocks.map((b) => f(`${b.items[0].txt} — ${b.tag.toLowerCase()}`)) }],
+      "stretch", { str: propose.name });
     setEndOpen(false);
-    beep(660, 120);
+  };
+
+  /* ---- séance interrompue retrouvée au démarrage ---- */
+  const dropPending = () => { store.del(K_RUN); setPending(null); };
+
+  const resumePending = () => {
+    const rec = pending.rec;
+    const i = (WORKOUTS[rec.day] || []).findIndex((w) => w.name === rec.w);
+    if (i < 0) { dropPending(); return; }
+    setTab("seance");
+    setDayKey(rec.day);
+    setVariant(i);
+    setSeen([i]);
+    if (rec.lvl) setLevel(rec.lvl);
+    setEndStage(rec.stage || "workout");
+    setFinisher(rec.fin ? { name: rec.fin } : null);
+    setStretch(rec.str ? { name: rec.str } : null);
+    setEndOpen(false);
+    setSaveState("idle");
+    /* On rouvre en pause, à la position retrouvée : le chrono ne repart pas
+       tout seul au fond d'une poche. */
+    setRun({ ...rec, paused: true, suspended: false });
+    setPending(null);
+  };
+
+  const savePending = () => {
+    const rec = pending.rec;
+    writeEntry({
+      d: rec.d, day: rec.day, w: rec.w, lvl: rec.lvl || 1,
+      fin: rec.fin || null, str: rec.str || null, s: null,
+    });
+    dropPending();
   };
 
   const finish = () => {
@@ -269,6 +323,38 @@ export default function App() {
         <div style={{ display:"flex", gap:6, marginBottom:28 }}>
           <Tab id="seance" label="SÉANCE" /><Tab id="suivi" label="SUIVI" />
         </div>
+
+        {pending && !run && (() => {
+          const rec = pending.rec;
+          const pos = position(rec, rec.at || 0);
+          const reprise = pending.kind === "resume";
+          return (
+            <div style={{ padding:16, marginBottom:24, border:`1px solid ${C.lime}`, borderRadius:3 }}>
+              <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.lime, marginBottom:8 }}>
+                {reprise ? "SÉANCE EN COURS" : "SÉANCE NON TERMINÉE"}
+              </div>
+              <div style={{ fontFamily:DISPLAY, fontSize:26, lineHeight:1 }}>{rec.w}</div>
+              <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"8px 0 14px" }}>
+                {reprise
+                  ? `${!pos ? "Le chrono était lancé." : pos.warm ? "Tu étais dans l'échauffement."
+                      : `Tu étais à la minute ${pos.minute} sur ${pos.total}.`} Elle reprendra en pause, là où tu l'as laissée.`
+                  : `Laissée en cours le ${shortFr(rec.d)}. Trop ancienne pour être reprise : tu peux l'enregistrer telle quelle ou l'abandonner.`}
+              </p>
+              <div style={{ display:"flex", gap:8 }}>
+                <button onClick={reprise ? resumePending : savePending}
+                  style={{ flex:1, padding:"13px 0", background:C.lime, color:C.ink,
+                    fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".1em", borderRadius:2 }}>
+                  {reprise ? "REPRENDRE" : "ENREGISTRER"}
+                </button>
+                <button onClick={dropPending}
+                  style={{ flex:1, padding:"13px 0", border:`1px solid ${C.line}`, color:C.ash,
+                    fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".1em", borderRadius:2 }}>
+                  ABANDONNER
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {backupStale && tab === "suivi" && (
           <div style={{ padding:12, marginBottom:20, border:`1px solid ${C.ember}`, borderRadius:2,
@@ -603,7 +689,10 @@ export default function App() {
         </div>
       )}
 
-      {phases && <Timer phases={phases} level={level} onDone={segmentDone} />}
+      {run && (
+        <Timer key={`${run.segment}-${run.startedAt}`} initial={run} level={level}
+          onPersist={persistRun} onDone={segmentDone} />
+      )}
 
       {/* ---- Écran de fin ---- */}
       {endOpen && wod && (() => {
