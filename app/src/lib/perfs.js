@@ -75,6 +75,31 @@ export function valeurDe(champ, perfs) {
   return v === undefined || v === null ? champ.prescrit : v;
 }
 
+/* Ce qu'il faut écrire quand on quitte la saisie sans valider. Sortir ne doit
+   rien perdre — un chiffre tapé est une donnée, et « local d'abord, jamais
+   perdue » ne fait pas d'exception pour la porte de sortie.
+
+   Mais seuls les champs **modifiés** partent. Les champs `ex` sont préremplis
+   avec le prescrit : les écrire tous aurait fabriqué une mesure que personne
+   n'a faite, et un total prescrit enregistré comme réel est pire qu'un total
+   absent. D'où la comparaison avec l'état initial plutôt qu'avec le vide.
+
+   Rend `null` quand rien n'a bougé : il n'y a alors rien à écrire. */
+export function correctionsDe(champs, saisie, initial, perfsAvant) {
+  const modifies = champs.filter((c) => saisie[c.k] !== initial[c.k]);
+  if (!modifies.length) return null;
+  const perfs = { ...perfsAvant };
+  const o = {};
+  modifies.forEach((c) => {
+    const v = saisie[c.k] === "" ? null : Number(saisie[c.k]);
+    if (c.kind === "score") o.s = v;
+    else if (v === null) delete perfs[c.k];
+    else perfs[c.k] = v;
+  });
+  o.perfs = perfs;
+  return o;
+}
+
 /* Le volume réellement fait, quand la séance a été relue. `volumeOf` dit ce qui
    était prescrit, ce qui reste la bonne réponse avant la relecture — et la seule
    possible sur un format à tours ouverts dont on ignore le nombre de tours.

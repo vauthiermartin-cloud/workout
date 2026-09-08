@@ -156,6 +156,24 @@ Le lot est clos, et l'étape 3 a suivi.
     arrêtée en route. Réaffichable, il aurait reposé la question du ressenti sur une séance
     incomplète — ce que la règle interdit. Le champ part en base : ne pas le renommer.
 
+- **Deux façons de perdre un chiffre déjà saisi, fermées le 2026-09-08.** Les deux étaient de
+  la même famille que le bilan ratable : une donnée existante rendue inaccessible ou effacée
+  par un geste dont la conséquence n'était pas devinable.
+  - **`RETOUR AU BILAN` jetait en silence tout ce qui venait d'être tapé.** Le score du
+    vendredi passait par là. La sortie enregistre maintenant les champs modifiés
+    (`correctionsDe` dans `app/src/lib/perfs.js`, pur et testé) **sans marquer la ligne
+    relue** : seul « C'EST BON » la marque relue. Ne partent que les champs **réellement
+    modifiés** — les champs `ex` arrivent préremplis avec le prescrit, et les écrire tous
+    aurait fait passer une consigne pour une mesure. Vider un champ déjà relu l'oublie au lieu
+    d'y écrire zéro.
+  - **`savePending` écrasait la ligne du jour au lieu de la compléter.** Enregistrer une séance
+    interrompue retrouvée au démarrage réécrivait une ligne neuve, donc `s: null` et sans
+    `perfs`, `ressenti` ni `valide` : un chrono de finisher resté ouvert effaçait le score du
+    test saisi juste avant. La ligne existante est maintenant reprise, les valeurs par défaut
+    ne servant qu'à une date encore vide. Le champ `arrete` est écrit **après** cette reprise
+    et non comme valeur par défaut, sans quoi les lignes antérieures au champ — qui n'en
+    portent pas la clé — auraient été prises pour des séances arrêtées.
+
 **Une décision prise le 2026-09-08 et pas encore codée : la seconde question de densité.** Le
 ressenti actuel ne distingue pas la charge du rythme, et « trop dur » sur une séance seulement
 trop serrée déclencherait une descente de mode — donc moins de répétitions, alors que le
@@ -233,7 +251,7 @@ Fichiers du projet :
 4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
 5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures.
 6. `app/src/App.jsx` et `app/src/components/` — les écrans.
-7. `app/test/` — sept fichiers, 89 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
+7. `app/test/` — sept fichiers, 95 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
 8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
 9. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 10. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.

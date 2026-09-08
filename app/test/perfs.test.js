@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { perfsOf, valeurDe, volumeReel } from "../src/lib/perfs.js";
+import { correctionsDe, perfsOf, valeurDe, volumeReel } from "../src/lib/perfs.js";
 import { WORKOUTS } from "../src/data/workouts.js";
 import { TIMERS } from "../src/data/timers.js";
 import { EXERCISES } from "../src/data/exercises.js";
@@ -125,5 +125,65 @@ describe("volumeReel — le total de ce qui a été fait", () => {
     /* Un temps sur 50 burpees ne s'additionne pas à des répétitions : le total
        est complet sans lui, puisque les burpees sont déjà comptés. */
     expect(volumeReel("50 burpees for time", 1, {}, null)).toEqual({ total:179, complet:true });
+  });
+});
+
+/* L'état initial du champ, tel que l'écran le préremplit. */
+const prefill = (champs, entry) => {
+  const o = {};
+  champs.forEach((c) => {
+    const v = c.kind === "score" ? entry && entry.s : valeurDe(c, entry && entry.perfs);
+    o[c.k] = v === null || v === undefined ? "" : String(v);
+  });
+  return o;
+};
+
+describe("correctionsDe — ce que garde une sortie sans validation", () => {
+  it("ne rend rien quand aucun champ n'a bougé", () => {
+    const champs = perfsOf("EMOM 25", 1);
+    const initial = prefill(champs, null);
+    expect(correctionsDe(champs, initial, initial, null)).toBe(null);
+  });
+
+  it("n'écrit que le champ corrigé, jamais les préremplis", () => {
+    /* Le cœur du sujet : les champs `ex` arrivent remplis avec le prescrit.
+       Les écrire tous ferait passer une consigne pour une mesure. */
+    const champs = perfsOf("EMOM 25", 1);
+    const initial = prefill(champs, null);
+    const o = correctionsDe(champs, { ...initial, "s:burpees": "30" }, initial, null);
+    expect(o.perfs).toEqual({ "s:burpees": 30 });
+    expect(o).not.toHaveProperty("s");
+  });
+
+  it("range le score du vendredi dans `s`, pas dans les perfs", () => {
+    const champs = perfsOf("Test 4 min + finisher", 1);
+    const initial = prefill(champs, null);
+    const o = correctionsDe(champs, { ...initial, score: "45" }, initial, null);
+    expect(o.s).toBe(45);
+    expect(o.perfs).toEqual({});
+  });
+
+  it("garde les corrections déjà enregistrées", () => {
+    const champs = perfsOf("EMOM 25", 1);
+    const avant = { "s:pompes": 42 };
+    const initial = prefill(champs, { perfs: avant });
+    const o = correctionsDe(champs, { ...initial, "s:burpees": "30" }, initial, avant);
+    expect(o.perfs).toEqual({ "s:pompes": 42, "s:burpees": 30 });
+  });
+
+  it("vider un champ relu l'oublie au lieu d'y écrire zéro", () => {
+    const champs = perfsOf("EMOM 25", 1);
+    const avant = { "s:pompes": 42 };
+    const initial = prefill(champs, { perfs: avant });
+    const o = correctionsDe(champs, { ...initial, "s:pompes": "" }, initial, avant);
+    expect(o.perfs).toEqual({});
+  });
+
+  it("retient un tour saisi sur un format ouvert", () => {
+    const champs = perfsOf("AMRAP 20", 1);
+    const initial = prefill(champs, null);
+    expect(initial["tours:0"]).toBe("");
+    const o = correctionsDe(champs, { ...initial, "tours:0": "4" }, initial, null);
+    expect(o.perfs).toEqual({ "tours:0": 4 });
   });
 });

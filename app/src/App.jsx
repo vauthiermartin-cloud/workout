@@ -284,6 +284,13 @@ export default function App() {
     setPerfsOpen(false);
   };
 
+  /* Quitter la saisie garde les chiffres tapés, sans dire que la ligne a été
+     relue. `null` quand rien n'a bougé : il n'y a alors rien à écrire. */
+  const quitterPerfs = (o) => {
+    if (o) logSession(o);
+    setPerfsOpen(false);
+  };
+
   const lancerStretch = () => {
     setStretch(propose);
     launch([{ t:"down", sec:300, label:"Étirements", sub:propose.name,
@@ -315,11 +322,24 @@ export default function App() {
     setPending(null);
   };
 
+  /* Enregistrer une séance retrouvée n'écrase pas ce qui existe déjà à sa date.
+     Une ligne neuve remettait le score, les perfs, le ressenti et la relecture à
+     zéro : le vendredi, un chrono de finisher resté ouvert effaçait le score du
+     test saisi juste avant. Les valeurs par défaut ne servent donc qu'à une date
+     encore vide. */
   const savePending = () => {
     const rec = pending.rec;
+    const avant = log.find((e) => e.d === rec.d);
     writeEntry({
-      d: rec.d, day: rec.day, w: rec.w, lvl: rec.lvl || 1,
-      fin: rec.fin || null, str: rec.str || null, s: null,
+      s: null, ressenti: null, perfs: null, valide: false,
+      ...avant,
+      d: rec.d, day: rec.day, w: rec.w, lvl: rec.lvl || (avant && avant.lvl) || 1,
+      fin: rec.fin || (avant && avant.fin) || null,
+      str: rec.str || (avant && avant.str) || null,
+      /* Écrit après la reprise des champs, et pas comme valeur par défaut : les
+         lignes antérieures à ce champ n'en portent pas la clé, et le défaut
+         aurait fait passer une séance terminée pour une séance arrêtée. */
+      arrete: avant ? !!avant.arrete : true,
     });
     dropPending();
   };
@@ -1069,7 +1089,7 @@ export default function App() {
           {perfsOpen && (
             <Perfs name={wod.name} level={level} entry={entryToday}
               accent={wod.test ? C.ember : C.lime}
-              onValider={validerPerfs} onRetour={() => setPerfsOpen(false)} />
+              onValider={validerPerfs} onRetour={quitterPerfs} />
           )}
           </>
         );

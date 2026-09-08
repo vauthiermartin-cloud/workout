@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { C, DISPLAY, MONO } from "../lib/theme.js";
 import { labelOf } from "../data/exercises.js";
-import { perfsOf, valeurDe } from "../lib/perfs.js";
+import { correctionsDe, perfsOf, valeurDe } from "../lib/perfs.js";
 
 const uniteCourte = (u) => (u === "secondes" ? "s" : u === "tours" ? "tours" : "reps");
 
@@ -41,14 +41,15 @@ function Ligne({ champ, accent, valeur, onChange }) {
   );
 }
 
-/* Le passage obligé par les perfs, une fois la séance validée.
+/* « Mes chiffres du jour » : l'écran de saisie, atteint depuis le bilan.
 
-   La ligne de séance existe déjà : cet écran la corrige. Sortir sans valider ne
-   perd donc que les corrections, et c'est pour ça qu'une sortie existe — un
-   écran de fin sans issue avait déjà été un piège une fois. */
+   La ligne de séance existe déjà, cet écran la corrige. Une sortie existe donc
+   — un écran de fin sans issue avait déjà été un piège une fois — mais elle ne
+   perd rien : elle enregistre les champs modifiés sans marquer la ligne relue.
+   Seul « c'est bon » la marque relue, et fixe tous les champs. */
 export function Perfs({ name, level, entry, accent, onValider, onRetour }) {
   const champs = perfsOf(name, level);
-  const [saisie, setSaisie] = useState(() => {
+  const [initial] = useState(() => {
     const o = {};
     champs.forEach((c) => {
       const v = c.kind === "score" ? entry && entry.s : valeurDe(c, entry && entry.perfs);
@@ -56,6 +57,7 @@ export function Perfs({ name, level, entry, accent, onValider, onRetour }) {
     });
     return o;
   });
+  const [saisie, setSaisie] = useState(initial);
 
   const set = (k, v) => setSaisie((s) => ({ ...s, [k]: v.replace(/[^0-9]/g, "") }));
 
@@ -71,6 +73,13 @@ export function Perfs({ name, level, entry, accent, onValider, onRetour }) {
     if (champs.some((c) => c.kind === "score")) o.s = score;
     onValider(o);
   };
+
+  /* Sortir sans valider n'est pas tout jeter, mais ce n'est pas tout garder
+     non plus : `correctionsDe` tranche. La ligne n'est pas marquée relue pour
+     autant — c'est « c'est bon » qui le dit, et la fiche continue de proposer
+     d'y revenir. */
+  const retour = () =>
+    onRetour(correctionsDe(champs, saisie, initial, entry && entry.perfs));
 
   return (
     <div style={{ position:"fixed", inset:0, zIndex:47, background:C.ink, overflowY:"auto",
@@ -99,7 +108,7 @@ export function Perfs({ name, level, entry, accent, onValider, onRetour }) {
           color:C.ink, fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
           C'EST BON
         </button>
-        <button onClick={onRetour} style={{ width:"100%", padding:"14px 0", marginTop:6,
+        <button onClick={retour} style={{ width:"100%", padding:"14px 0", marginTop:6,
           fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>
           RETOUR AU BILAN
         </button>
