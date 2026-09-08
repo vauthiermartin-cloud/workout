@@ -78,7 +78,7 @@ export function Perfs({ name, level, entry, accent, onValider, onRetour }) {
       <div style={{ maxWidth:460, margin:"0 auto" }}>
 
         <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".16em", color:accent, marginBottom:10 }}>
-          TES PERFS
+          MES CHIFFRES DU JOUR
         </div>
         <div style={{ fontFamily:DISPLAY, fontSize:40, lineHeight:.95, marginBottom:8 }}>
           CE QUE TU AS FAIT
@@ -97,7 +97,7 @@ export function Perfs({ name, level, entry, accent, onValider, onRetour }) {
 
         <button onClick={valider} style={{ width:"100%", padding:"16px 0", background:accent,
           color:C.ink, fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
-          ENREGISTRER
+          C'EST BON
         </button>
         <button onClick={onRetour} style={{ width:"100%", padding:"14px 0", marginTop:6,
           fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>

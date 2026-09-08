@@ -127,9 +127,42 @@ Le lot est clos, et l'étape 3 a suivi.
   - Les perfs couvrent **la séance seule**, pas le finisher, qui est du travail en plus.
   - **Valider ramène au bilan**, pas aux stats. Enchaîner sur les stats fermait l'écran de fin
     et emportait l'offre de finisher avec lui.
-  - Un défaut réel trouvé en vérifiant : `segmentDone` **n'écrivait pas la séance du vendredi**
-    à la fin du chrono, elle attendait le score. Une séance quittée avant la saisie était
-    perdue. Corrigé, c'était une violation directe de « local d'abord ».
+
+- **Le bilan de séance est devenu difficile à rater.** Corrigé le 2026-09-08, après un
+  usage réel où « VOIR MES STATS » a été tapé à la place du bouton de validation : l'écran de
+  fin s'est fermé, et rien ne permettait de le rouvrir. Le diagnostic tient en une phrase —
+  **les stats cumulées et le bilan du jour étaient en concurrence alors qu'ils sont en
+  séquence**. Le bilan est le moment le plus important du parcours, il ne peut pas être une
+  option parmi d'autres. Quatre corrections, et une conséquence non prévue :
+  - **« VOIR MES STATS » a disparu de l'écran de fin.** L'onglet SUIVI reste à un tap une fois
+    le bilan refermé ; il n'a pas à être atteignable *depuis* le bilan.
+  - **Le libellé annonce le contenu** : « VALIDER LA SÉANCE » est devenu
+    **« MES CHIFFRES DU JOUR »**, et « ENREGISTRER » sur l'écran de perfs est devenu
+    « C'EST BON ». « Valider » et « enregistrer » sonnaient administratif et ne laissaient pas
+    deviner qu'on allait voir ses chiffres et pouvoir les corriger. **L'écran de perfs
+    s'appelle désormais « mes chiffres du jour », l'écran de fin reste « le bilan »** : deux
+    noms distincts, à ne pas remélanger.
+  - **Fermer sans être passé par ses chiffres demande une confirmation.** Une sortie subsiste
+    quand même (`FERMER QUAND MÊME`) : un écran de fin sans issue a déjà été un piège une
+    fois, on ne le referme pas.
+  - **Le bilan se réaffiche depuis la fiche du jour**, tant que la séance du jour est
+    enregistrée. La porte s'appuie sur la ligne stockée et non sur l'état de l'écran, donc
+    elle survit à un redémarrage de l'app — et **la séance du jour est restaurée sur sa fiche
+    au démarrage**, sans quoi la fiche repartait vide et en tirer une autre pouvait donner une
+    variante différente. Le mode, lui, n'est pas restauré : c'est un réglage de l'app, pas une
+    propriété de la séance.
+  - **Conséquence non prévue : la ligne a gagné un champ `arrete`.** Tant que le bilan ne
+    s'affichait qu'une fois, l'état de l'écran suffisait à savoir que la séance avait été
+    arrêtée en route. Réaffichable, il aurait reposé la question du ressenti sur une séance
+    incomplète — ce que la règle interdit. Le champ part en base : ne pas le renommer.
+
+**Une décision prise le 2026-09-08 et pas encore codée : la seconde question de densité.** Le
+ressenti actuel ne distingue pas la charge du rythme, et « trop dur » sur une séance seulement
+trop serrée déclencherait une descente de mode — donc moins de répétitions, alors que le
+volume était bon. La décision est écrite dans `brief-v2-multi-user.md` section 7.1b : sur les
+formats à contrainte de temps, « ça rentrait dans le temps ? » avec `large` / `juste` /
+`pas le temps`. **Ce signal remonte au catalogue, jamais au mode** — c'est toute sa raison
+d'être. Une étape à elle, pas à mêler à autre chose.
 
 Trois dettes ouvertes, chacune à traiter dans l'étape qui la concerne :
 

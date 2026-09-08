@@ -42,6 +42,7 @@ export default function App() {
   const [run, setRun] = useState(null);
   const [pending, setPending] = useState(null);
   const [endOpen, setEndOpen] = useState(false);
+  const [confirmFermer, setConfirmFermer] = useState(false);
   const [perfsOpen, setPerfsOpen] = useState(false);
   const [endStage, setEndStage] = useState("workout");
   const [aborted, setAborted] = useState(false);
@@ -55,21 +56,36 @@ export default function App() {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   useEffect(() => {
-    try { const v = store.get(K_LOG); if (v) setLog(JSON.parse(v)); } catch {}
+    let entries = [];
+    try { const v = store.get(K_LOG); if (v) { entries = JSON.parse(v); setLog(entries); } } catch {}
     try { const v = store.get(K_SET); if (v) { const s = JSON.parse(v); if (s.level) setLevel(s.level); } } catch {}
     setLastBackup(store.get(K_BAK));
     /* Une séance interrompue se retrouve au démarrage. Trop vieille, elle n'est
        plus reprenable mais reste enregistrable. */
     const rec = readJson(K_RUN);
     const kind = resumableKind(rec);
-    if (kind) setPending({ kind, rec });
-    else if (rec) store.del(K_RUN);
+    if (kind) { setPending({ kind, rec }); return; }
+    if (rec) store.del(K_RUN);
+    /* La séance du jour revient sur sa fiche. Sans ça, fermer l'app rendait son
+       bilan définitivement inatteignable : la fiche repartait vide et en tirer
+       une autre pouvait donner une variante différente. Le mode n'est pas
+       restauré — c'est un réglage de l'app, pas une propriété de la séance. */
+    const e = entries.find((x) => x.d === todayIso);
+    if (!e) return;
+    const i = (WORKOUTS[e.day] || []).findIndex((w) => w.name === e.w);
+    if (i < 0) return;
+    setDayKey(e.day);
+    setVariant(i);
+    setSeen([i]);
+    setFinisher(e.fin ? { name: e.fin } : null);
+    setStretch(e.str ? { name: e.str } : null);
   }, []);
 
   const saveLog = (next) => { setLog(next); return store.set(K_LOG, JSON.stringify(next)); };
   const saveLevel = (l) => { setLevel(l); store.set(K_SET, JSON.stringify({ level: l })); };
 
   /* ---- calculs ---- */
+  const entryToday = log.find((e) => e.d === todayIso);
   const last28 = log.filter((e) => daysBetween(fromIso(e.d), today) < 28).length;
   const suggested = LEVELS.slice().reverse().find((l) => last28 >= l.need).id;
   const monthCount = log.filter((e) => {
@@ -117,7 +133,21 @@ export default function App() {
     setSeen(next.seen);
     setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
     setFinisher(null); setStretch(null); setPropose(null); setEndOpen(false); setAborted(false);
-    setPerfsOpen(false);
+    setPerfsOpen(false); setConfirmFermer(false);
+  };
+
+  /* Le bilan du jour se réaffiche depuis la fiche. Une donnée déjà stockée ne
+     doit pas devenir inaccessible parce qu'un tap a fermé l'écran.
+
+     Il se réaffiche toujours au stade « séance », jamais « finisher » : c'est
+     le seul stade où le ressenti reste répondable, et le finisher déjà fait
+     empêche de son côté qu'on en propose un second. */
+  const revoirBilan = () => {
+    setEndStage("workout");
+    setAborted(!!(entryToday && entryToday.arrete));
+    setPropose(null);
+    setConfirmFermer(false);
+    setEndOpen(true);
   };
 
   /* Le tirage penche vers les abdos les jours déjà chargés en burpees,
@@ -200,6 +230,10 @@ export default function App() {
          qu'elle existe — elle existe depuis la fin du chrono. */
       perfs: "perfs" in o ? o.perfs : (avant && avant.perfs) || null,
       valide: "valide" in o ? o.valide : !!(avant && avant.valide),
+      /* Une séance arrêtée en route ne reçoit pas la question du ressenti. Tant
+         que le bilan n'était affiché qu'une fois, l'état de l'écran suffisait à
+         le savoir ; maintenant qu'il se réaffiche, la ligne doit s'en souvenir. */
+      arrete: "arrete" in o ? o.arrete : !!(avant && avant.arrete),
     });
   };
 
@@ -215,8 +249,9 @@ export default function App() {
        attendait auparavant le score pour être enregistré : une séance quittée
        avant de le saisir disparaissait. Le score reste simplement vide jusqu'à
        la relecture des perfs. */
-    else { setEndStage("workout"); logSession({}); }
+    else { setEndStage("workout"); logSession({ arrete: !!(how && how.aborted) }); }
     setPropose(null);
+    setConfirmFermer(false);
     setEndOpen(true);
   };
 
@@ -481,7 +516,28 @@ export default function App() {
                         fontFamily:DISPLAY, fontSize:34, border:"none", borderBottom:`1px solid ${C.line}`, outline:"none" }} />
                   </div>
                 )}
-                {saveState === "done" && <div style={{ marginTop:14, fontFamily:MONO, fontSize:11, color:C.lime, letterSpacing:".08em" }}>✓ SÉANCE ENREGISTRÉE</div>}
+                {/* La porte de retour vers le bilan du jour. Elle s'appuie sur la
+                    ligne enregistrée et non sur l'état de l'écran : elle existe
+                    donc encore après un redémarrage de l'app. */}
+                {entryToday && entryToday.w === wod.name && (
+                  <div style={{ marginTop:14, padding:"12px 14px", border:`1px solid ${C.line}`, borderRadius:3 }}>
+                    <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.lime }}>
+                      ✓ SÉANCE ENREGISTRÉE
+                    </div>
+                    {!entryToday.valide && (
+                      <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"8px 0 0" }}>
+                        Tes chiffres du jour n'ont pas encore été relus.
+                      </p>
+                    )}
+                    <button onClick={revoirBilan} style={{ width:"100%", padding:"12px 0", marginTop:10,
+                      background: entryToday.valide ? "transparent" : C.bone,
+                      border:`1px solid ${entryToday.valide ? C.line : C.bone}`,
+                      color: entryToday.valide ? C.bone : C.ink,
+                      fontFamily:DISPLAY, fontSize:16, letterSpacing:".04em", borderRadius:2 }}>
+                      REVOIR MON BILAN
+                    </button>
+                  </div>
+                )}
                 {saveState === "error" && <div style={{ marginTop:14, fontSize:12.5, color:C.ember }}>Enregistrement impossible sur cet appareil. Vérifie que le navigateur n'est pas en navigation privée.</div>}
 
                 <p style={{ marginTop:16, fontSize:12, color:C.ash, lineHeight:1.5 }}>
@@ -750,7 +806,6 @@ export default function App() {
         const streak = streakOf(log, today);
         const pats = patternsOfWorkout(wod);
         const manque = PATTERNS.filter((p) => !weekPatterns.has(p.id));
-        const entryToday = log.find((e) => e.d === todayIso);
         const ressenti = (entryToday && entryToday.ressenti) || null;
         const stance = finisherStance(ressenti);
         /* Une fois la séance relue, le total montre ce qui a été fait. Avant, il
@@ -930,11 +985,15 @@ export default function App() {
                     </button>
                   )}
 
-                  {/* Valider ne crée pas la ligne du jour : elle est écrite depuis
-                      la fin du chrono. Ce bouton dit qu'elle a été relue, et il
-                      est le seul chemin vers les perfs — donc, le vendredi, vers
-                      le score du test. Tant qu'il reste à faire, c'est lui qui
-                      porte le plein : les autres actions passent en contour. */}
+                  {/* Le libellé annonce ce qu'on va voir. « Valider la séance »
+                      sonnait administratif et cachait que l'écran suivant est
+                      celui de ses propres chiffres, corrigeables — donc, le
+                      vendredi, celui du score du test.
+
+                      Relire ne crée pas la ligne du jour : elle est écrite
+                      depuis la fin du chrono. Tant que ce passage reste à
+                      faire, c'est lui qui porte le plein, les autres actions
+                      passent en contour. */}
                   {valide ? (
                     <>
                       <div style={{ padding:"15px 0", marginBottom:2, textAlign:"center",
@@ -945,7 +1004,7 @@ export default function App() {
                       <button onClick={() => setPerfsOpen(true)} style={{ width:"100%",
                         padding:"11px 0", marginBottom:8, fontFamily:MONO, fontSize:10,
                         letterSpacing:".12em", color:C.ash }}>
-                        REVOIR MES PERFS
+                        REVOIR MES CHIFFRES
                       </button>
                     </>
                   ) : (
@@ -954,7 +1013,7 @@ export default function App() {
                         padding:"16px 0", marginBottom: besoinScore ? 7 : 8,
                         background: besoinScore ? C.ember : C.bone, color:C.ink,
                         fontFamily:DISPLAY, fontSize:18, letterSpacing:".04em", borderRadius:2 }}>
-                        VALIDER LA SÉANCE
+                        MES CHIFFRES DU JOUR
                       </button>
                       {besoinScore && (
                         <p style={{ fontSize:12, color:C.ash, lineHeight:1.45, margin:"0 0 12px" }}>
@@ -964,18 +1023,44 @@ export default function App() {
                     </>
                   )}
 
-                  <button onClick={() => { setEndOpen(false); setTab("suivi"); }}
-                    style={{ width:"100%", padding:"15px 0", marginBottom:8,
-                      background: valide && endStage === "finisher" && stretch ? C.bone : "transparent",
-                      border:`1px solid ${C.line}`,
-                      color: valide && endStage === "finisher" && stretch ? C.ink : C.bone,
-                      fontFamily:DISPLAY, fontSize:16, letterSpacing:".04em", borderRadius:2 }}>
-                    VOIR MES STATS
-                  </button>
-                  <button onClick={() => setEndOpen(false)} style={{ width:"100%", padding:"12px 0",
-                    fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash }}>
-                    FERMER
-                  </button>
+                  {/* « Voir mes stats » a disparu d'ici. L'historique cumulé
+                      était en concurrence avec le bilan du jour alors qu'il
+                      vient après : un tap dessus fermait l'écran le plus
+                      important du parcours, sans retour possible. L'onglet
+                      SUIVI reste à un tap, une fois le bilan refermé.
+
+                      Et fermer avant d'avoir vu ses chiffres demande une
+                      confirmation : c'est le seul geste de cet écran dont la
+                      conséquence n'était pas devinable. Une sortie subsiste
+                      quand même — un écran de fin sans issue a déjà été un
+                      piège une fois. */}
+                  {confirmFermer ? (
+                    <div style={{ padding:"14px 16px 16px", border:`1px solid ${C.ember}`, borderRadius:3 }}>
+                      <p style={{ fontSize:13.5, lineHeight:1.5, margin:"0 0 14px" }}>
+                        Tu n'as pas encore vu tes chiffres du jour. La séance est enregistrée,
+                        et tu pourras y revenir depuis sa fiche.
+                      </p>
+                      <button onClick={() => { setConfirmFermer(false); setPerfsOpen(true); }}
+                        style={{ width:"100%", padding:"15px 0", background:C.bone, color:C.ink,
+                          fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 }}>
+                        VOIR MES CHIFFRES
+                      </button>
+                      <button onClick={() => { setConfirmFermer(false); setEndOpen(false); }}
+                        style={{ width:"100%", padding:"12px 0", marginTop:4, fontFamily:MONO,
+                          fontSize:10, letterSpacing:".12em", color:C.ash }}>
+                        FERMER QUAND MÊME
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => (valide ? setEndOpen(false) : setConfirmFermer(true))}
+                      style={{ width:"100%", padding: valide ? "15px 0" : "12px 0",
+                        background:"transparent", border: valide ? `1px solid ${C.line}` : "none",
+                        color: valide ? C.bone : C.ash, borderRadius:2,
+                        fontFamily: valide ? DISPLAY : MONO, fontSize: valide ? 16 : 10,
+                        letterSpacing: valide ? ".04em" : ".12em" }}>
+                      FERMER
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -493,6 +493,40 @@ est refusée, ne pas reposer la question avant deux semaines.
 
 ---
 
+### 7.1b Distinguer la charge du rythme — DÉCIDÉ le 2026-09-08, PAS ENCORE FAIT
+
+Constat d'usage : une séance n'était pas trop dure, elle était **trop serrée**. Le volume
+passait, mais il fallait courir pour faire rentrer tous les mouvements dans la minute. Les
+trois réponses actuelles ne savent pas dire ça, et c'est un défaut de la donnée, pas de
+l'utilisateur : répondre « trop dur » aurait déclenché une **descente de mode**, donc moins de
+répétitions — et **masqué un défaut de calibration de la séance derrière un ajustement de
+l'utilisateur**.
+
+Deux axes à ne jamais confondre, comme les modes et les régressions ailleurs :
+
+- **La charge** — « est-ce que c'était trop lourd pour moi ». C'est le ressenti actuel, il
+  parle de l'utilisateur et il alimente le mode.
+- **La densité** — « est-ce que ça rentrait dans le temps ». Un EMOM peut être parfaitement
+  dosé en volume et infaisable dans la minute.
+
+**Ce qui est décidé.** Sur les formats à contrainte de temps — EMOM, notamment — une seconde
+question d'un tap : **« ça rentrait dans le temps ? »**, avec **LARGE / JUSTE / PAS LE TEMPS**.
+Posée uniquement quand elle a un sens, donc deux taps sur ces séances et un seul sur les
+autres. Mêmes règles que la première question : jamais bloquante, aucune réponse
+présélectionnée, jamais posée sur une séance arrêtée en route.
+
+**Où va l'information, et c'est le point important.** Cette donnée ne parle pas de
+l'utilisateur, elle parle du **catalogue**. Une séance signalée « pas le temps » à plusieurs
+reprises par la même personne est une séance mal dosée : le signal remonte au **contenu**, pas
+au mode. C'est le troisième cas de recalibrage déjà identifié — l'écart systématique sur une
+séance précise — mais **capté directement au lieu d'être déduit**, ce que la section 7.2
+attendait du croisement ressenti / séance.
+
+**Elle ne doit jamais alimenter une descente de mode.** Ce serait exactement la confusion que
+cette question existe pour éviter.
+
+---
+
 ## 7.2 Stats personnelles — chantier à reprendre
 
 L'onglet de suivi actuel est perfectible et doit être repensé dans cette v2. En particulier,
