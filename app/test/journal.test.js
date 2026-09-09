@@ -12,6 +12,7 @@
 
 import { describe, it, expect } from "vitest";
 import { streakOf } from "../src/lib/volume.js";
+import { ecraserait, entreeA } from "../src/lib/journal.js";
 
 /* La semaine du 7 septembre 2026 : lundi 07, mardi 08, mercredi 09.
    Le vendredi précédent est le 04. */
@@ -45,6 +46,36 @@ describe("la série de jours", () => {
   it("deux séances le même jour ne valent qu'un jour", () => {
     const deux = [ligne("2026-09-08"), ligne("2026-09-09"), ligne("2026-09-09")];
     expect(streakOf(deux, MER)).toBe(2);
+  });
+});
+
+/* Le garde-fou qui manquait. Lancer le thème de jeudi un mercredi déjà entraîné
+   écrivait à la date du jour, donc **remplaçait** la séance du matin : nom,
+   thème, mode et chrono perdus, chiffres conservés mais accrochés au nom d'une
+   autre séance. Une séance de démonstration a suffi. */
+describe("ce que le journal refuse d'écraser", () => {
+  const JOUR = "2026-09-09";
+  const log = [{ ...ligne(JOUR), w: "EMOM 21" }];
+
+  it("une date libre accepte n'importe quelle séance", () => {
+    expect(ecraserait([], JOUR, "EMOM 21")).toBe(false);
+    expect(ecraserait(log, "2026-09-10", "AMRAP 20")).toBe(false);
+  });
+
+  /* Le cas normal : la ligne se complète plusieurs fois au fil d'une séance —
+     fin du chrono, finisher, ressenti, relecture. Elle ne s'écrase pas
+     elle-même. */
+  it("la même séance se réécrit autant de fois qu'il faut", () => {
+    expect(ecraserait(log, JOUR, "EMOM 21")).toBe(false);
+  });
+
+  it("une autre séance au même jour est refusée", () => {
+    expect(ecraserait(log, JOUR, "AMRAP 20")).toBe(true);
+  });
+
+  it("la ligne visée se retrouve, ou vaut null", () => {
+    expect(entreeA(log, JOUR).w).toBe("EMOM 21");
+    expect(entreeA(log, "2026-09-10")).toBeNull();
   });
 });
 

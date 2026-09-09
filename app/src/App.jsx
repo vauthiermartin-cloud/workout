@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { C, DISPLAY, MONO } from "./lib/theme.js";
 import { store, readJson, K_LOG, K_SET, K_BAK, K_RUN } from "./lib/store.js";
+import { ecraserait } from "./lib/journal.js";
 import { doneWith, newBeat, newRun, position, record, resumableKind } from "./lib/chrono.js";
 import { iso, fromIso, mondayOf, isoOfWeekday, weekdayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
 import { beep } from "./lib/audio.js";
@@ -151,6 +152,13 @@ export default function App() {
      du bilan. */
   const faitEtEnregistre = !!wodEnregistre;
 
+  /* La séance jouée ne peut pas s'enregistrer : la date du jour porte déjà une
+     autre séance. Tout ce qui se lit sur « la ligne du jour » doit alors se
+     taire, sinon l'écran de fin afficherait les chiffres, le ressenti et la
+     relecture de la séance du matin sous le nom de celle qu'on vient de faire. */
+  const nonEnregistree = !!wod && ecraserait(log, todayIso, wod.name);
+  const ligneDuJour = nonEnregistree ? null : entryToday;
+
   const generate = () => {
     const next = pickVariant(pool, weekPatterns, seen, variant);
     setVariant(next.index);
@@ -229,6 +237,10 @@ export default function App() {
   const logSession = (opts) => {
     const o = opts || {};
     const avant = log.find((e) => e.d === todayIso);
+    /* Une autre séance est déjà enregistrée à cette date : on n'écrit pas.
+       Écrire remplacerait, et le journal ne sait pas encore porter plusieurs
+       séances par jour. Voir `lib/journal.js` pour le détail des dégâts. */
+    if (ecraserait(log, todayIso, wod.name)) { setSaveState("occupe"); return; }
     /* La ligne s'écrit à la date du jour, et la fiche se lit par date : jouer le
        thème d'un autre jour laissait donc l'onglet du thème sans ligne, et la
        séance qu'on venait de finir réaffichait ses consignes et son bouton de
@@ -654,6 +666,10 @@ export default function App() {
                   </div>
                 )}
                 {saveState === "error" && <div style={{ marginTop:14, fontSize:12.5, color:C.ember }}>Enregistrement impossible sur cet appareil. Vérifie que le navigateur n'est pas en navigation privée.</div>}
+                {/* Cocher « séance faite » depuis l'onglet d'un autre jour se
+                    heurte au même mur que la fin du chrono, et doit le dire
+                    ici plutôt que de ne rien faire. */}
+                {nonEnregistree && <div style={{ marginTop:14, fontSize:12.5, color:C.ember }}>Aujourd'hui porte déjà {entryToday.w}, et une journée ne peut en tenir qu'une pour le moment. Efface-la depuis son bilan pour enregistrer celle-ci à la place.</div>}
 
                 <p style={{ marginTop:16, fontSize:12, color:C.ash, lineHeight:1.5 }}>
                   Barre trop dure ? Fais des négatives : tu montes en sautant, tu descends en 5 s.
@@ -924,16 +940,16 @@ export default function App() {
         const streak = streakOf(log, today);
         const pats = patternsOfWorkout(wod);
         const manque = PATTERNS.filter((p) => !weekPatterns.has(p.id));
-        const ressenti = (entryToday && entryToday.ressenti) || null;
+        const ressenti = (ligneDuJour && ligneDuJour.ressenti) || null;
         const stance = finisherStance(ressenti);
         /* Une fois la séance relue, le total montre ce qui a été fait. Avant, il
            ne peut montrer que ce qui était prescrit — et sur un format à tours
            ouverts, seulement le contenu d'un tour. */
-        const reel = entryToday && entryToday.valide
-          ? volumeReel(wod.name, level, entryToday.perfs, entryToday.s) : null;
+        const reel = ligneDuJour && ligneDuJour.valide
+          ? volumeReel(wod.name, level, ligneDuJour.perfs, ligneDuJour.s) : null;
         const fait = reel && reel.complet;
-        const valide = !!(entryToday && entryToday.valide);
-        const besoinScore = wod.test && !(entryToday && entryToday.s != null);
+        const valide = !!(ligneDuJour && ligneDuJour.valide);
+        const besoinScore = wod.test && !(ligneDuJour && ligneDuJour.s != null);
 
         return (
           <>
@@ -945,12 +961,31 @@ export default function App() {
                 vol={vol} volFin={volFin} reel={reel} fait={fait}
                 streak={streak} weekCount={weekCount} />
 
+              {/* Le refus d'écriture se dit, et se dit ici : c'est l'écran où on
+                  croit sa séance enregistrée. Muet, il laissait croire que le
+                  travail était compté. */}
+              {nonEnregistree && (
+                <div style={{ marginBottom:28, padding:"15px 16px 16px", borderRadius:3,
+                  background:C.steel, border:`1px solid ${C.ember}` }}>
+                  <div style={{ fontFamily:MONO, fontSize:9.5, letterSpacing:".16em",
+                    color:C.ember, marginBottom:6 }}>
+                    SÉANCE NON ENREGISTRÉE
+                  </div>
+                  <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:0 }}>
+                    Aujourd'hui porte déjà <b style={{ color:C.bone }}>{entryToday.w}</b>, et une
+                    journée ne peut en tenir qu'une pour le moment. Celle-ci n'a rien écrit :
+                    tes chiffres du matin sont intacts. Pour la garder à la place, efface
+                    d'abord la séance du jour depuis son bilan.
+                  </p>
+                </div>
+              )}
+
               {/* Le ressenti. Après les chiffres, il arrive à un moment de recul
                   naturel. Et il reste loin du chemin du pouce vers les boutons
                   d'action, pour éviter le tap réflexe sur « juste ». Aucune
                   réponse présélectionnée, aucune obligation de répondre : une
                   séance sans réponse est simplement une séance sans signal. */}
-              {askRessenti({ stage: endStage, aborted }) && (
+              {!nonEnregistree && askRessenti({ stage: endStage, aborted }) && (
                 /* Tant qu'elle est sans réponse, la question est la seule chose
                    de l'écran qui attende quelque chose : elle le dit avec le
                    liseré d'accent et l'oeil s'y pose. Répondre l'éteint, et le
@@ -1141,7 +1176,7 @@ export default function App() {
           </div>
 
           {perfsOpen && (
-            <Perfs name={wod.name} level={level} entry={entryToday}
+            <Perfs name={wod.name} level={level} entry={ligneDuJour}
               accent={wod.test ? C.ember : C.lime}
               onValider={validerPerfs} onRetour={quitterPerfs} />
           )}
