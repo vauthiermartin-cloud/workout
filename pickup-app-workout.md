@@ -219,6 +219,31 @@ Le lot est clos, et l'étape 3 a suivi.
     communs ne portent ni CTA ni ressenti. **Les entités HTML y sont défaites avant comparaison**,
     sans quoi les vérifications d'absence passeraient sans rien vérifier.
 
+- **La fiche relit sa séance du journal, par date. Le bilan de n'importe quel jour de la semaine
+  en cours se relit donc, et changer d'onglet ne perd plus rien.** Corrigé le 2026-09-09, deux
+  symptômes pour une seule cause : la séance affichée venait d'un tirage tenu en mémoire, donc
+  un passage sur un autre onglet de jour la remplaçait et le retour ne la retrouvait plus —
+  il fallait relancer l'app.
+  - **La ligne du jour se cherche par date (`d`), jamais par thème (`day`).** Les deux divergent
+    dès qu'on joue le thème d'un autre jour, et les exports le montrent : sur trois lignes, une
+    porte une date de lundi et le thème du mercredi, et deux lignes réclament le même thème.
+    Sous un modèle par thème, l'onglet mercredi aurait eu deux candidates et l'onglet mardi
+    aucune. **Le journal est un agenda, pas une grille de thèmes.** `entreeDuJour` et
+    `wodEnregistre` en découlent, et la fiche survit désormais au redémarrage comme au changement
+    d'onglet sans rien restaurer à la main — l'effet de montage qui rejouait le tirage a disparu.
+  - **La correction d'une ligne relue ne passe pas par `logSession`** mais par `corrigerLigne`,
+    qui fusionne dans la ligne existante **à sa propre date**. C'est le piège qu'ouvrait la
+    relecture d'un autre jour : `logSession` écrit à la date du jour avec la séance et le mode
+    courants, donc relire lundi un mercredi aurait corrigé mercredi et estampillé lundi du mode
+    d'aujourd'hui. Aucune valeur par défaut ne s'y applique : une ligne relue existe déjà.
+  - **`isoOfWeekday` et `weekdayOf` sont sortis dans `lib/dates.js`** (neuvième fichier de tests,
+    `app/test/dates.test.js`). La numérotation des onglets va de 1 = lundi à 7 = dimanche, et non
+    celle de JavaScript où dimanche vaut 0. **Le week-end n'a pas d'onglet** : une séance faite un
+    samedi se rattache au jour de référence lui-même et garde son bilan atteignable, au lieu de
+    tomber sur un lundi qui n'a rien vu — et le réalignement de l'onglet après enregistrement est
+    gardé par `dowToday <= 5`, sans quoi un samedi désignait un onglet inexistant et plantait
+    l'écran.
+
 **Une décision prise le 2026-09-08 et pas encore codée : la seconde question de densité.** Le
 ressenti actuel ne distingue pas la charge du rythme, et « trop dur » sur une séance seulement
 trop serrée déclencherait une descente de mode — donc moins de répétitions, alors que le
@@ -296,7 +321,7 @@ Fichiers du projet :
 4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
 5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures.
 6. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits.
-7. `app/test/` — huit fichiers, 114 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans de bilan. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
+7. `app/test/` — neuf fichiers, 119 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans de bilan, dates de la semaine. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
 8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
 9. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 10. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.

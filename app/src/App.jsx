@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { C, DISPLAY, MONO } from "./lib/theme.js";
 import { store, readJson, K_LOG, K_SET, K_BAK, K_RUN } from "./lib/store.js";
 import { doneWith, newBeat, newRun, position, record, resumableKind } from "./lib/chrono.js";
-import { iso, fromIso, mondayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
+import { iso, fromIso, mondayOf, isoOfWeekday, weekdayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
 import { beep } from "./lib/audio.js";
 import { volumeOf, streakOf } from "./lib/volume.js";
 import { volumeReel } from "./lib/perfs.js";
@@ -69,17 +69,14 @@ export default function App() {
     const kind = resumableKind(rec);
     if (kind) { setPending({ kind, rec }); return; }
     if (rec) store.del(K_RUN);
-    /* La séance du jour revient sur sa fiche. Sans ça, fermer l'app rendait son
-       bilan définitivement inatteignable : la fiche repartait vide et en tirer
-       une autre pouvait donner une variante différente. Le mode n'est pas
-       restauré — c'est un réglage de l'app, pas une propriété de la séance. */
+    /* Le finisher et les étirements du jour reviennent en état, pour que l'écran
+       de fin n'en propose pas un second. La séance elle-même n'a plus à être
+       restaurée ici : la fiche la relit du journal à chaque rendu, ce qui la
+       fait survivre non seulement au redémarrage mais aussi à un passage sur un
+       autre onglet de jour. Le mode n'est pas restauré — c'est un réglage de
+       l'app, pas une propriété de la séance. */
     const e = entries.find((x) => x.d === todayIso);
     if (!e) return;
-    const i = (WORKOUTS[e.day] || []).findIndex((w) => w.name === e.w);
-    if (i < 0) return;
-    setDayKey(e.day);
-    setVariant(i);
-    setSeen([i]);
     setFinisher(e.fin ? { name: e.fin } : null);
     setStretch(e.str ? { name: e.str } : null);
   }, []);
@@ -98,8 +95,22 @@ export default function App() {
 
   const wkStart = mondayOf(today);
   const weekDone = {};
-  log.forEach((e) => { const d = fromIso(e.d); if (d >= wkStart) weekDone[((d.getDay() + 6) % 7) + 1] = true; });
+  log.forEach((e) => { const d = fromIso(e.d); if (d >= wkStart) weekDone[weekdayOf(d)] = true; });
   const weekCount = Object.keys(weekDone).length;
+
+  /* La date derrière l'onglet sélectionné, puis la ligne qui s'y trouve.
+     ==================================================================
+
+     La ligne est cherchée par **date** et non par thème. Les deux divergent dès
+     qu'on joue le thème d'un autre jour, et ça arrive : un lundi peut porter la
+     séance du mercredi. L'onglet L doit alors montrer ce qui a été fait lundi —
+     c'est déjà ce que dit le point sous l'onglet, qui se calcule sur la date. Le
+     journal est un agenda, pas une grille de thèmes.
+
+     Le calcul de la date, week-end compris, est dans `isoOfWeekday` — pur et
+     testé, parce que dimanche vaut 0 en JavaScript et qu'on s'y trompe. */
+  const dowToday = weekdayOf(today);
+  const entreeDuJour = log.find((e) => e.d === isoOfWeekday(today, dayKey));
 
   /* Ce que la semaine a déjà couvert, reconstruit depuis le journal */
   const weekPatterns = new Set();
@@ -127,12 +138,18 @@ export default function App() {
   /* ---- séance ---- */
   const day = DAYS.find((d) => d.key === dayKey);
   const pool = WORKOUTS[dayKey];
-  const wod = variant === null ? null : pool[variant];
+  /* Une journée déjà faite montre la séance qu'elle a portée, reprise par son
+     nom et non par son rang dans la réserve du jour : le thème joué n'est pas
+     toujours celui de l'onglet, et un rang n'aurait rien trouvé. C'est aussi ce
+     qui répare la perte du bilan au retour d'un autre onglet — la fiche ne
+     dépend plus d'un tirage en mémoire, elle relit le journal. */
+  const wodEnregistre = entreeDuJour ? WORKOUT_BY_NAME[entreeDuJour.w] || null : null;
+  const wod = wodEnregistre || (variant === null ? null : pool[variant]);
   const accent = wod && wod.test ? C.ember : C.lime;
-  /* La séance affichée est celle du jour, et elle est faite. La fiche n'a plus
-     alors à décrire ce qui est derrière, ni à proposer de le rejouer : elle
-     n'offre que la porte du bilan. */
-  const faitEtEnregistre = !!(wod && entryToday && entryToday.w === wod.name);
+  /* La séance du jour sélectionné est faite. La fiche n'a plus alors à décrire
+     ce qui est derrière, ni à proposer de le rejouer : elle n'offre que la porte
+     du bilan. */
+  const faitEtEnregistre = !!wodEnregistre;
 
   const generate = () => {
     const next = pickVariant(pool, weekPatterns, seen, variant);
@@ -212,6 +229,12 @@ export default function App() {
   const logSession = (opts) => {
     const o = opts || {};
     const avant = log.find((e) => e.d === todayIso);
+    /* La ligne s'écrit à la date du jour, et la fiche se lit par date : jouer le
+       thème d'un autre jour laissait donc l'onglet du thème sans ligne, et la
+       séance qu'on venait de finir réaffichait ses consignes et son bouton de
+       lancement. La sélection rejoint la date écrite. Le thème, lui, ne change
+       pas : c'est le nom de la séance qui le porte, pas l'onglet. */
+    if (dowToday <= 5 && dayKey !== dowToday) setDayKey(dowToday);
     writeEntry({
       d: todayIso, day: dayKey, w: wod.name, lvl: level,
       fin: ("fin" in o ? o.fin : finisher ? finisher.name : (avant && avant.fin) || null),
@@ -302,10 +325,20 @@ export default function App() {
     setPerfsOpen(false);
   };
 
-  /* Les deux mêmes gestes depuis la relecture, qui se referme au lieu de
-     revenir à un bilan de fin qu'elle a remplacé. */
-  const validerRevoir = (o) => { logSession({ ...o, valide: true }); setRevoirOpen(false); };
-  const quitterRevoir = (o) => { if (o) logSession(o); setRevoirOpen(false); };
+  /* Les deux mêmes gestes depuis la relecture, qui se referme au lieu de revenir
+     à un bilan de fin qu'elle a remplacé.
+
+     Ils n'écrivent pas par `logSession` : celui-ci écrit à la date du jour, avec
+     la séance et le mode courants. Relire lundi un mercredi aurait donc corrigé
+     mercredi — et fait passer le mode d'aujourd'hui pour celui de lundi. La
+     ligne relue est ici corrigée **à sa date**, par simple fusion : elle existe
+     déjà, il n'y a aucune valeur par défaut à appliquer. */
+  const corrigerLigne = (o, relue) => {
+    if (o || relue) writeEntry({ ...entreeDuJour, ...o, ...(relue ? { valide: true } : {}) });
+    setRevoirOpen(false);
+  };
+  const validerRevoir = (o) => corrigerLigne(o, true);
+  const quitterRevoir = (o) => corrigerLigne(o, false);
 
   const lancerStretch = () => {
     setStretch(propose);
@@ -532,14 +565,14 @@ export default function App() {
                   {wod.name}
                 </div>
                 <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"8px 0 0" }}>
-                  {entryToday.valide
-                    ? "Tes chiffres du jour sont relus."
-                    : "Tes chiffres du jour n'ont pas encore été relus."}
+                  {entreeDuJour.valide
+                    ? "Tes chiffres sont relus."
+                    : "Tes chiffres n'ont pas encore été relus."}
                 </p>
                 <button onClick={revoirBilan} style={{ width:"100%", padding:"16px 0", marginTop:16,
-                  background: entryToday.valide ? "transparent" : C.bone,
-                  border:`1px solid ${entryToday.valide ? C.line : C.bone}`,
-                  color: entryToday.valide ? C.bone : C.ink,
+                  background: entreeDuJour.valide ? "transparent" : C.bone,
+                  border:`1px solid ${entreeDuJour.valide ? C.line : C.bone}`,
+                  color: entreeDuJour.valide ? C.bone : C.ink,
                   fontFamily:DISPLAY, fontSize:18, letterSpacing:".04em", borderRadius:2 }}>
                   REVOIR MON BILAN
                 </button>
@@ -1087,17 +1120,26 @@ export default function App() {
       })()}
 
       {/* ---- Relecture d'une séance faite ---- */}
-      {revoirOpen && faitEtEnregistre && (
-        <Revoir wod={wod} finisher={finisher} stretch={stretch} level={level}
-          entry={entryToday} accent={accent}
-          vol={volumeOf(wod.name, level)}
-          volFin={finisher ? volumeOf(finisher.name, level) : null}
-          streak={streakOf(log, today)} weekCount={weekCount}
-          pats={patternsOfWorkout(wod)}
-          manque={PATTERNS.filter((p) => !weekPatterns.has(p.id))}
-          reduced={reduced}
-          onValider={validerRevoir} onRetour={quitterRevoir} />
-      )}
+      {revoirOpen && faitEtEnregistre && (() => {
+        /* Tout se lit sur la ligne relue, et non sur l'état de l'écran : le
+           mode, le finisher et les étirements sont ceux du jour relu, qui n'est
+           pas forcément aujourd'hui. Afficher le mode courant aurait recalculé
+           les volumes de lundi au mode de mercredi. */
+        const lvl = entreeDuJour.lvl || level;
+        const fin = entreeDuJour.fin ? { name: entreeDuJour.fin } : null;
+        return (
+          <Revoir wod={wod} finisher={fin}
+            stretch={entreeDuJour.str ? { name: entreeDuJour.str } : null} level={lvl}
+            entry={entreeDuJour} accent={accent}
+            vol={volumeOf(wod.name, lvl)}
+            volFin={fin ? volumeOf(fin.name, lvl) : null}
+            streak={streakOf(log, today)} weekCount={weekCount}
+            pats={patternsOfWorkout(wod)}
+            manque={PATTERNS.filter((p) => !weekPatterns.has(p.id))}
+            reduced={reduced}
+            onValider={validerRevoir} onRetour={quitterRevoir} />
+        );
+      })()}
     </div>
   );
 }
