@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { C, DISPLAY, MONO } from "./lib/theme.js";
 import { store, readJson, K_LOG, K_SET, K_BAK, K_RUN } from "./lib/store.js";
-import { ecraserait } from "./lib/journal.js";
+import { ecraserait, entreeA } from "./lib/journal.js";
 import { doneWith, newBeat, newRun, position, record, resumableKind } from "./lib/chrono.js";
 import { iso, fromIso, mondayOf, isoOfWeekday, weekdayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
 import { beep } from "./lib/audio.js";
@@ -527,6 +527,13 @@ export default function App() {
           const rec = pending.rec;
           const pos = position(rec, rec.at || 0);
           const reprise = pending.kind === "resume";
+          /* Même mur que `logSession`, par un autre chemin : `savePending`
+             écrit `w`, `day` et `lvl` sans condition à la date de
+             l'enregistrement, et écraserait la séance déjà notée ce jour-là.
+             Reprendre reste sans danger — la reprise n'écrit rien, et c'est
+             `logSession` qui tranchera à la fin. C'est **enregistrer** qui
+             disparaît, en laissant l'abandon. */
+          const occupe = !reprise && ecraserait(log, rec.d, rec.w);
           return (
             <div style={{ padding:16, marginBottom:24, border:`1px solid ${C.lime}`, borderRadius:3 }}>
               <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.lime, marginBottom:8 }}>
@@ -537,14 +544,18 @@ export default function App() {
                 {reprise
                   ? `${!pos ? "Le chrono était lancé." : pos.warm ? "Tu étais dans l'échauffement."
                       : `Tu étais à la minute ${pos.minute} sur ${pos.total}.`} Elle reprendra en pause, là où tu l'as laissée.`
-                  : `Laissée en cours le ${shortFr(rec.d)}. Trop ancienne pour être reprise : tu peux l'enregistrer telle quelle ou l'abandonner.`}
+                  : occupe
+                    ? `Laissée en cours le ${shortFr(rec.d)}, mais ce jour-là porte déjà ${entreeA(log, rec.d).w}. Une journée ne peut tenir qu'une séance pour le moment : celle-ci ne peut pas s'enregistrer sans effacer l'autre.`
+                    : `Laissée en cours le ${shortFr(rec.d)}. Trop ancienne pour être reprise : tu peux l'enregistrer telle quelle ou l'abandonner.`}
               </p>
               <div style={{ display:"flex", gap:8 }}>
+                {!occupe && (
                 <button onClick={reprise ? resumePending : savePending}
                   style={{ flex:1, padding:"13px 0", background:C.lime, color:C.ink,
                     fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".1em", borderRadius:2 }}>
                   {reprise ? "REPRENDRE" : "ENREGISTRER"}
                 </button>
+                )}
                 <button onClick={dropPending}
                   style={{ flex:1, padding:"13px 0", border:`1px solid ${C.line}`, color:C.ash,
                     fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".1em", borderRadius:2 }}>
