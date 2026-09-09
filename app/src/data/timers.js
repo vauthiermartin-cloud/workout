@@ -104,7 +104,7 @@ export const TIMERS = {
     r(12,"sautsMogul"), r(8,"sweeps"), r(10,"vups"), r(15,"hipThrusts"), r(8,"pompes"),
   ] }],
   "AMRAP 20 poussée-tirage": [{ t:"down", sec:1200, label:"AMRAP 20", sub:"Max de tours", list:[
-    r(6,"pompesPiquees"), r(4,"pullups"), r(4,"chinups"), r(10,"pompes"),
+    r(6,"pompesPiquees"), r(8,"chinups"), r(10,"pompes"),
   ] }],
 
   /* Vendredi */

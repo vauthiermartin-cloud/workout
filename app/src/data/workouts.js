@@ -176,16 +176,23 @@ export const WORKOUTS = {
         ]},
       ],
       goal:"Le sweep est le mouvement le plus technique du lot. Si tu perds la forme, ralentis-le au lieu de le sauter." },
-    { name:"AMRAP 20 poussée-tirage", dur:"20 min", meta:"Max de tours en 20 min · poussée verticale et les deux prises à la barre",
+    /* Cette séance portait 4 pull-ups + 4 chin-ups dans le même tour, et s'en
+       félicitait : « pronation, supination, tout dans un tour ». Deux prises
+       dans une même séance ne se travaillent pas, elles se partagent la
+       fatigue — les seconds 4 se font sur les avant-bras des premiers. Le
+       tirage est donc réuni sur une seule prise, à volume identique. La
+       supination est gardée plutôt que la pronation parce que `chinups` porte
+       les deux schémas moteurs `tirage` et `supination` : la couverture de la
+       séance ne change pas d'un iota. */
+    { name:"AMRAP 20 poussée-tirage", dur:"20 min", meta:"Max de tours en 20 min · poussée verticale et tirage en supination",
       blocks:[
         {tag:"1 TOUR",items:[
           r(6,"pompesPiquees","Bassin haut, tête vers le sol entre les mains, tu descends puis tu pousses. Pieds surélevés pour durcir."),
-          r(4,"pullups","Paumes vers l'avant, mains un peu plus large que les épaules"),
-          r(4,"chinups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps."),
+          r(8,"chinups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps."),
           r(10,"pompes"),
         ]},
       ],
-      goal:"Poussée verticale, poussée horizontale, pronation, supination. Tout dans un tour." },
+      goal:"Huit tractions par tour, c'est le tirage le plus dense du jeudi. Si la barre lâche avant les pompes, coupe en deux séries de quatre." },
   ],
   5: [
     /* `score` dit ce que le chiffre du test est réellement. Sans lui, « Burpees

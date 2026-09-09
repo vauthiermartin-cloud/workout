@@ -80,6 +80,36 @@ describe("bibliothèque", () => {
     });
     expect(ecarts).toEqual([]);
   });
+
+  /* Pronation et supination dans la même séance ne se travaillent pas : elles
+     se partagent la fatigue. Les quatre chin-ups qui suivaient quatre pull-ups
+     se faisaient sur les avant-bras des premiers, donc ni l'une ni l'autre
+     prise n'était chargée franchement. Une séance réunit son tirage sur une
+     seule prise.
+
+     Le contrôle porte sur les **familles** et non sur les identifiants, parce
+     que la bibliothèque (étape 9) substituera des crans : `pullupsElastique`
+     avec `chinupsNegatifs` serait exactement la même faute, et un test écrit
+     sur les deux seuls noms nus ne l'aurait pas vue. */
+  const familleDe = (id) => {
+    const c = chainOf(id);
+    return c ? c[c.length - 1] : id;
+  };
+
+  it("aucune séance ne mélange pronation et supination à la barre", () => {
+    const fautives = [];
+    [...allWorkouts, ...allFinishers].forEach((w) => {
+      const ids = new Set();
+      w.blocks.forEach((b) => b.items.forEach((it) => { if (it.ex !== undefined) ids.add(it.ex); }));
+      (TIMERS[w.name] || []).forEach((p) => {
+        const lignes = p.stations ? p.stations.flat() : p.list || [];
+        lignes.forEach((it) => { if (it && it.ex !== undefined) ids.add(it.ex); });
+      });
+      const familles = new Set([...ids].map(familleDe));
+      if (familles.has("pullups") && familles.has("chinups")) fautives.push(w.name);
+    });
+    expect(fautives).toEqual([]);
+  });
 });
 
 describe("les exercices sont des entités", () => {

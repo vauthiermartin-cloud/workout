@@ -286,6 +286,24 @@ Le lot est clos, et l'étape 3 a suivi.
     seulement supposée. Elle l'est maintenant, ce qui rend la levée de cette contrainte explicite
     le jour où on la lèvera.
 
+- **Une séance ne mélange plus les deux prises à la barre. Règle posée le 2026-09-09, en usage
+  réel.** « AMRAP 20 poussée-tirage » prescrivait 4 pull-ups **puis** 4 chin-ups dans le même
+  tour, et son texte s'en félicitait. Les seconds quatre se font sur les avant-bras des premiers :
+  ni la pronation ni la supination n'est chargée franchement, la séance travaille surtout la
+  fatigue. Le tirage est désormais réuni sur une prise unique, **8 chin-ups**, à volume identique
+  — 24 répétitions par tour en mode 1, comme les 6+4+4+10 d'avant.
+  - **La supination a été gardée plutôt que la pronation, et ce n'est pas un goût** : `chinups`
+    porte `tirage` **et** `supination` quand `pullups` ne porte que `tirage`. Les schémas moteurs
+    de la séance sont donc inchangés (`poussee, supination, tirage`), et la simulation de
+    couverture sur 500 semaines n'avait rien à revalider. Retirer les chin-ups à la place aurait
+    fait tomber `supination` à quatre séances sur vingt-cinq, réparties sur les jours 1, 2, 3 et 5.
+  - **Le garde-fou porte sur les familles, pas sur les deux noms nus** (`coherence.test.js`,
+    « aucune séance ne mélange pronation et supination à la barre »). La bibliothèque de l'étape 9
+    substituera des crans : `pullupsElastique` avec `chinupsNegatifs` serait exactement la même
+    faute, et un test écrit sur `pullups`/`chinups` ne l'aurait pas vue.
+  - **Répartition après coup** : la pronation tient les jours 1, 3, 4 et 5 ; la supination une
+    variante par jour sur 1, 2, 3, 4 et 5. Aucune séance ne porte les deux.
+
 **Un modèle décidé le 2026-09-09 et pas encore codé : séances ad hoc et plusieurs séances par
 jour.** Écrit dans `brief-v2-multi-user.md` section 3.1. Le partage porteur est **jour actif ≠
 séance** (« 3 jours actifs, 4 séances »), qui laisse le contrat et la série par jour et n'a donc
@@ -374,7 +392,7 @@ Fichiers du projet :
 4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
 5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures.
 6. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits.
-7. `app/test/` — dix fichiers, 134 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans de bilan, dates de la semaine, journal et série. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
+7. `app/test/` — dix fichiers, 135 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans de bilan, dates de la semaine, journal et série. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
 8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
 9. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 10. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.
