@@ -24,8 +24,56 @@ import { Rail } from "./Rail.jsx";
    Le ressenti n'y figure pas. Il se répond à chaud, sur l'écran de fin, ou
    pas du tout : une séance sans réponse est une séance sans signal, pas une
    séance à rattraper. */
+/* La suppression d'une séance, armée puis confirmée.
+   ================================================
+
+   Elle sert d'abord à montrer l'app à quelqu'un sans laisser la séance de
+   démonstration dans les stats, mais aussi à une séance loguée par erreur.
+
+   Elle vit ici et pas sur l'écran de fin : celui-là se voit tous les vrais
+   matins juste après l'effort, et un geste destructeur n'y a rien à faire. La
+   relecture, elle, ne s'atteint que délibérément.
+
+   Son état d'armement tient dans ce composant, et c'est voulu : changer
+   d'onglet le démonte, donc le bouton se désarme seul. Un bouton resté armé
+   sous un onglet qu'on ne regarde plus serait un piège. */
+export function SupprimerSeance({ onSupprimer }) {
+  const [arme, setArme] = useState(false);
+  if (!onSupprimer) return null;
+
+  if (!arme) return (
+    <button onClick={() => setArme(true)} style={{ display:"block", margin:"28px auto 0",
+      padding:"8px 4px", background:"transparent", border:"none", color:C.ash,
+      fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".14em" }}>
+      SUPPRIMER CETTE SÉANCE
+    </button>
+  );
+
+  return (
+    <div style={{ marginTop:28, border:`1px solid ${C.ember}`, borderRadius:3, padding:16 }}>
+      <span style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ember }}>EFFACER CETTE SÉANCE</span>
+      <p style={{ fontSize:13, color:C.ash, lineHeight:1.5, margin:"8px 0 14px" }}>
+        Elle quitte le journal avec ses chiffres. La série et le compte de la
+        semaine se recalculent sans elle. Sans retour.
+      </p>
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={() => setArme(false)} style={{ flex:1, padding:"13px 0",
+          background:"transparent", border:`1px solid ${C.line}`, color:C.bone,
+          fontFamily:DISPLAY, fontSize:15, letterSpacing:".04em", borderRadius:2 }}>
+          ANNULER
+        </button>
+        <button onClick={onSupprimer} style={{ flex:1, padding:"13px 0",
+          background:C.ember, border:`1px solid ${C.ember}`, color:C.ink,
+          fontFamily:DISPLAY, fontSize:15, letterSpacing:".04em", borderRadius:2 }}>
+          EFFACER
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Revoir({ wod, finisher, stretch, level, entry, accent, vol, volFin,
-  streak, weekCount, pats, manque, reduced, onValider, onRetour }) {
+  streak, weekCount, pats, manque, reduced, onValider, onRetour, onSupprimer }) {
   const [onglet, setOnglet] = useState("chiffres");
 
   const reel = entry && entry.valide
@@ -82,6 +130,8 @@ export function Revoir({ wod, finisher, stretch, level, entry, accent, vol, volF
               fontFamily:DISPLAY, fontSize:16, letterSpacing:".04em", borderRadius:2 }}>
               FERMER
             </button>
+
+            <SupprimerSeance onSupprimer={onSupprimer} />
           </>
         )}
       </div>

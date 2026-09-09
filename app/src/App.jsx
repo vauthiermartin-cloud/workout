@@ -340,6 +340,36 @@ export default function App() {
   const validerRevoir = (o) => corrigerLigne(o, true);
   const quitterRevoir = (o) => corrigerLigne(o, false);
 
+  /* Effacer la séance d'un jour.
+     ==========================
+
+     Elle sert d'abord à montrer l'app à quelqu'un — générer, lancer, finir,
+     puis retirer la séance de démonstration — mais aussi à une séance loguée
+     par erreur ou lancée pour voir. C'est la fonction qui manquait.
+
+     La ligne s'efface **à sa date**, comme elle se corrige : la relecture
+     s'ouvre sur n'importe quel jour de la semaine, et supprimer depuis lundi
+     ne doit pas effacer mercredi.
+
+     Rien de dérivé n'est à mettre à jour : la série, le contrat de la semaine
+     et la couverture des schémas moteurs se recalculent du journal à chaque
+     rendu. L'effacement est un `filter`, et tout suit. */
+  const supprimerLigne = () => {
+    const cible = entreeDuJour.d;
+    const ok = saveLog(log.filter((e) => e.d !== cible));
+    setSaveState(ok ? "done" : "error");
+    /* Une séance en cours à cette date n'a plus de ligne où aboutir. La laisser
+       ferait proposer la reprise de ce qu'on vient d'effacer. */
+    const rec = readJson(K_RUN);
+    if (rec && rec.d === cible) store.del(K_RUN);
+    if (pending && pending.rec.d === cible) setPending(null);
+    /* Le jour redevient vierge, exactement comme en changeant d'onglet : sans
+       ça la fiche garderait le tirage de la séance qu'on vient d'effacer. */
+    setVariant(null); setSeen([]); setFinisher(null); setStretch(null);
+    setPropose(null); setEndOpen(false); setAborted(false);
+    setRevoirOpen(false);
+  };
+
   const lancerStretch = () => {
     setStretch(propose);
     launch([{ t:"down", sec:300, label:"Étirements", sub:propose.name,
@@ -1137,7 +1167,8 @@ export default function App() {
             pats={patternsOfWorkout(wod)}
             manque={PATTERNS.filter((p) => !weekPatterns.has(p.id))}
             reduced={reduced}
-            onValider={validerRevoir} onRetour={quitterRevoir} />
+            onValider={validerRevoir} onRetour={quitterRevoir}
+            onSupprimer={supprimerLigne} />
         );
       })()}
     </div>

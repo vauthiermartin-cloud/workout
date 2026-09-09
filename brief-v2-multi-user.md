@@ -255,6 +255,67 @@ rien dire.
 | Effet sur la série | la préserve | la gèle |
 | Cumulable | non | non |
 
+### 3.1 Séances ad hoc, plusieurs séances par jour — DÉCIDÉ le 2026-09-09, PAS ENCORE FAIT
+
+**On doit pouvoir générer une séance à tout moment**, y compris un jour qui en porte déjà une,
+y compris le week-end. Un jour qui porte deux séances **affiche deux séances et deux bilans**.
+
+**Le partage qui rend tout le reste possible : jour actif ≠ séance.** Une semaine peut lire
+« 3 jours actifs, 4 séances ». Les deux chiffres ne se remplacent pas et ne partagent jamais un
+affichage.
+
+C'est ce partage qui protège les métriques : **le contrat et la série comptent des jours, jamais
+des séances.** Deux séances le même jour ne gonflent ni l'un ni l'autre — sinon il suffirait
+d'enchaîner deux séances faciles pour tenir une série. Bonne nouvelle du code : `weekDone` (une
+table indexée par jour de semaine) et `streakOf` (un `Set` de dates) sont **déjà** par jour et
+n'ont pas une ligne à changer.
+
+**Le vrai piège est ailleurs, et il est silencieux.** `last28` et `monthCount` comptent des
+*lignes* de journal. Une ligne valant aujourd'hui un jour, ils comptent des jours ; dès qu'une
+date peut porter plusieurs lignes, **ils deviennent des compteurs de séances sans que personne
+n'ait touché à ce code**. Or `last28` alimente `suggested`, le mode conseillé : deux séances par
+jour pousseraient vers WARRIOR puis BEAST — donc plus de répétitions — pour une raison qui n'a
+rien à voir avec la capacité du pratiquant. **Chaque compteur doit donc être audité et déclaré
+explicitement par jour ou par séance. Un `.length` sur le journal n'est plus une réponse.**
+
+**La ligne de journal gagne un identifiant : l'horodatage de sa création.** La date (`d`) cesse
+d'être la clé, et elle l'est aujourd'hui partout (fiche, porte du bilan, `logSession`, reprise au
+démarrage). Une clé pour deux besoins : elle identifie *et* ordonne — sans elle, on ne sait pas
+laquelle des deux séances du jour vient d'abord, donc on ne peut pas afficher les deux bilans dans
+l'ordre. **Migration obligatoire** : les lignes existantes n'en portent pas, les exports déjà sur
+disque doivent continuer à s'importer.
+
+**Une séance ad hoc ne pioche pas dans le thème du jour.** Un deuxième travail le même jour ne
+doit pas refaire travailler les mêmes choses. Le générateur choisit déjà selon les schémas moteurs
+que la semaine n'a pas encore couverts : une séance ad hoc pioche dans **tout le catalogue** pour
+combler ces trous. C'est sa raison d'être, pas un effet de bord.
+
+**Le bandeau passe à sept cases**, samedi et dimanche à la même taille que les autres, en défilement
+horizontal. Règle de position : **on voit toujours le lendemain.** Vendredi montre samedi et
+n'affiche plus lundi ; samedi et dimanche collent le bandeau à droite ; lundi le ramène tout à
+gauche. Toutes les cases restent atteignables au doigt — c'est une position par défaut, pas une
+restriction. Deux simplifications tombent avec ça : le repli du week-end dans `isoOfWeekday` et le
+garde `dowToday <= 5` de `logSession` n'existent que faute d'onglet de week-end. **Et un onglet de
+week-end n'a pas de thème, donc il ne peut être qu'ad hoc** : la règle du bandeau et celle du
+tirage se rejoignent d'elles-mêmes.
+
+**Révision probable du contrat, à trancher avec son interface : un nombre de séances par semaine,
+les jours restant libres** — plutôt que des jours nommés à l'avance comme le dit la section 3.
+Ça dissout la question du plafond (« 6/4 » veut dire qu'on a dépassé son contrat ; « 6/5 jours »
+ne voulait rien dire, 5 étant une borne physique et non un objectif). Deux conséquences à ne pas
+découvrir en codant :
+
+- **Une série de jours consécutifs devient incompatible avec des jours libres.** Un jour de repos
+  légitime casserait la série, qui punirait donc exactement la souplesse qu'on vient d'accorder.
+  Elle devrait compter des **semaines de contrat tenu**. Non tranché.
+- **Le gel perd son objet.** Il couvre « un jour de contrat manqué », ce qui présuppose des jours
+  identifiés ; avec des jours libres, rien n'est manqué avant la fin de la semaine. Il se peut
+  qu'un contrat souple soit déjà ce que le gel rafistolait. Non tranché.
+
+**Ce qui est fait en attendant** (2026-09-09) : la suppression d'une séance, qui débloque la
+démonstration de l'app à quelqu'un sans polluer les stats. Elle n'est pas un pansement — un jour
+qui porte plusieurs séances a d'autant plus besoin qu'on puisse en retirer une.
+
 ---
 
 ## 4. Leaderboard — PHASE 2

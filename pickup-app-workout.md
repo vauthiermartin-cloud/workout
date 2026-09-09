@@ -244,6 +244,39 @@ Le lot est clos, et l'étape 3 a suivi.
     gardé par `dowToday <= 5`, sans quoi un samedi désignait un onglet inexistant et plantait
     l'écran.
 
+- **Une séance se supprime, depuis la relecture.** Fait le 2026-09-09. Le besoin de départ était
+  de montrer l'app à quelqu'un — générer, lancer, finir pour voir l'écran de bilan — sans laisser
+  la séance de démonstration dans les stats. Elle sert aussi à une séance loguée par erreur ou
+  lancée pour voir.
+  - **Elle est sous l'onglet LA SÉANCE, pas sur l'écran de fin.** Celui-là se voit tous les vrais
+    matins juste après l'effort ; un geste destructeur n'y a rien à faire. La relecture ne
+    s'atteint que délibérément, et couvre depuis hier tous les jours de la semaine — on peut donc
+    nettoyer une démonstration faite sur l'onglet d'un autre jour.
+  - **Elle s'arme, puis se confirme.** L'état d'armement vit dans `SupprimerSeance`, un composant
+    à part : changer d'onglet le démonte, donc le bouton se désarme seul, et il se rend en pièce
+    détachée dans les tests — le rendu statique n'atteint que l'onglet d'arrivée. Un écran qui
+    s'ouvrirait déjà armé ferait de la confirmation un décor, et un test le vérifie.
+  - **La ligne s'efface à sa date**, comme elle se corrige. **Rien de dérivé n'est à mettre à
+    jour** : série, contrat de la semaine et couverture des schémas moteurs se recalculent du
+    journal à chaque rendu. Une séance en cours à cette date est aussi oubliée (`K_RUN`,
+    `pending`), sans quoi le démarrage suivant proposait de reprendre ce qu'on venait d'effacer.
+    Le jour redevient vierge et le bouton de génération revient — il est conditionné à
+    `!faitEtEnregistre`.
+  - **`app/test/journal.test.js`** (dixième fichier) couvre `streakOf`, qui ne l'était pas, et
+    épingle la propriété dont dépend l'étape à venir : **la série compte des jours, pas des
+    lignes** — deux séances le même jour ne valent qu'un jour de série.
+
+**Un modèle décidé le 2026-09-09 et pas encore codé : séances ad hoc et plusieurs séances par
+jour.** Écrit dans `brief-v2-multi-user.md` section 3.1. Le partage porteur est **jour actif ≠
+séance** (« 3 jours actifs, 4 séances »), qui laisse le contrat et la série par jour et n'a donc
+aucun chiffre existant à redéfinir. **Le piège à connaître avant d'y toucher** : `last28` et
+`monthCount` comptent des *lignes*, donc des jours seulement parce qu'une date n'en porte qu'une.
+Dès qu'elle en portera plusieurs, ils deviendront des compteurs de séances sans que personne
+n'ait touché à ce code — et `last28` alimente `suggested`, le mode conseillé, donc le volume de
+répétitions. La section liste aussi le bandeau à sept cases, le tirage ad hoc hors thème du jour,
+et deux conséquences non tranchées sur la série et le gel si le contrat devient un nombre de
+séances à jours libres. Une étape à elle seule, avec migration.
+
 **Une décision prise le 2026-09-08 et pas encore codée : la seconde question de densité.** Le
 ressenti actuel ne distingue pas la charge du rythme, et « trop dur » sur une séance seulement
 trop serrée déclencherait une descente de mode — donc moins de répétitions, alors que le
@@ -321,7 +354,7 @@ Fichiers du projet :
 4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
 5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures.
 6. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits.
-7. `app/test/` — neuf fichiers, 119 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans de bilan, dates de la semaine. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
+7. `app/test/` — dix fichiers, 130 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans de bilan, dates de la semaine, journal et série. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
 8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
 9. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 10. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.

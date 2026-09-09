@@ -17,7 +17,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BilanEntete, BilanPatterns } from "../src/components/Bilan.jsx";
 import { Perfs } from "../src/components/Perfs.jsx";
-import { Revoir } from "../src/components/Revoir.jsx";
+import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
 import { WORKOUTS } from "../src/data/workouts.js";
 import { TIMERS } from "../src/data/timers.js";
 import { PATTERNS, patternsOfWorkout } from "../src/data/patterns.js";
@@ -35,11 +35,11 @@ const ligne = (wod, extra) => ({
   arrete:false, dur:1500, ...extra,
 });
 
-const relecture = (wod, extra) => html(
+const relecture = (wod, extra, props) => html(
   <Revoir wod={wod} finisher={null} stretch={null} level={2} entry={ligne(wod, extra)}
     accent="#c8ff00" vol={volumeOf(wod.name, 2)} volFin={null}
     streak={3} weekCount={4} pats={patternsOfWorkout(wod)} manque={PATTERNS.slice(0, 2)}
-    reduced onValider={() => {}} onRetour={() => {}} />
+    reduced onValider={() => {}} onRetour={() => {}} {...props} />
 );
 
 describe("le bilan partagé", () => {
@@ -99,6 +99,28 @@ describe("la relecture d'une séance faite", () => {
       expect(vu).not.toContain("DÉMARRER");
       expect(vu).not.toContain("LANCER LE CHRONO");
     });
+  });
+});
+
+/* La suppression ne se teste qu'ici, en pièce détachée : elle vit sous l'onglet
+   de la séance, et le rendu statique n'atteint que l'onglet d'arrivée. */
+describe("la suppression d'une séance", () => {
+  it("ne s'offre que si l'écran sait supprimer", () => {
+    expect(html(<SupprimerSeance onSupprimer={null} />)).toBe("");
+    expect(html(<SupprimerSeance onSupprimer={() => {}} />)).toContain("SUPPRIMER CETTE SÉANCE");
+  });
+
+  /* Un écran qui s'ouvrirait déjà armé ferait de la confirmation un décor. */
+  it("s'ouvre désarmée : rien n'efface au premier appui", () => {
+    const vu = html(<SupprimerSeance onSupprimer={() => {}} />);
+    expect(vu).not.toContain("EFFACER");
+    expect(vu).not.toContain("Sans retour");
+  });
+
+  it("l'arrivée de la relecture ne porte aucun geste destructeur", () => {
+    const vu = relecture(CATALOGUE[0], null, { onSupprimer: () => {} });
+    expect(vu).toContain("CE QUE TU AS FAIT");
+    ["SUPPRIMER", "EFFACER"].forEach((m) => expect(vu).not.toContain(m));
   });
 });
 
