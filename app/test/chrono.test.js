@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  RESUME_WINDOW, beatAt, beatOf, goToPhase, isOver, newBeat, newRun, pauseRun, phaseDur,
-  planDur, position, record, resumableKind, resumeRun, suspendRun, verdict,
+  RESUME_WINDOW, beatAt, beatOf, doneWith, goToPhase, isOver, newBeat, newRun, pauseRun,
+  phaseDur, planDur, position, record, resumableKind, resumeRun, suspendRun, verdict,
 } from "../src/lib/chrono.js";
 import { TIMERS } from "../src/data/timers.js";
 
@@ -21,7 +21,10 @@ const tickTo = ({ run, beat }, ms) => {
   let cur = { run, beat };
   for (let t = beat.seenAt + 100; t <= T0 + ms; t += 100) {
     const v = verdict(cur.run, cur.beat, t);
-    if (v.kind === "complete") cur = { run: goToPhase(cur.run, cur.run.idx + 1, t), beat: newBeat(t) };
+    /* `v.elapsed` est passé comme le composant le passe : c'est ce qui solde la
+       phase dans le temps fait. Sans lui, le helper mesurerait un déroulé que
+       personne ne joue. */
+    if (v.kind === "complete") cur = { run: goToPhase(cur.run, cur.run.idx + 1, t, v.elapsed), beat: newBeat(t) };
     else if (v.kind === "running") cur = { run: cur.run, beat: beatAt(cur.run, t) };
     else return { ...cur, halted: v };
   }
@@ -144,6 +147,60 @@ describe("pause explicite", () => {
     const t = T0 + 500_000;
     const r = resumeRun(p, t);
     expect(verdict(r, { at:p.at, seenAt:t }, t + 1000).elapsed).toBeCloseTo(121, 1);
+  });
+});
+
+/* Le chrono effectué, qui part en base dans le champ `dur`.
+   =======================================================
+
+   Il est mesuré et non déduit du plan, et c'est le seul point qui compte ici :
+   sur un escalier — 50, 40, 30, 20, 10 — c'est le pratiquant qui arrête la
+   phase, sa durée n'est écrite nulle part, et le plan aurait donné la seule
+   réponse fausse précisément là où le chiffre est intéressant. */
+describe("temps de chrono réellement fait", () => {
+  const ESCALIER = [
+    { t:"down", sec:300, warm:true, label:"Échauffement" },
+    { t:"up", cap:1500, pas:10, label:"Escalier" },
+  ];
+
+  it("un run neuf n'a rien fait", () => {
+    expect(newRun({ plan: PLAN }, T0).done).toBe(0);
+  });
+
+  it("l'échauffement n'entre pas dans le compte", () => {
+    const run = newRun({ plan: PLAN }, T0);
+    expect(doneWith(run, 300)).toBe(0);
+    expect(goToPhase(run, 1, T0 + 300_000, 300).done).toBe(0);
+  });
+
+  it("une séance déroulée jusqu'au bout vaut la durée de sa séance", () => {
+    const fin = tickTo(start(), 300_000 + 1_260_000);
+    expect(isOver(fin.run)).toBe(true);
+    expect(fin.run.done).toBeCloseTo(1260, 0);
+  });
+
+  /* Le cas qui interdit de déduire du plan : la phase s'arrête plus tôt, ou
+     plus tard, et seul le temps observé le sait. */
+  it("une phase ouverte compte ce qui a été fait, pas son plafond", () => {
+    const run = newRun({ plan: ESCALIER, segment:"workout" }, T0);
+    const apres = goToPhase(run, 1, T0 + 300_000, 300);
+    expect(goToPhase(apres, 2, T0 + 300_000 + 762_000, 762).done).toBeCloseTo(762, 0);
+  });
+
+  it("un bond de temps ne gonfle pas le compte au-delà de la phase", () => {
+    const run = { ...newRun({ plan: PLAN }, T0), idx: 1 };
+    expect(doneWith(run, 99_999)).toBe(1260);
+  });
+
+  it("le temps déjà fait ne se recompte pas quand on avance", () => {
+    const un = goToPhase(newRun({ plan: ESCALIER }, T0), 1, T0, 0);
+    const deux = goToPhase(un, 2, T0, 400);
+    expect(goToPhase(deux, 3, T0, 0).done).toBeCloseTo(400, 0);
+  });
+
+  it("un plan épuisé ne compte plus rien de neuf", () => {
+    const fini = { ...newRun({ plan: PLAN }, T0), idx: 2, done: 1260 };
+    expect(doneWith(fini, 500)).toBe(1260);
   });
 });
 

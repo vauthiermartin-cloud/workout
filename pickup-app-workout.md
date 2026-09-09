@@ -174,6 +174,51 @@ Le lot est clos, et l'étape 3 a suivi.
     et non comme valeur par défaut, sans quoi les lignes antérieures au champ — qui n'en
     portent pas la clé — auraient été prises pour des séances arrêtées.
 
+- **La fiche d'une séance faite ne montre plus qu'une porte, et la relecture a ses deux
+  onglets.** Corrigé le 2026-09-09, après usage réel. Trois constats de suite : le bouton de
+  bilan arrivait *sous* les consignes, donc trop bas ; « LANCER LE CHRONO » restait offert et
+  laissait croire qu'on pouvait rejouer sa journée ; et relire les consignes d'un travail déjà
+  fait n'aide personne.
+  - **La fiche du jour, séance enregistrée, ne porte plus ni échauffement, ni consignes, ni
+    CTA** — seulement `REVOIR MON BILAN`. Le drapeau est `faitEtEnregistre` dans `App.jsx`, qui
+    compare la ligne du jour à la séance affichée.
+  - **Le bouton n'ouvre plus l'écran de fin, mais une relecture** (`app/src/components/
+    Revoir.jsx`). La distinction est le fond du sujet : **l'écran de fin est un moment du
+    parcours** — il propose un finisher, des étirements, il demande le ressenti — et le rouvrir
+    plus tard rouvrait ces décisions sur une journée déjà jouée. La relecture ne décide rien.
+    Deux onglets : les chiffres (l'arrivée, la seule chose encore corrigeable) et la séance
+    (bilan, schémas moteurs, consignes). **Aucun CTA, et le ressenti n'y figure pas** : il se
+    répond à chaud ou pas du tout, une séance sans réponse est une séance sans signal et non
+    une séance à rattraper.
+  - **Les chiffres communs aux deux écrans vivent dans `app/src/components/Bilan.jsx`**
+    (`BilanEntete`, `BilanPatterns`). Le libellé du total dépend de trois conditions qui se
+    croisent — séance relue ou non, tours ouverts ou non, finisher enchaîné ou non — et deux
+    copies de cette décision auraient fini par dire deux choses.
+  - **`Perfs.jsx` s'est scindé** : `PerfsCorps` est la saisie sans son cadre, `Perfs` garde le
+    plein écran de l'écran de fin. Le corps sert aux deux endroits, et `sortie` nomme la sortie
+    qui n'est pas la même.
+  - **La ligne a gagné un champ `dur`, le chrono réellement effectué en secondes. Il part en
+    base : ne pas le renommer.** Il est **mesuré et non déduit du plan**, et c'est un point à
+    ne pas « simplifier » plus tard : sur un format à durée ouverte — l'escalier 50/40/30/20/10,
+    les 50 burpees — c'est le pratiquant qui arrête la phase et sa durée n'est écrite nulle
+    part. Déduire du plan aurait donné la seule réponse fausse précisément là où le chiffre est
+    intéressant. Le temps s'accumule donc dans le `run` (`done`, via `doneWith` et `goToPhase`
+    dans `chrono.js`), **hors échauffement, hors pauses et hors suspensions** : les 25 minutes
+    que promet le nom de l'app sont celles de la séance. Une séance retrouvée au démarrage et
+    seulement enregistrée porte le temps observé jusqu'à son dernier battement — la seule
+    mesure honnête pour une séance dont personne n'a vu la fin.
+  - **Le total de répétitions et le chrono s'affichent sur l'écran des chiffres.** Le total suit
+    la frappe, et **se tait tant qu'un tour ou un score manque** : additionner ce qui est connu
+    donnerait un total plus faux que pas de total.
+  - **Un huitième fichier de tests, `app/test/rendu.test.jsx`.** Les autres tiennent les données
+    et les calculs, jamais l'affichage : une séance sans plan de chrono était attrapée, un écran
+    qui plante à l'ouverture ne l'était pas. Rendu statique côté serveur — le projet n'a pas de
+    `jsdom` et n'ouvre pas de navigateur en test, donc on ne peut ni taper dans un champ ni
+    changer d'onglet. Ce qui s'y vérifie : la relecture se rend pour **chaque** séance du
+    catalogue, elle s'ouvre sur les chiffres, elle ne propose pas de rejouer, et les morceaux
+    communs ne portent ni CTA ni ressenti. **Les entités HTML y sont défaites avant comparaison**,
+    sans quoi les vérifications d'absence passeraient sans rien vérifier.
+
 **Une décision prise le 2026-09-08 et pas encore codée : la seconde question de densité.** Le
 ressenti actuel ne distingue pas la charge du rythme, et « trop dur » sur une séance seulement
 trop serrée déclencherait une descente de mode — donc moins de répétitions, alors que le
@@ -250,8 +295,8 @@ Fichiers du projet :
 
 4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
 5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures.
-6. `app/src/App.jsx` et `app/src/components/` — les écrans.
-7. `app/test/` — sept fichiers, 95 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
+6. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits.
+7. `app/test/` — huit fichiers, 114 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans de bilan. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
 8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
 9. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 10. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.

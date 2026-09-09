@@ -32,7 +32,24 @@ export function planDur(plan) {
 }
 
 export function newRun(ctx, now = Date.now()) {
-  return { ...ctx, idx: 0, phaseStart: now, paused: false, suspended: false, at: 0, seenAt: now, startedAt: now };
+  return { ...ctx, idx: 0, phaseStart: now, paused: false, suspended: false, at: 0, seenAt: now, startedAt: now, done: 0 };
+}
+
+/* Le temps de chrono réellement fait, une fois la phase en cours comptée.
+
+   Il s'accumule dans l'enregistrement au lieu de se déduire du plan, et ce
+   n'est pas de la prudence : sur un format à durée ouverte — l'escalier, les
+   50 burpees — c'est le pratiquant qui arrête la phase, et sa durée n'est
+   écrite nulle part. Déduire du plan aurait donné la seule réponse fausse
+   précisément là où le chiffre est intéressant.
+
+   L'échauffement en est exclu, comme partout ailleurs : les 25 minutes que
+   promet le nom de l'app sont celles de la séance. Les pauses et les
+   suspensions le sont aussi, `elapsed` ne comptant que le temps observé. */
+export function doneWith(run, elapsed) {
+  const ph = run.plan[run.idx];
+  if (!ph || ph.warm) return run.done || 0;
+  return (run.done || 0) + Math.min(elapsed, phaseLimit(ph));
 }
 
 export const newBeat = (now = Date.now()) => ({ at: 0, seenAt: now });
@@ -63,8 +80,11 @@ export const resumeRun = (run, now) => ({
   ...run, paused: false, suspended: false, phaseStart: now - run.at * 1000,
 });
 
-export const goToPhase = (run, idx, now) => ({
+/* Quitter une phase la solde dans le temps fait. Le chrono n'avance jamais en
+   arrière, donc rien ne se recompte. */
+export const goToPhase = (run, idx, now, elapsed = 0) => ({
   ...run, idx, paused: false, suspended: false, at: 0, phaseStart: now,
+  done: doneWith(run, elapsed),
 });
 
 export const isOver = (run) => run.idx >= run.plan.length;

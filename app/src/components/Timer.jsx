@@ -5,7 +5,8 @@ import { labelOf, quantityOf } from "../data/exercises.js";
 import { mmss } from "../lib/dates.js";
 import { beep } from "../lib/audio.js";
 import {
-  beatOf, goToPhase, newBeat, pauseRun, phaseDur, position, record, resumeRun, suspendRun, verdict,
+  beatOf, doneWith, goToPhase, newBeat, pauseRun, phaseDur, position, record, resumeRun,
+  suspendRun, verdict,
 } from "../lib/chrono.js";
 
 /* Un battement enregistré toutes les 5 s : assez fin pour retrouver sa place
@@ -80,11 +81,13 @@ export function Timer({ initial, level, onPersist, onDone }) {
     onPersist(record(next, beat));
   };
 
+  /* Le temps fait part avec la fin du chrono : c'est le seul moment où il est
+     encore connu, l'enregistrement de séance étant écrit juste après. */
   const goTo = (i) => {
-    if (i >= phases.length) { onDone({ aborted: false }); return; }
+    if (i >= phases.length) { onDone({ aborted: false, done: doneWith(run, elapsed) }); return; }
     const t = Date.now();
     beepRef.current = -1;
-    commit(goToPhase(run, i, t), newBeat(t));
+    commit(goToPhase(run, i, t, elapsed), newBeat(t));
   };
 
   const toggle = () => {
@@ -347,7 +350,8 @@ export function Timer({ initial, level, onPersist, onDone }) {
           {/* Arrêter en route n'est pas terminer : l'écran de bilan a besoin de
               la distinction pour ne pas demander un ressenti sur une séance
               incomplète. */}
-          <button onClick={() => onDone({ aborted: true })} style={{ width:"100%", padding:"16px 0",
+          <button onClick={() => onDone({ aborted: true, done: doneWith(run, elapsed) })}
+            style={{ width:"100%", padding:"16px 0",
             border:`1px solid ${C.ember}`, color:C.ember, fontFamily:DISPLAY, fontSize:16,
             letterSpacing:".04em", borderRadius:2 }}>
             ARRÊTER

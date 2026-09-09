@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { C, DISPLAY, MONO } from "./lib/theme.js";
 import { store, readJson, K_LOG, K_SET, K_BAK, K_RUN } from "./lib/store.js";
-import { newBeat, newRun, position, record, resumableKind } from "./lib/chrono.js";
+import { doneWith, newBeat, newRun, position, record, resumableKind } from "./lib/chrono.js";
 import { iso, fromIso, mondayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
 import { beep } from "./lib/audio.js";
 import { volumeOf, streakOf } from "./lib/volume.js";
@@ -19,6 +19,8 @@ import { f } from "./data/items.js";
 import { Rail } from "./components/Rail.jsx";
 import { Timer } from "./components/Timer.jsx";
 import { Perfs } from "./components/Perfs.jsx";
+import { BilanEntete, BilanPatterns } from "./components/Bilan.jsx";
+import { Revoir } from "./components/Revoir.jsx";
 
 export default function App() {
   const today = new Date();
@@ -42,6 +44,7 @@ export default function App() {
   const [run, setRun] = useState(null);
   const [pending, setPending] = useState(null);
   const [endOpen, setEndOpen] = useState(false);
+  const [revoirOpen, setRevoirOpen] = useState(false);
   const [confirmFermer, setConfirmFermer] = useState(false);
   const [perfsOpen, setPerfsOpen] = useState(false);
   const [endStage, setEndStage] = useState("workout");
@@ -126,6 +129,10 @@ export default function App() {
   const pool = WORKOUTS[dayKey];
   const wod = variant === null ? null : pool[variant];
   const accent = wod && wod.test ? C.ember : C.lime;
+  /* La séance affichée est celle du jour, et elle est faite. La fiche n'a plus
+     alors à décrire ce qui est derrière, ni à proposer de le rejouer : elle
+     n'offre que la porte du bilan. */
+  const faitEtEnregistre = !!(wod && entryToday && entryToday.w === wod.name);
 
   const generate = () => {
     const next = pickVariant(pool, weekPatterns, seen, variant);
@@ -133,22 +140,16 @@ export default function App() {
     setSeen(next.seen);
     setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
     setFinisher(null); setStretch(null); setPropose(null); setEndOpen(false); setAborted(false);
-    setPerfsOpen(false); setConfirmFermer(false);
+    setPerfsOpen(false); setConfirmFermer(false); setRevoirOpen(false);
   };
 
   /* Le bilan du jour se réaffiche depuis la fiche. Une donnée déjà stockée ne
      doit pas devenir inaccessible parce qu'un tap a fermé l'écran.
 
-     Il se réaffiche toujours au stade « séance », jamais « finisher » : c'est
-     le seul stade où le ressenti reste répondable, et le finisher déjà fait
-     empêche de son côté qu'on en propose un second. */
-  const revoirBilan = () => {
-    setEndStage("workout");
-    setAborted(!!(entryToday && entryToday.arrete));
-    setPropose(null);
-    setConfirmFermer(false);
-    setEndOpen(true);
-  };
+     Ce n'est pas l'écran de fin qui se rouvre, mais sa relecture : l'écran de
+     fin propose un finisher, des étirements, il demande le ressenti — des
+     décisions qui n'ont plus lieu d'être une fois la journée jouée. */
+  const revoirBilan = () => setRevoirOpen(true);
 
   /* Le tirage penche vers les abdos les jours déjà chargés en burpees,
      mais garde une chance de sortir l'autre famille pour ne pas devenir prévisible. */
@@ -234,6 +235,10 @@ export default function App() {
          que le bilan n'était affiché qu'une fois, l'état de l'écran suffisait à
          le savoir ; maintenant qu'il se réaffiche, la ligne doit s'en souvenir. */
       arrete: "arrete" in o ? o.arrete : !!(avant && avant.arrete),
+      /* Le temps de chrono fait sur la séance, en secondes, échauffement et
+         finisher exclus. Nul quand la séance a été cochée à la main sans
+         chrono : il n'y a alors rien de mesuré à montrer. */
+      dur: "dur" in o ? o.dur : (avant && avant.dur) ?? null,
     });
   };
 
@@ -249,7 +254,13 @@ export default function App() {
        attendait auparavant le score pour être enregistré : une séance quittée
        avant de le saisir disparaissait. Le score reste simplement vide jusqu'à
        la relecture des perfs. */
-    else { setEndStage("workout"); logSession({ arrete: !!(how && how.aborted) }); }
+    else {
+      setEndStage("workout");
+      logSession({
+        arrete: !!(how && how.aborted),
+        dur: how && how.done != null ? Math.round(how.done) : null,
+      });
+    }
     setPropose(null);
     setConfirmFermer(false);
     setEndOpen(true);
@@ -290,6 +301,11 @@ export default function App() {
     if (o) logSession(o);
     setPerfsOpen(false);
   };
+
+  /* Les deux mêmes gestes depuis la relecture, qui se referme au lieu de
+     revenir à un bilan de fin qu'elle a remplacé. */
+  const validerRevoir = (o) => { logSession({ ...o, valide: true }); setRevoirOpen(false); };
+  const quitterRevoir = (o) => { if (o) logSession(o); setRevoirOpen(false); };
 
   const lancerStretch = () => {
     setStretch(propose);
@@ -340,6 +356,10 @@ export default function App() {
          lignes antérieures à ce champ n'en portent pas la clé, et le défaut
          aurait fait passer une séance terminée pour une séance arrêtée. */
       arrete: avant ? !!avant.arrete : true,
+      /* L'enregistrement retrouvé porte le temps déjà fait, jusqu'à son dernier
+         battement observé. C'est la seule mesure honnête disponible pour une
+         séance dont personne n'a vu la fin. */
+      dur: (avant && avant.dur) ?? (rec.segment === "workout" ? Math.round(doneWith(rec, rec.at || 0)) : null),
     });
     dropPending();
   };
@@ -490,13 +510,47 @@ export default function App() {
               {day.theme.toUpperCase()}
             </div>
 
-            <div style={{ borderLeft:`2px solid ${C.line}`, paddingLeft:12, marginBottom:24,
-              fontSize:12.5, color:C.ash, lineHeight:1.5 }}>
-              <span style={{ color:C.bone }}>Avant.</span> Squats latéraux, élévations latérales de jambe,
-              isométries kiné, puis 30 s de deep squat.
-            </div>
+            {!faitEtEnregistre && (
+              <div style={{ borderLeft:`2px solid ${C.line}`, paddingLeft:12, marginBottom:24,
+                fontSize:12.5, color:C.ash, lineHeight:1.5 }}>
+                <span style={{ color:C.bone }}>Avant.</span> Squats latéraux, élévations latérales de jambe,
+                isométries kiné, puis 30 s de deep squat.
+              </div>
+            )}
 
-            {wod ? (
+            {faitEtEnregistre ? (
+              /* La séance est derrière : plus de consignes, plus de chrono à
+                 lancer. Relire les consignes d'un travail déjà fait n'aide
+                 personne, et le bouton de lancement laissait croire qu'on
+                 pouvait rejouer sa journée. Une seule porte, celle du bilan —
+                 les consignes s'y retrouvent, du côté relecture. */
+              <div style={{ borderTop:`1px solid ${C.line}`, paddingTop:18 }}>
+                <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.lime }}>
+                  ✓ SÉANCE ENREGISTRÉE
+                </div>
+                <div style={{ fontFamily:DISPLAY, fontSize:30, lineHeight:1, margin:"8px 0 0" }}>
+                  {wod.name}
+                </div>
+                <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"8px 0 0" }}>
+                  {entryToday.valide
+                    ? "Tes chiffres du jour sont relus."
+                    : "Tes chiffres du jour n'ont pas encore été relus."}
+                </p>
+                <button onClick={revoirBilan} style={{ width:"100%", padding:"16px 0", marginTop:16,
+                  background: entryToday.valide ? "transparent" : C.bone,
+                  border:`1px solid ${entryToday.valide ? C.line : C.bone}`,
+                  color: entryToday.valide ? C.bone : C.ink,
+                  fontFamily:DISPLAY, fontSize:18, letterSpacing:".04em", borderRadius:2 }}>
+                  REVOIR MON BILAN
+                </button>
+                {saveState === "error" && (
+                  <div style={{ marginTop:14, fontSize:12.5, color:C.ember }}>
+                    Enregistrement impossible sur cet appareil. Vérifie que le navigateur
+                    n'est pas en navigation privée.
+                  </div>
+                )}
+              </div>
+            ) : wod ? (
               <div key={runId}>
                 <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between",
                   borderTop:`1px solid ${C.line}`, paddingTop:18, marginBottom:4 }}>
@@ -534,28 +588,6 @@ export default function App() {
                       onChange={(e) => setScoreInput(e.target.value)} placeholder="—"
                       style={{ width:"100%", marginTop:8, padding:"8px 0", background:"transparent", color:C.bone,
                         fontFamily:DISPLAY, fontSize:34, border:"none", borderBottom:`1px solid ${C.line}`, outline:"none" }} />
-                  </div>
-                )}
-                {/* La porte de retour vers le bilan du jour. Elle s'appuie sur la
-                    ligne enregistrée et non sur l'état de l'écran : elle existe
-                    donc encore après un redémarrage de l'app. */}
-                {entryToday && entryToday.w === wod.name && (
-                  <div style={{ marginTop:14, padding:"12px 14px", border:`1px solid ${C.line}`, borderRadius:3 }}>
-                    <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.lime }}>
-                      ✓ SÉANCE ENREGISTRÉE
-                    </div>
-                    {!entryToday.valide && (
-                      <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"8px 0 0" }}>
-                        Tes chiffres du jour n'ont pas encore été relus.
-                      </p>
-                    )}
-                    <button onClick={revoirBilan} style={{ width:"100%", padding:"12px 0", marginTop:10,
-                      background: entryToday.valide ? "transparent" : C.bone,
-                      border:`1px solid ${entryToday.valide ? C.line : C.bone}`,
-                      color: entryToday.valide ? C.bone : C.ink,
-                      fontFamily:DISPLAY, fontSize:16, letterSpacing:".04em", borderRadius:2 }}>
-                      REVOIR MON BILAN
-                    </button>
                   </div>
                 )}
                 {saveState === "error" && <div style={{ marginTop:14, fontSize:12.5, color:C.ember }}>Enregistrement impossible sur cet appareil. Vérifie que le navigateur n'est pas en navigation privée.</div>}
@@ -745,7 +777,10 @@ export default function App() {
         )}
       </div>
 
-      {tab === "seance" && (
+      {/* Aucune action au bas de la fiche quand la séance du jour est faite :
+          « lancer le chrono » et « autre séance » proposaient de rejouer une
+          journée déjà jouée. */}
+      {tab === "seance" && !faitEtEnregistre && (
         <div style={{ position:"fixed", bottom:0, left:0, right:0, display:"flex", justifyContent:"center",
           padding:"16px 20px calc(20px + env(safe-area-inset-bottom))",
           background:`linear-gradient(to top, ${C.ink} 62%, rgba(11,11,12,0))` }}>
@@ -843,37 +878,9 @@ export default function App() {
             padding:"max(28px, env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom))" }}>
             <div style={{ maxWidth:460, margin:"0 auto" }}>
 
-              <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".16em", color:C.lime, marginBottom:10 }}>
-                {endStage === "finisher" ? "FINISHER TERMINÉ" : "SÉANCE TERMINÉE"}
-              </div>
-              <div style={{ fontFamily:DISPLAY, fontSize:44, lineHeight:.95, marginBottom:6 }}>
-                {endStage === "finisher" ? "TU EN AS REMIS UNE COUCHE" : "C'EST FAIT"}
-              </div>
-              <p style={{ fontSize:13.5, color:C.ash, lineHeight:1.5, margin:"0 0 28px" }}>
-                {wod.name}{finisher ? ` + ${finisher.name}` : ""}{stretch ? ` + ${stretch.name}` : ""}
-              </p>
-
-              {/* Chiffres */}
-              <div style={{ display:"flex", gap:10, marginBottom:24 }}>
-                {[
-                  { n: (fait ? reel.total : vol.total) + (volFin ? volFin.total : 0),
-                    l: fait ? "RÉPÉTITIONS FAITES"
-                      : vol.amrap || (volFin && volFin.amrap) ? "REPS PAR TOUR" : "RÉPÉTITIONS" },
-                  { n: streak, l: streak === 1 ? "JOUR D'AFFILÉE" : "JOURS D'AFFILÉE" },
-                  { n: `${weekCount}/5`, l: "CETTE SEMAINE" },
-                ].map((k, i) => (
-                  <div key={i} style={{ flex:1, background:C.steel, borderRadius:3, padding:"14px 12px" }}>
-                    <div style={{ fontFamily:DISPLAY, fontSize:32, lineHeight:.9 }}>{k.n}</div>
-                    <div style={{ fontFamily:MONO, fontSize:8, letterSpacing:".1em", color:C.ash, marginTop:6 }}>{k.l}</div>
-                  </div>
-                ))}
-              </div>
-              {vol.amrap && !fait && (
-                <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, margin:"-14px 0 24px" }}>
-                  Format AMRAP : le total affiché est celui d'un seul tour. Dis tes tours en
-                  validant la séance et le total devient le vrai.
-                </p>
-              )}
+              <BilanEntete stage={endStage} wod={wod} finisher={finisher} stretch={stretch}
+                vol={vol} volFin={volFin} reel={reel} fait={fait}
+                streak={streak} weekCount={weekCount} />
 
               {/* Le ressenti. Après les chiffres, il arrive à un moment de recul
                   naturel. Et il reste loin du chemin du pouce vers les boutons
@@ -917,23 +924,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* Schémas */}
-              <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginBottom:8 }}>
-                TRAVAILLÉ AUJOURD'HUI
-              </div>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:12 }}>
-                {pats.map((p) => (
-                  <span key={p} style={{ fontFamily:MONO, fontSize:9, letterSpacing:".1em", padding:"5px 8px",
-                    borderRadius:2, background:C.lime, color:C.ink }}>
-                    {PATTERNS.find((x) => x.id === p).label}
-                  </span>
-                ))}
-              </div>
-              <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"0 0 28px" }}>
-                {manque.length === 0
-                  ? "Semaine complète : les dix schémas moteurs sont couverts."
-                  : `Il reste ${manque.map((p) => p.label.toLowerCase()).join(", ")} à couvrir cette semaine.`}
-              </p>
+              <BilanPatterns pats={pats} manque={manque} />
 
               {/* Proposition */}
               {propose && (
@@ -1094,6 +1085,19 @@ export default function App() {
           </>
         );
       })()}
+
+      {/* ---- Relecture d'une séance faite ---- */}
+      {revoirOpen && faitEtEnregistre && (
+        <Revoir wod={wod} finisher={finisher} stretch={stretch} level={level}
+          entry={entryToday} accent={accent}
+          vol={volumeOf(wod.name, level)}
+          volFin={finisher ? volumeOf(finisher.name, level) : null}
+          streak={streakOf(log, today)} weekCount={weekCount}
+          pats={patternsOfWorkout(wod)}
+          manque={PATTERNS.filter((p) => !weekPatterns.has(p.id))}
+          reduced={reduced}
+          onValider={validerRevoir} onRetour={quitterRevoir} />
+      )}
     </div>
   );
 }
