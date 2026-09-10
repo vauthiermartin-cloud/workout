@@ -21,7 +21,8 @@ import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
 import { WORKOUTS } from "../src/data/workouts.js";
 import { TIMERS } from "../src/data/timers.js";
 import { PATTERNS, patternsOfWorkout } from "../src/data/patterns.js";
-import { perfsOf } from "../src/lib/perfs.js";
+import { attenduDe, perfsOf } from "../src/lib/perfs.js";
+import { labelOf } from "../src/data/exercises.js";
 import { volumeOf } from "../src/lib/volume.js";
 
 /* Les entités sont défaites avant comparaison. Sans ça « C'EST BON » ne se
@@ -159,6 +160,36 @@ describe("le total du jour", () => {
     const ex = champs(simple).find((c) => c.kind === "ex" && c.unit === "reps");
     const vu = relecture(simple, { perfs: { [ex.k]: ex.prescrit + 7 } });
     expect(totalAffiche(vu)).toBe(String(volumeOf(simple.name, 2).total + 7));
+  });
+});
+
+/* Le sujet de ces trois-là : un AMRAP ne se relit pas qu'en tours. Le bilan
+   n'en montrait que le nombre de tours, et un tour entamé puis lâché n'avait
+   nulle part où se dire. */
+describe("les lignes d'un bloc à tours ouverts", () => {
+  const wod = CATALOGUE.find((w) => perfsOf(w.name, 2).some((c) => c.kind === "tours"));
+  const champs = perfsOf(wod.name, 2);
+  const tours = champs.find((c) => c.kind === "tours");
+  const ligne = champs.find((c) => c.de);
+
+  it("nomme chaque exercice du bloc, et se tait sur son total", () => {
+    const vu = relecture(wod);
+    champs.filter((c) => c.de).forEach((c) => expect(vu).toContain(labelOf(c.ex)));
+    expect(vu).toContain("PAR TOUR");
+    expect(vu).not.toContain("ATTENDU");
+  });
+
+  it("chiffre les lignes dès que les tours sont dits", () => {
+    const attendu = attenduDe(ligne, 5);
+    const vu = relecture(wod, { perfs: { [tours.k]: 5 } });
+    expect(vu).toContain(`ATTENDU ${attendu}`);
+    expect(vu).toContain(`value="${attendu}"`);
+  });
+
+  it("garde la ligne corrigée plutôt que de la redéduire", () => {
+    const vu = relecture(wod, { perfs: { [tours.k]: 5, [ligne.k]: 3 } });
+    expect(vu).toContain('value="3"');
+    expect(vu).toContain(`ATTENDU ${attenduDe(ligne, 5)}`);
   });
 });
 

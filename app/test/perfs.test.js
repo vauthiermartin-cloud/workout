@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { correctionsDe, perfsOf, valeurDe, volumeReel } from "../src/lib/perfs.js";
+import { attenduDe, correctionsDe, perfsOf, saisieApres, valeurDe, volumeReel } from "../src/lib/perfs.js";
 import { WORKOUTS } from "../src/data/workouts.js";
 import { TIMERS } from "../src/data/timers.js";
 import { EXERCISES } from "../src/data/exercises.js";
@@ -27,24 +27,34 @@ describe("perfsOf — ce que la feuille propose de saisir", () => {
     expect(planche.prescrit).toBe(120);
   });
 
-  it("ne propose qu'un nombre de tours sur un format ouvert", () => {
+  it("demande les tours d'un format ouvert, puis ses exercices", () => {
     const champs = perfsOf("AMRAP 20", 1);
-    expect(champs).toHaveLength(1);
     expect(champs[0]).toMatchObject({ kind:"tours", k:"tours:0", unit:"tours", pas:0 });
     expect(champs[0].parTour).toBe(65); // 5 + 10 + 15 + 20 + 15
+    /* Les lignes viennent après les tours dont elles découlent. */
+    expect(champs.slice(1).map((c) => c.k)).toEqual(
+      ["t0:pullups", "t0:burpees", "t0:pompes", "t0:airSquats", "t0:hipThrusts"]);
+    expect(champ(champs, "t0:pullups")).toMatchObject({ kind:"ex", de:"tours:0", n:5, prescrit:null });
   });
 
-  it("donne un champ de tours par bloc ouvert", () => {
+  it("donne un champ de tours par bloc ouvert, et rattache chaque ligne au sien", () => {
     const champs = perfsOf("2 × AMRAP 10", 1);
-    expect(champs.map((c) => c.k)).toEqual(["tours:0", "tours:1"]);
-    expect(champs.map((c) => c.label)).toEqual(["AMRAP A", "AMRAP B"]);
+    const tours = champs.filter((c) => c.kind === "tours");
+    expect(tours.map((c) => c.k)).toEqual(["tours:0", "tours:1"]);
+    expect(tours.map((c) => c.label)).toEqual(["AMRAP A", "AMRAP B"]);
+    expect(champ(champs, "t0:pullups").de).toBe("tours:0");
+    expect(champ(champs, "t1:situps").de).toBe("tours:1");
   });
 
-  it("déclare le pas d'un escalier ouvert", () => {
+  it("déclare le pas d'un escalier ouvert, sur le bloc comme sur ses lignes", () => {
     const champs = perfsOf("Escalier ouvert", 1);
-    expect(champs).toEqual([expect.objectContaining({
-      kind:"tours", pas:1, parTour:6, lignes:[1, 2, 3],
-    })]);
+    expect(champs[0]).toMatchObject({ kind:"tours", pas:1, parTour:6, lignes:[1, 2, 3] });
+    expect(champ(champs, "t0:pompes")).toMatchObject({ kind:"ex", n:2, pas:1, de:"tours:0" });
+  });
+
+  it("applique le mode aux lignes d'un bloc ouvert", () => {
+    expect(champ(perfsOf("AMRAP 20", 1), "t0:burpees").n).toBe(10);
+    expect(champ(perfsOf("AMRAP 20", 3), "t0:burpees").n).toBeGreaterThan(10);
   });
 
   it("ajoute le score du test le vendredi, et lui seul", () => {
@@ -93,6 +103,19 @@ describe("valeurDe — la relecture prime, le prescrit comble", () => {
     expect(valeurDe(c, { "s:burpees": 33 })).toBe(33);
     expect(valeurDe(c, { "s:burpees": 0 })).toBe(0);
   });
+
+  it("déduit des tours ce qu'une ligne de bloc ouvert n'a pas encore dit", () => {
+    const ligne = champ(perfsOf("AMRAP 20", 1), "t0:burpees");
+    expect(valeurDe(ligne, null)).toBe(null);           // tours inconnus : pas d'attendu
+    expect(valeurDe(ligne, { "tours:0": 4 })).toBe(40);
+    expect(valeurDe(ligne, { "tours:0": 4, "t0:burpees": 34 })).toBe(34);
+  });
+
+  it("empile les paliers d'un escalier sur une ligne", () => {
+    const ligne = champ(perfsOf("Escalier ouvert", 1), "t0:airSquats");
+    expect(attenduDe(ligne, 5)).toBe(25);  // 3 + 4 + 5 + 6 + 7
+    expect(attenduDe(ligne, "")).toBe(null);
+  });
 });
 
 describe("volumeReel — le total de ce qui a été fait", () => {
@@ -108,6 +131,13 @@ describe("volumeReel — le total de ce qui a été fait", () => {
 
   it("multiplie un tour d'AMRAP par les tours annoncés", () => {
     expect(volumeReel("AMRAP 20", 1, { "tours:0": 4 }, null)).toEqual({ total:260, complet:true });
+  });
+
+  it("préfère la ligne corrigée à ce que les tours laissaient attendre", () => {
+    /* Quatre tours pleins, puis un cinquième arrêté après les tractions : le
+       total ne se dit ni en 4 tours ni en 5, seulement ligne par ligne. */
+    const perfs = { "tours:0": 4, "t0:pullups": 25 };
+    expect(volumeReel("AMRAP 20", 1, perfs, null)).toEqual({ total:265, complet:true });
   });
 
   it("somme les paliers d'un escalier au lieu de répéter le premier tour", () => {
@@ -137,6 +167,46 @@ const prefill = (champs, entry) => {
   });
   return o;
 };
+
+/* Ce que le rendu statique ne peut pas atteindre : la frappe. La saisie d'un
+   AMRAP se fait en deux temps, et c'est le premier qui remplit le second. */
+describe("saisieApres — les lignes suivent les tours", () => {
+  const champs = perfsOf("AMRAP 20", 1);
+  const vide = prefill(champs, null);
+
+  it("chiffre toutes les lignes du bloc dès que les tours sont tapés", () => {
+    const o = saisieApres(champs, vide, "tours:0", "4", new Set());
+    expect(o["tours:0"]).toBe("4");
+    expect(o["t0:pullups"]).toBe("20");
+    expect(o["t0:airSquats"]).toBe("80");
+  });
+
+  it("ne touche pas une ligne déjà corrigée", () => {
+    const avec = { ...vide, "t0:pullups": "18" };
+    const o = saisieApres(champs, avec, "tours:0", "4", new Set(["t0:pullups"]));
+    expect(o["t0:pullups"]).toBe("18");
+    expect(o["t0:burpees"]).toBe("40");
+  });
+
+  it("vide les lignes quand on efface les tours", () => {
+    const plein = saisieApres(champs, vide, "tours:0", "4", new Set());
+    const o = saisieApres(champs, plein, "tours:0", "", new Set());
+    expect(o["t0:pullups"]).toBe("");
+  });
+
+  it("ne fait rien suivre quand le champ ne commande rien", () => {
+    const o = saisieApres(champs, vide, "t0:pullups", "18", new Set());
+    expect(o["t0:pullups"]).toBe("18");
+    expect(o["t0:burpees"]).toBe("");
+  });
+
+  it("n'entraîne que les lignes de son propre bloc", () => {
+    const deux = perfsOf("2 × AMRAP 10", 1);
+    const o = saisieApres(deux, prefill(deux, null), "tours:1", "3", new Set());
+    expect(o["t1:situps"]).toBe("45");
+    expect(o["t0:pullups"]).toBe("");
+  });
+});
 
 describe("correctionsDe — ce que garde une sortie sans validation", () => {
   it("ne rend rien quand aucun champ n'a bougé", () => {
@@ -183,7 +253,18 @@ describe("correctionsDe — ce que garde une sortie sans validation", () => {
     const champs = perfsOf("AMRAP 20", 1);
     const initial = prefill(champs, null);
     expect(initial["tours:0"]).toBe("");
+    expect(initial["t0:burpees"]).toBe("");
     const o = correctionsDe(champs, { ...initial, "tours:0": "4" }, initial, null);
     expect(o.perfs).toEqual({ "tours:0": 4 });
+  });
+
+  it("retient les lignes que les tours ont remplies, qui sont des mesures", () => {
+    /* Contrairement au prescrit d'un format fermé, une ligne d'AMRAP ne vaut que
+       par les tours annoncés : l'écrire n'invente rien, c'est le report. */
+    const champs = perfsOf("AMRAP 20", 1);
+    const initial = prefill(champs, null);
+    const o = correctionsDe(champs,
+      { ...initial, "tours:0": "4", "t0:pullups": "25", "t0:burpees": "40" }, initial, null);
+    expect(o.perfs).toEqual({ "tours:0": 4, "t0:pullups": 25, "t0:burpees": 40 });
   });
 });

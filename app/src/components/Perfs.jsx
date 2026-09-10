@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { C, DISPLAY, MONO } from "../lib/theme.js";
 import { mmss } from "../lib/dates.js";
 import { labelOf } from "../data/exercises.js";
-import { correctionsDe, perfsOf, valeurDe, volumeReel } from "../lib/perfs.js";
+import { attenduDe, correctionsDe, perfsOf, saisieApres, valeurDe, volumeReel } from "../lib/perfs.js";
 
 const uniteCourte = (u) => (u === "secondes" ? "s" : u === "tours" ? "tours" : "reps");
 
@@ -10,18 +10,25 @@ const uniteCourte = (u) => (u === "secondes" ? "s" : u === "tours" ? "tours" : "
    chaque rendu est un type de composant neuf à chaque frappe, et React démonte
    alors le champ au lieu de le mettre à jour. Le clavier de l'iPhone se
    refermait à chaque chiffre. */
-function Ligne({ champ, accent, valeur, onChange }) {
+function Ligne({ champ, accent, valeur, attendu, onChange }) {
   const titre = champ.kind === "ex" ? labelOf(champ.ex)
     : champ.kind === "tours" ? `Tours · ${champ.label}`
     : champ.label;
-  const sous = champ.kind === "ex" ? `PRÉVU ${champ.prescrit}`
+  const sous = champ.kind === "ex"
+    ? champ.de
+      ? (champ.pas ? `${champ.n} AU TOUR 1 · +${champ.pas} PAR TOUR` : `${champ.n} PAR TOUR`)
+        + (attendu === null ? "" : ` · ATTENDU ${attendu}`)
+      : `PRÉVU ${champ.prescrit}`
     : champ.kind === "tours" ? `1 TOUR = ${champ.parTour} REPS${champ.pas ? ` · +${champ.pas} PAR TOUR` : ""}`
     : "AUCUNE RÉFÉRENCE, C'EST TA MESURE";
-  const change = champ.kind === "ex" && valeur !== "" && Number(valeur) !== champ.prescrit;
+  const change = champ.kind === "ex" && attendu !== null && valeur !== "" && Number(valeur) !== attendu;
   return (
     <div style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 0",
       borderBottom:`1px solid ${C.line}` }}>
-      <div style={{ flex:1, minWidth:0 }}>
+      {/* Les lignes d'un bloc ouvert se rattachent visuellement à ses tours :
+          elles en découlent, elles ne sont pas des champs de plus. */}
+      <div style={{ flex:1, minWidth:0, paddingLeft: champ.de ? 14 : 0,
+        borderLeft: champ.de ? `1px solid ${C.line}` : "none" }}>
         <div style={{ fontFamily:DISPLAY, fontSize:20, lineHeight:1.15 }}>{titre}</div>
         <div style={{ fontFamily:MONO, fontSize:9.5, letterSpacing:".12em",
           color: change ? accent : C.ash, marginTop:4 }}>
@@ -63,8 +70,16 @@ export function PerfsCorps({ name, level, entry, accent, onValider, onRetour, so
     return o;
   });
   const [saisie, setSaisie] = useState(initial);
+  /* Une ligne de bloc ouvert suit les tours tant que personne ne l'a corrigée.
+     Après correction elle ne bouge plus : un chiffre tapé est une mesure, et
+     changer les tours ne doit pas l'effacer. */
+  const [corriges, setCorriges] = useState(() => new Set());
 
-  const set = (k, v) => setSaisie((s) => ({ ...s, [k]: v.replace(/[^0-9]/g, "") }));
+  const set = (k, v) => {
+    const n = v.replace(/[^0-9]/g, "");
+    setCorriges((c) => (c.has(k) ? c : new Set(c).add(k)));
+    setSaisie((s) => saisieApres(champs, s, k, n, corriges));
+  };
 
   /* Ce que la saisie dit en l'état, façonné comme la ligne de séance. Sert deux
      fois : au total affiché, qui suit la frappe, et à la validation. */
@@ -110,6 +125,8 @@ export function PerfsCorps({ name, level, entry, accent, onValider, onRetour, so
       <p style={{ fontSize:13.5, color:C.ash, lineHeight:1.5, margin:"0 0 20px" }}>
         Ajuste si tu as fait plus ou moins que prévu. Les totaux sont ceux de la séance
         entière, pas d'une série.
+        {champs.some((c) => c.kind === "tours") &&
+          " Dis d'abord tes tours : les lignes suivent, corrige celles du tour entamé."}
       </p>
 
       <div style={{ display:"flex", gap:10, marginBottom:20 }}>
@@ -127,6 +144,7 @@ export function PerfsCorps({ name, level, entry, accent, onValider, onRetour, so
       <div style={{ marginBottom:24 }}>
         {champs.map((c) => (
           <Ligne key={c.k} champ={c} accent={accent} valeur={saisie[c.k]}
+            attendu={c.de ? attenduDe(c, saisie[c.de]) : c.prescrit}
             onChange={(v) => set(c.k, v)} />
         ))}
       </div>

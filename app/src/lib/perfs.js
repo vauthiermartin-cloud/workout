@@ -12,9 +12,12 @@
              Le total est celui de la séance entière, pas d'une série : c'est le
              seul niveau où le chiffre se retient encore une fois le chrono fermé.
    - `tours` un bloc dont le nombre de tours est le résultat, pas la consigne
-             (AMRAP, escalier ouvert). Ce qu'on ajuste est le nombre de tours et
-             non les répétitions d'un tour — un tour se termine ou ne se termine
-             pas.
+             (AMRAP, escalier ouvert). Le nombre de tours se saisit d'abord :
+             c'est lui qui commande. Le bloc rend ensuite ses exercices en
+             champs `ex` ordinaires, dont l'attendu se déduit des tours au lieu
+             d'être prescrit (`de` nomme le champ de tours dont ils dépendent).
+             Un tour entamé et non fini se corrige alors ligne par ligne, comme
+             sur n'importe quel autre bilan.
    - `score` le chiffre du test du vendredi. Il ne va pas dans `perfs` mais dans
              le champ `s` de la ligne, qui existait avant et que les stats lisent.
 
@@ -42,12 +45,22 @@ export function perfsOf(name, level) {
        nombre de tours de sa consigne, ou ne le tient pas du tout. */
     const tours = p.stations ? p.loops || 1 : roundsOfPhase(p);
     if (tours === null) {
+      const i = ouverts.length;
+      const k = `tours:${i}`;
+      const pas = p.pas || 0;
+      const parEx = new Map();
+      lignes.forEach((it) => parEx.set(it.ex, (parEx.get(it.ex) || 0) + scaleItem(it, level).n));
       ouverts.push({
-        kind: "tours", k: `tours:${ouverts.length}`, label: p.label, unit: "tours",
-        prescrit: null, pas: p.pas || 0,
-        /* Les maintiens comptent pour 0 : 30 s de planche ne sont pas
-           30 répétitions, et le total d'un tour se dit en répétitions. */
-        lignes: lignes.map((it) => (EXERCISES[it.ex].unit === "reps" ? scaleItem(it, level).n : 0)),
+        bloc: {
+          kind: "tours", k, label: p.label, unit: "tours", prescrit: null, pas,
+          /* Les maintiens comptent pour 0 : 30 s de planche ne sont pas
+             30 répétitions, et le total d'un tour se dit en répétitions. */
+          lignes: [...parEx].map(([ex, n]) => (EXERCISES[ex].unit === "reps" ? n : 0)),
+        },
+        exs: [...parEx].map(([ex, n]) => ({
+          kind: "ex", k: `t${i}:${ex}`, ex, unit: EXERCISES[ex].unit,
+          prescrit: null, de: k, n, pas,
+        })),
       });
       return;
     }
@@ -60,7 +73,12 @@ export function perfsOf(name, level) {
   totaux.forEach((n, ex) => champs.push({
     kind: "ex", k: `s:${ex}`, ex, unit: EXERCISES[ex].unit, prescrit: n,
   }));
-  ouverts.forEach((c) => champs.push({ ...c, parTour: c.lignes.reduce((a, b) => a + b, 0) }));
+  /* Le champ de tours d'abord, ses exercices ensuite : l'ordre de saisie est
+     celui de la dépendance, on ne remplit pas des lignes avant leur tour. */
+  ouverts.forEach(({ bloc, exs }) => {
+    champs.push({ ...bloc, parTour: bloc.lignes.reduce((a, b) => a + b, 0) });
+    exs.forEach((c) => champs.push(c));
+  });
   if (wod && wod.test) champs.push({
     kind: "score", k: "score", label: wod.testLabel,
     unit: (wod.score && wod.score.unit) || "reps", prescrit: null,
@@ -68,11 +86,40 @@ export function perfsOf(name, level) {
   return champs;
 }
 
+/* Ce qu'une ligne de bloc ouvert vaut pour un nombre de tours donné. Un
+   escalier ajoute `pas` répétitions à chaque tour : la somme des tours 1 à t
+   vaut t fois le tour 1, plus le triangle des paliers. Rend `null` tant que les
+   tours ne sont pas dits — il n'y a alors pas d'attendu, pas un attendu nul. */
+export function attenduDe(champ, tours) {
+  if (tours === undefined || tours === null || tours === "") return null;
+  const t = Number(tours);
+  return champ.n * t + champ.pas * ((t * (t - 1)) / 2);
+}
+
 /* Ce qu'il faut afficher dans le champ : la valeur relue si elle existe, le
-   prescrit sinon. Un champ jamais relu n'est pas un champ à zéro. */
+   prescrit sinon. Un champ jamais relu n'est pas un champ à zéro. Sur un bloc
+   ouvert, l'attendu se déduit des tours déjà relus. */
 export function valeurDe(champ, perfs) {
   const v = perfs ? perfs[champ.k] : undefined;
-  return v === undefined || v === null ? champ.prescrit : v;
+  if (v !== undefined && v !== null) return v;
+  if (champ.de) return attenduDe(champ, perfs ? perfs[champ.de] : null);
+  return champ.prescrit;
+}
+
+/* Ce que devient la feuille quand un champ change. Un champ de tours entraîne
+   les lignes de son bloc : les chiffrer à la main après avoir dit ses tours
+   serait faire deux fois le même calcul.
+
+   `corriges` retient les lignes déjà touchées, qui ne suivent plus — un chiffre
+   tapé est une mesure, et rectifier ses tours ne doit pas l'effacer. */
+export function saisieApres(champs, saisie, k, valeur, corriges) {
+  const o = { ...saisie, [k]: valeur };
+  champs.forEach((c) => {
+    if (c.de !== k || corriges.has(c.k)) return;
+    const a = attenduDe(c, valeur);
+    o[c.k] = a === null ? "" : String(a);
+  });
+  return o;
 }
 
 /* Ce qu'il faut écrire quand on quitte la saisie sans valider. Sortir ne doit
@@ -110,15 +157,13 @@ export function volumeReel(name, level, perfs, score) {
   let total = 0, complet = true;
   perfsOf(name, level).forEach((c) => {
     if (c.kind === "ex") {
-      if (c.unit === "reps") total += valeurDe(c, perfs) || 0;
-    } else if (c.kind === "tours") {
-      const t = perfs ? perfs[c.k] : null;
-      if (t === undefined || t === null) { complet = false; return; }
-      /* Un escalier ajoute `pas` répétitions par ligne à chaque tour : la somme
-         des tours 1 à t vaut t fois le tour 1, plus le triangle des paliers. */
-      const lignes = c.lignes.filter((n) => n > 0);
-      total += lignes.reduce((a, n) => a + n * t, 0)
-        + c.pas * lignes.length * ((t * (t - 1)) / 2);
+      if (c.unit !== "reps") return;
+      /* Un bloc ouvert compte par ses lignes et non par ses tours : c'est le
+         même volume tant que rien n'est corrigé, et le bon dès qu'un tour
+         entamé a été repris ligne à ligne. */
+      const v = valeurDe(c, perfs);
+      if (v === null || v === undefined) { complet = false; return; }
+      total += v;
     } else if (c.kind === "score" && c.unit === "reps") {
       if (score === undefined || score === null) complet = false;
       else total += score;
