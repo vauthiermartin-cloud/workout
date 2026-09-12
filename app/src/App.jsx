@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { C, DISPLAY, MONO } from "./lib/theme.js";
 import { store, readJson, K_LOG, K_SET, K_BAK, K_RUN } from "./lib/store.js";
-import { ecraserait, entreeA } from "./lib/journal.js";
+import { ecraserait, entreeA, entreeDeLOnglet } from "./lib/journal.js";
 import { doneWith, newBeat, newRun, position, record, resumableKind } from "./lib/chrono.js";
-import { iso, fromIso, mondayOf, isoOfWeekday, weekdayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
+import { iso, fromIso, mondayOf, weekdayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
 import { beep } from "./lib/audio.js";
 import { volumeOf, streakOf } from "./lib/volume.js";
 import { volumeReel } from "./lib/perfs.js";
@@ -108,10 +108,10 @@ export default function App() {
      c'est déjà ce que dit le point sous l'onglet, qui se calcule sur la date. Le
      journal est un agenda, pas une grille de thèmes.
 
-     Le calcul de la date, week-end compris, est dans `isoOfWeekday` — pur et
+     Le choix de la ligne, week-end compris, est dans `entreeDeLOnglet` — pur et
      testé, parce que dimanche vaut 0 en JavaScript et qu'on s'y trompe. */
   const dowToday = weekdayOf(today);
-  const entreeDuJour = log.find((e) => e.d === isoOfWeekday(today, dayKey));
+  const entreeDuJour = entreeDeLOnglet(log, today, dayKey);
 
   /* Ce que la semaine a déjà couvert, reconstruit depuis le journal */
   const weekPatterns = new Set();

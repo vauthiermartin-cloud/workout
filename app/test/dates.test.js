@@ -31,13 +31,16 @@ describe("la date derrière un onglet de jour", () => {
     [LUN, MER].forEach((d) => expect(isoOfWeekday(d, weekdayOf(d))).toBe(iso(d)));
   });
 
-  /* Sans quoi le bilan d'une séance du samedi deviendrait inatteignable : aucun
-     onglet ne porte sa date, et « jamais perdue » ne fait pas d'exception. */
-  it("le week-end, faute d'onglet, se rattache au jour courant", () => {
-    [1, 3, 5].forEach((k) => {
-      expect(isoOfWeekday(SAM, k)).toBe("2026-09-12");
-      expect(isoOfWeekday(DIM, k)).toBe("2026-09-13");
-    });
+  /* Le repli du week-end renvoyait la date du jour pour les cinq onglets : vu
+     d'un samedi, toute la semaine montrait la séance du samedi, et le journal
+     paraissait écrasé. Un onglet porte sa date, quel que soit le jour d'où on
+     le regarde. Ce que devient une séance de week-end se décide dans
+     `entreeDeLOnglet`, pas ici. */
+  it("le week-end regarde la semaine qu'il termine, onglet par onglet", () => {
+    expect(isoOfWeekday(SAM, 1)).toBe("2026-09-07");
+    expect(isoOfWeekday(SAM, 5)).toBe("2026-09-11");
+    expect(isoOfWeekday(DIM, 1)).toBe("2026-09-07");
+    expect(isoOfWeekday(DIM, 5)).toBe("2026-09-11");
   });
 
   it("une semaine à cheval sur deux mois ne dérape pas", () => {

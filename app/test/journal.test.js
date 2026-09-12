@@ -12,7 +12,7 @@
 
 import { describe, it, expect } from "vitest";
 import { streakOf } from "../src/lib/volume.js";
-import { ecraserait, entreeA } from "../src/lib/journal.js";
+import { ecraserait, entreeA, entreeDeLOnglet } from "../src/lib/journal.js";
 
 /* La semaine du 7 septembre 2026 : lundi 07, mardi 08, mercredi 09.
    Le vendredi précédent est le 04. */
@@ -76,6 +76,61 @@ describe("ce que le journal refuse d'écraser", () => {
   it("la ligne visée se retrouve, ou vaut null", () => {
     expect(entreeA(log, JOUR).w).toBe("EMOM 21");
     expect(entreeA(log, "2026-09-10")).toBeNull();
+  });
+});
+
+/* La ligne que montre un onglet de jour.
+   ====================================
+
+   Le bug d'un samedi matin : le repli du week-end renvoyait la date du jour pour
+   les cinq onglets, si bien qu'une séance de rattrapage s'affichait sous lundi,
+   mardi, mercredi, jeudi et vendredi à la fois. Rien n'était écrasé — le journal
+   avait toutes ses lignes — mais aucune n'était lisible, ce qui revient au même
+   pour qui regarde l'écran. */
+describe("la ligne que montre un onglet de jour", () => {
+  const MAR = new Date(2026, 8, 8);
+  const SAM = new Date(2026, 8, 12);
+  const DIM = new Date(2026, 8, 13);
+  const semaine = ["2026-09-07", "2026-09-08"].map(ligne);
+  /* Le samedi 12, on rejoue le thème du vendredi (onglet 5) qu'on a sauté. */
+  const rattrapage = { d: "2026-09-12", w: "AMRAP 20", lvl: 2, day: 5 };
+
+  it("en semaine, un onglet montre la séance de sa date", () => {
+    expect(entreeDeLOnglet(semaine, MAR, 1).d).toBe("2026-09-07");
+    expect(entreeDeLOnglet(semaine, MAR, 2).d).toBe("2026-09-08");
+    expect(entreeDeLOnglet(semaine, MAR, 3)).toBeNull();
+  });
+
+  it("un samedi, la semaine reste lisible onglet par onglet", () => {
+    const log = [...semaine, rattrapage];
+    expect(entreeDeLOnglet(log, SAM, 1).d).toBe("2026-09-07");
+    expect(entreeDeLOnglet(log, SAM, 2).d).toBe("2026-09-08");
+    expect(entreeDeLOnglet(log, SAM, 3)).toBeNull();
+  });
+
+  /* Rattraper vendredi un samedi, c'est prendre la place que vendredi a
+     laissée : c'est là, et nulle part ailleurs, que son bilan se retrouve. */
+  it("la séance de rattrapage se range sous l'onglet du thème joué", () => {
+    const log = [...semaine, rattrapage];
+    expect(entreeDeLOnglet(log, SAM, 5).w).toBe("AMRAP 20");
+    expect(entreeDeLOnglet(log, SAM, 4)).toBeNull();
+    expect(entreeDeLOnglet([...semaine, { ...rattrapage, d: "2026-09-13" }], DIM, 5).w)
+      .toBe("AMRAP 20");
+  });
+
+  /* La limite, assumée : la place doit être libre. Tant qu'une date ne porte
+     qu'une séance, le vendredi réellement fait garde son onglet, et la séance
+     de rattrapage ne se relit que dans les stats et l'export. */
+  it("un jour déjà entraîné garde sa ligne", () => {
+    const log = [...semaine, ligne("2026-09-11"), rattrapage];
+    expect(entreeDeLOnglet(log, SAM, 5).d).toBe("2026-09-11");
+  });
+
+  /* Une séance de week-end tirée sur un thème n'apparaît pas sous un autre :
+     sans le test du thème, elle reprendrait le premier onglet libre venu. */
+  it("ne se range pas sous un onglet dont elle n'a pas joué le thème", () => {
+    const log = [{ ...rattrapage, day: 2 }];
+    expect(entreeDeLOnglet(log, SAM, 5)).toBeNull();
   });
 });
 

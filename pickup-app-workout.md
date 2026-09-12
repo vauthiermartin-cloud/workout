@@ -238,11 +238,24 @@ Le lot est clos, et l'étape 3 a suivi.
     d'aujourd'hui. Aucune valeur par défaut ne s'y applique : une ligne relue existe déjà.
   - **`isoOfWeekday` et `weekdayOf` sont sortis dans `lib/dates.js`** (neuvième fichier de tests,
     `app/test/dates.test.js`). La numérotation des onglets va de 1 = lundi à 7 = dimanche, et non
-    celle de JavaScript où dimanche vaut 0. **Le week-end n'a pas d'onglet** : une séance faite un
-    samedi se rattache au jour de référence lui-même et garde son bilan atteignable, au lieu de
-    tomber sur un lundi qui n'a rien vu — et le réalignement de l'onglet après enregistrement est
-    gardé par `dowToday <= 5`, sans quoi un samedi désignait un onglet inexistant et plantait
-    l'écran.
+    celle de JavaScript où dimanche vaut 0. `isoOfWeekday` ne dépend que de la semaine : un onglet
+    porte sa date, qu'on le regarde un mardi ou un dimanche. **Le week-end n'a pas d'onglet à lui**,
+    et le réalignement de l'onglet après enregistrement reste gardé par `dowToday <= 5`, sans quoi
+    un samedi désignerait un onglet inexistant et planterait l'écran.
+  - **Ce que montre un onglet est décidé par `entreeDeLOnglet` (`lib/journal.js`)**, pas par un
+    `find` dans `App.jsx`. Corrigé le 2026-09-12, après un bug vécu un samedi matin : le repli du
+    week-end renvoyait la date du jour **pour les cinq onglets**, si bien qu'une séance de
+    rattrapage s'affichait sous lundi, mardi, mercredi, jeudi et vendredi à la fois. Rien n'était
+    écrasé — toutes les lignes étaient dans le journal, et les points sous les onglets, calculés
+    sur les vraies dates, le montraient — mais aucune n'était lisible, ce qui revient au même pour
+    qui regarde l'écran. La règle tient en deux temps : un onglet montre la séance de **sa date** ;
+    à défaut, et le week-end seulement, la séance du jour s'y range **si elle a joué le thème de
+    cet onglet**. Rattraper vendredi un samedi, c'est prendre la place que vendredi a laissée.
+    **Limite assumée** : la place doit être libre. Un vendredi déjà entraîné garde sa ligne, et la
+    séance de rattrapage ne se relit alors que dans les stats et l'export — tant qu'une date ne
+    porte qu'une séance (brief 3.1). `weekDone` n'a délibérément pas bougé : y ranger le
+    rattrapage sous l'onglet du thème compterait deux jours pour un, et le contrat compte des
+    jours. Un samedi n'allume donc aucun point.
 
 - **Une séance se supprime, depuis la relecture.** Fait le 2026-09-09. Le besoin de départ était
   de montrer l'app à quelqu'un — générer, lancer, finir pour voir l'écran de bilan — sans laisser

@@ -15,12 +15,15 @@ export const weekdayOf = (d) => ((d.getDay() + 6) % 7) + 1;
 /* La date derrière un onglet de jour, dans la semaine de `ref`.
    ==========================================================
 
-   Elle sert à relire le bilan d'un autre jour de la semaine en cours. Le
-   week-end n'a pas d'onglet — l'app va du lundi au vendredi — et une séance
-   faite un samedi doit malgré tout garder son bilan atteignable : elle se
-   rattache donc au jour de `ref` lui-même, et non à un lundi qui n'a rien vu. */
+   Elle sert à relire le bilan d'un autre jour de la semaine en cours, et ne
+   dépend que de la semaine : un onglet porte sa date, qu'on le regarde un mardi
+   ou un dimanche. Le week-end tombe dans la semaine qu'il termine, `mondayOf`
+   s'en charge.
+
+   Le week-end n'a pas d'onglet à lui pour autant. Ce que devient une séance
+   faite un samedi est une question de journal, pas de calendrier : voir
+   `entreeDeLOnglet` dans `lib/journal.js`. */
 export const isoOfWeekday = (ref, dayKey) => {
-  if (weekdayOf(ref) > 5) return iso(ref);
   const d = mondayOf(ref);
   d.setDate(d.getDate() + dayKey - 1);
   return iso(d);
