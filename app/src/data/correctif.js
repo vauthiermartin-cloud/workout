@@ -1,10 +1,11 @@
 import { f, h, st } from "./items.js";
+import { labelOf } from "./exercises.js";
 
-/* Le correctif.
-   ============
+/* Le bloc pubalgie.
+   ===============
 
-   Prévention de la pubalgie : une isométrie de flexion de hanche, quatre
-   maintiens de 45 s, deux par jambe. Trois minutes en tout.
+   Deux mouvements, cinq minutes : une isométrie de flexion de hanche en
+   quatre maintiens de 45 s, deux par jambe, puis deux minutes de dead bug.
 
    Ce n'est pas du contenu de séance et ça ne se génère pas. C'est une case à
    cocher avant de lancer le chrono, au même endroit et de la même façon que
@@ -15,37 +16,36 @@ import { f, h, st } from "./items.js";
    se fait sur un corps chaud mais pas cuit, et placé à la fin il serait celui
    qu'on passe.
 
-   La forme est un `cycle` de quatre intervalles plutôt qu'un seul compte à
-   rebours de trois minutes : c'est le chrono qui doit marquer les changements
-   de jambe, sinon la prescription n'est qu'une phrase et personne ne tient les
-   45 s. Le côté est une note (`f`) et non un exercice : on ne compte pas deux
-   mouvements, on alterne le même. */
+   Deux phases et non une, parce que les intervalles diffèrent — 45 s d'un
+   côté, 60 s de l'autre. C'est le chrono qui doit marquer les changements de
+   jambe et de série, sinon la prescription n'est qu'une phrase et personne ne
+   tient les 45 s.
+
+   Le dead bug se prescrit ici au temps alors que la bibliothèque le compte en
+   répétitions : une minute lente n'est pas un nombre de reps, et l'exercice ne
+   change pas d'unité pour autant. Sa ligne est donc une note, dont le texte se
+   lit dans la table — un renommage la suivra. */
 
 export const ISO_SEC = 45;
-export const ISO_SERIES = 4;
+export const DB_SEC = 60;
 
-const cote = (txt) => st(h(ISO_SEC, "flexionHancheIso"), f(txt));
+const jambe = (txt) => st(h(ISO_SEC, "flexionHancheIso"), f(txt));
+const serie = () => st(f(labelOf("deadBugs")));
 
-export const CORRECTIF = {
-  t: "cycle", sec: ISO_SEC, loops: 1, corr: true,
-  label: "Isométrie",
-  stations: [cote("Jambe droite"), cote("Jambe gauche"), cote("Jambe droite"), cote("Jambe gauche")],
-};
+export const CORRECTIF = [
+  { t:"cycle", sec:ISO_SEC, loops:1, corr:true, label:"Pubalgie",
+    stations:[jambe("Jambe droite"), jambe("Jambe gauche"), jambe("Jambe droite"), jambe("Jambe gauche")] },
+  { t:"cycle", sec:DB_SEC, loops:1, corr:true, label:"Pubalgie",
+    stations:[serie(), serie()] },
+];
 
-/* L'autre moitié du correctif, et elle ne se coche pas : le dead bug vit dans
-   les séances elles-mêmes. Il a pris la place du sit-up partout où une séance
-   en prescrivait — le sit-up reste dans deux finishers, rien n'est perdu.
+/* L'autre moitié de la prévention, et elle ne se coche pas : le dead bug est
+   aussi prescrit par les séances elles-mêmes, pour les semaines où la case
+   reste décochée.
 
-   Il est nommé ici et pas seulement dans les données de séances parce que le
-   générateur doit le connaître : un correctif vaut par sa fréquence, et le
-   tirage par couverture des schémas moteurs jouait contre lui. */
+   Il est garanti par le contenu et non par le tirage — toutes les séances du
+   jeudi et du vendredi en portent une ligne, donc la semaine en voit deux quoi
+   qu'il arrive. Passer par le générateur aurait donné une préférence, pas une
+   garantie, et une préférence sur un correctif ne vaut pas grand-chose. */
 export const CORRECTIF_HEBDO = "deadBugs";
-
-/* Combien de fois par semaine le générateur cherche à le faire sortir.
-
-   Deux, et c'est un plafond mesuré, pas un souhait. Au-delà la simulation ne
-   bouge plus : la couverture des schémas moteurs reste le premier critère, et
-   les jours qui peuvent porter le dead bug sont au nombre de trois — lundi et
-   mardi n'ont aucune ligne de sangle à lui donner. Viser trois ne ferait que
-   retirer des séances de la rotation sans en faire sortir une de plus. */
-export const CORRECTIF_PAR_SEMAINE = 2;
+export const JOURS_CORRECTIF = [4, 5];

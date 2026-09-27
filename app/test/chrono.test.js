@@ -281,25 +281,27 @@ describe("ce que dit le bouton de droite", () => {
   });
 });
 
-/* Le correctif est du travail, mais pas de la séance : les 25 minutes que
-   promet le nom de l'app sont celles du corps de séance, et trois minutes
-   d'isométrie ne doivent ni les entamer ni les gonfler. */
-describe("le correctif reste hors des 25 minutes", () => {
-  const AVEC = [PLAN[0], CORRECTIF, PLAN[1]];
+/* Le bloc pubalgie est du travail, mais pas de la séance : les 25 minutes que
+   promet le nom de l'app sont celles du corps de séance, et cinq minutes de
+   correctif ne doivent ni les entamer ni les gonfler. */
+describe("le bloc pubalgie reste hors des 25 minutes", () => {
+  const AVEC = [PLAN[0], ...CORRECTIF, PLAN[1]];
 
-  it("il dure trois minutes", () => {
-    expect(phaseDur(CORRECTIF)).toBe(180);
+  it("il dure cinq minutes", () => {
+    expect(CORRECTIF.reduce((a, p) => a + phaseDur(p), 0)).toBe(300);
   });
 
   it("il n'entre pas dans le total annoncé", () => {
-    const run = { ...newRun({ plan: AVEC }, T0), idx: 2 };
+    const run = { ...newRun({ plan: AVEC }, T0), idx: 3 };
     expect(position(run, 0)).toEqual({ minute: 1, total: 21, warm: false });
     expect(position(run, 99_999).minute).toBe(21);
   });
 
   it("pendant le correctif, la position dit qu'on est hors du compte", () => {
-    const run = { ...newRun({ plan: AVEC }, T0), idx: 1 };
-    expect(position(run, 60)).toEqual({ minute: 0, total: 21, warm: true });
+    CORRECTIF.forEach((_, i) => {
+      const run = { ...newRun({ plan: AVEC }, T0), idx: 1 + i };
+      expect(position(run, 30)).toEqual({ minute: 0, total: 21, warm: true });
+    });
   });
 
   it("le temps qu'il prend n'est pas soldé dans le temps fait", () => {

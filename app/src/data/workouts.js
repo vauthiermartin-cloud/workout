@@ -98,13 +98,13 @@ export const WORKOUTS = {
   3: [
     { name:"5 rounds", dur:"≤ 25 min", meta:"Pour le temps · cap 25 min · repos libre entre les rounds",
       blocks:[
-        {tag:"1 ROUND",items:[r(40,"mountainClimbers"),r(30,"airSquats"),r(20,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),r(20,"fentesArriere"),r(10,"pompes"),r(3,"pullups")]},
+        {tag:"1 ROUND",items:[r(40,"mountainClimbers"),r(30,"airSquats"),r(20,"situps"),r(20,"fentesArriere"),r(10,"pompes"),r(3,"pullups")]},
         {tag:"× 5",items:[f("Enchaîne 5 fois")]},
       ],
       goal:"Note le temps total. C'est le seul chiffre à retenir." },
     { name:"4 rounds lourds", dur:"≤ 25 min", meta:"Pour le temps · rounds plus longs, moins nombreux",
       blocks:[
-        {tag:"1 ROUND",items:[r(50,"mountainClimbers"),r(40,"airSquats"),r(30,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),r(20,"fentesArriere"),r(10,"pompes"),r(5,"chinups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps.")]},
+        {tag:"1 ROUND",items:[r(50,"mountainClimbers"),r(40,"airSquats"),r(30,"situps"),r(20,"fentesArriere"),r(10,"pompes"),r(5,"chinups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps.")]},
         {tag:"× 4",items:[f("Enchaîne 4 fois")]},
       ],
       goal:"Découpe les mountain climbers en deux séries dès le round 2." },
@@ -112,7 +112,7 @@ export const WORKOUTS = {
       blocks:[
         {tag:"1",items:[r(100,"mountainClimbers")]},
         {tag:"2",items:[r(80,"airSquats")]},
-        {tag:"3",items:[r(60,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
+        {tag:"3",items:[r(60,"situps")]},
         {tag:"4",items:[r(40,"fentesArriere")]},
         {tag:"5",items:[r(30,"pompes")]},
         {tag:"6",items:[r(20,"burpees")]},
@@ -148,20 +148,20 @@ export const WORKOUTS = {
   4: [
     { name:"2 × AMRAP 10", dur:"23 min", meta:"Max de tours en 10 min · 3 min de repos entre les blocs",
       blocks:[
-        {tag:"AMRAP A",items:[r(5,"pullups"),r(10,"pompes"),r(15,"airSquats")]},
+        {tag:"AMRAP A",items:[r(5,"pullups"),r(10,"pompes"),r(15,"airSquats"),r(12,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
         {tag:"REPOS",items:[f("3 min")]},
-        {tag:"AMRAP B",items:[r(10,"fentesArriere"),r(15,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut."),r(15,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),r(20,"mountainClimbers")]},
+        {tag:"AMRAP B",items:[r(10,"fentesArriere"),r(15,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut."),r(15,"situps"),r(20,"mountainClimbers")]},
       ],
       goal:"Deux scores : tours du bloc A, tours du bloc B." },
     { name:"AMRAP 20", dur:"20 min", meta:"Max de tours en 20 min · un seul bloc, pas de pause programmée",
       blocks:[
-        {tag:"1 TOUR",items:[r(5,"pullups"),r(10,"burpees"),r(15,"pompes"),r(20,"airSquats"),r(15,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut.")]},
+        {tag:"1 TOUR",items:[r(5,"pullups"),r(10,"burpees"),r(15,"pompes"),r(20,"airSquats"),r(15,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut."),r(12,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
       ],
       goal:"Le rythme des 5 premières minutes décide de tout le reste." },
     { name:"3 × AMRAP 6", dur:"22 min", meta:"Trois blocs courts · 2 min de repos entre chaque",
       blocks:[
-        {tag:"BLOC A",items:[r(10,"pompes"),r(10,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
-        {tag:"BLOC B",items:[r(8,"fentesArriere"),r(8,"jumpSquats"),r(12,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut.")]},
+        {tag:"BLOC A",items:[r(10,"pompes"),r(10,"situps")]},
+        {tag:"BLOC B",items:[r(8,"fentesArriere"),r(8,"jumpSquats"),r(12,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut."),r(12,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
         {tag:"BLOC C",items:[r(3,"pullups"),r(6,"burpees")]},
       ],
       goal:"Blocs courts, donc tu peux pousser. Ne garde rien pour la fin." },
@@ -173,6 +173,7 @@ export const WORKOUTS = {
           r(10,"vups","Bras et jambes tendus qui se rejoignent au-dessus du bassin"),
           r(15,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut."),
           r(8,"pompes"),
+          r(12,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),
         ]},
       ],
       goal:"Le sweep est le mouvement le plus technique du lot. Si tu perds la forme, ralentis-le au lieu de le sauter." },
@@ -190,6 +191,7 @@ export const WORKOUTS = {
           r(6,"pompesPiquees","Bassin haut, tête vers le sol entre les mains, tu descends puis tu pousses. Pieds surélevés pour durcir."),
           r(8,"chinups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps."),
           r(10,"pompes"),
+          r(12,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),
         ]},
       ],
       goal:"Huit tractions par tour, c'est le tirage le plus dense du jeudi. Si la barre lâche avant les pompes, coupe en deux séries de quatre." },
@@ -205,7 +207,7 @@ export const WORKOUTS = {
       blocks:[
         {tag:"TEST",items:[f("Max de burpees en 4 min")]},
         {tag:"REPOS",items:[f("3 min")]},
-        {tag:"4 ROUNDS",items:[r(15,"airSquats"),r(10,"pompes"),r(5,"pullups"),r(20,"mountainClimbers")]},
+        {tag:"4 ROUNDS",items:[r(15,"airSquats"),r(10,"pompes"),r(5,"pullups"),r(20,"mountainClimbers"),r(12,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
       ],
       goal:"Le chiffre du test est ta seule métrique burpees de la semaine." },
     { name:"Test 3 min + EMOM 12", dur:"≈ 18 min", test:true, testLabel:"Burpees en 3 min",
@@ -214,7 +216,7 @@ export const WORKOUTS = {
       blocks:[
         {tag:"TEST",items:[f("Max de burpees en 3 min")]},
         {tag:"REPOS",items:[f("3 min")]},
-        {tag:"MIN 1",items:[r(5,"chinups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps.")]},
+        {tag:"MIN 1",items:[r(5,"chinups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps."),r(10,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
         {tag:"MIN 2",items:[r(20,"mountainClimbers")]},
         {tag:"MIN 3",items:[r(15,"airSquats")]},
         {tag:"× 4",items:[f("Répète le cycle 4 fois")]},
@@ -229,7 +231,7 @@ export const WORKOUTS = {
       blocks:[
         {tag:"TEST",items:[r(50,"burpees","Le plus vite possible")]},
         {tag:"REPOS",items:[f("4 min")]},
-        {tag:"3 ROUNDS",items:[r(10,"pompes"),r(15,"airSquats"),r(3,"pullups"),r(15,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
+        {tag:"3 ROUNDS",items:[r(10,"pompes"),r(15,"airSquats"),r(3,"pullups"),r(15,"situps"),r(12,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
       ],
       goal:"Note le temps en secondes. Sous 240 s, c'est déjà solide." },
     { name:"Test 4 min + sangle", dur:"≈ 22 min", test:true, testLabel:"Burpees en 4 min",
@@ -260,6 +262,7 @@ export const WORKOUTS = {
           r(20,"fentesArriere"),
           r(25,"monteesPointes","Debout, tu montes sur la pointe des pieds et tu redescends lentement"),
           r(12,"superman","Sur le ventre, bras et jambes décollés, 2 s en haut"),
+          r(12,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),
         ]},
       ],
       goal:"Fessiers, ischios, mollets. C'est ce qui te manquera le jour où le kiné te rendra la course." },

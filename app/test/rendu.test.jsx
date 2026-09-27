@@ -209,20 +209,27 @@ describe("la saisie en plein écran", () => {
   });
 });
 
-/* Le chrono du correctif. Il ne se relit nulle part ailleurs : c'est le seul
-   écran où la prescription se lit telle qu'on la fait, série par série. */
-describe("le chrono du correctif", () => {
+/* Le chrono du bloc pubalgie. Il ne se relit nulle part ailleurs : c'est le
+   seul écran où la prescription se lit telle qu'on la fait, série par série. */
+describe("le chrono du bloc pubalgie", () => {
   const chrono = (plan) => html(
     <Timer initial={newRun({ plan, segment:"workout" })} level={1}
       onPersist={() => {}} onDone={() => {}} />
   );
 
   it("nomme la série en cours et le côté, jamais la minute", () => {
-    const out = chrono([CORRECTIF, ...TIMERS["EMOM 21"]]);
-    expect(out).toContain("ISOMÉTRIE");
+    const out = chrono([...CORRECTIF, ...TIMERS["EMOM 21"]]);
+    expect(out).toContain("PUBALGIE");
     expect(out).toContain("SÉRIE 1 / 4");
     expect(out).toContain("Jambe droite");
     expect(out).not.toContain("MIN 1 / 4");
+  });
+
+  it("la seconde phase compte les deux minutes de dead bug", () => {
+    const out = chrono([CORRECTIF[1], ...TIMERS["EMOM 21"]]);
+    expect(out).toContain("MIN 1 / 2");
+    expect(out).toContain("dead bugs");
+    expect(out).toContain("1:00");
   });
 
   /* L'EMOM garde son compte en minutes : le libellé suit la durée de

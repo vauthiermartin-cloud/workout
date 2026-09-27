@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { WORKOUTS, WORKOUT_BY_NAME } from "../src/data/workouts.js";
 import { FINISHERS } from "../src/data/finishers.js";
 import { TIMERS } from "../src/data/timers.js";
-import { CORRECTIF } from "../src/data/correctif.js";
+import { CORRECTIF, CORRECTIF_HEBDO, JOURS_CORRECTIF } from "../src/data/correctif.js";
 import { EXERCISES, UNITS, PER_SIDE } from "../src/data/exercises.js";
 import { CHAINS, chainOf } from "../src/data/chains.js";
 import { PATTERNS, patternsOfWorkout, patternsOfTimer } from "../src/data/patterns.js";
@@ -21,7 +21,7 @@ function workLines() {
   const lines = [];
   const item = (it) => { if (it.ex !== undefined) lines.push(it); };
   [...allWorkouts, ...allFinishers].forEach((w) => w.blocks.forEach((b) => b.items.forEach(item)));
-  [...Object.values(TIMERS).flat(), CORRECTIF].forEach((p) => {
+  [...Object.values(TIMERS).flat(), ...CORRECTIF].forEach((p) => {
     if (p.stations) p.stations.forEach((s) => s.forEach(item));
     if (p.list) p.list.forEach(item);
   });
@@ -88,6 +88,30 @@ describe("bibliothèque", () => {
     expect(orphelines).toEqual([]);
   });
 
+  /* La fiche et le chrono décrivent la même séance, et deux fichiers la
+     portent. Les quantités peuvent légitimement différer de forme — un
+     escalier montre un palier par ligne sur la fiche et le déplie en cinq
+     minutes dans le chrono — donc le contrôle porte sur les exercices cités
+     et non sur les nombres.
+
+     « Gainage descendant » est la seule exception, et elle est antérieure :
+     son chrono porte son contenu dans des libellés de phase au lieu de lignes
+     typées, donc rien ne le compte. Inscrite ici pour qu'elle se voie au lieu
+     de se confondre avec un oubli. */
+  const SANS_LIGNES = ["Gainage descendant"];
+
+  it("fiche et chrono citent les mêmes exercices", () => {
+    const ecarts = [];
+    [...allWorkouts, ...allFinishers].forEach((w) => {
+      if (SANS_LIGNES.includes(w.name)) return;
+      const ids = (lignes) => [...new Set(lignes.filter((it) => it.ex !== undefined).map((it) => it.ex))].sort();
+      const fiche = ids(w.blocks.flatMap((b) => b.items));
+      const chrono = ids((TIMERS[w.name] || []).flatMap((p) => (p.stations ? p.stations.flat() : p.list || [])));
+      if (fiche.join() !== chrono.join()) ecarts.push({ name: w.name, fiche, chrono });
+    });
+    expect(ecarts).toEqual([]);
+  });
+
   it("fiche et chrono couvrent les mêmes qualités", () => {
     const ecarts = [];
     allWorkouts.forEach((w) => {
@@ -129,35 +153,66 @@ describe("bibliothèque", () => {
   });
 });
 
-/* La prescription du correctif est chiffrée dans le ticket : 4 x 45 s,
-   deux par jambe. Elle ne se relit nulle part ailleurs — ni dans une séance,
-   ni dans un plan de chrono — donc elle se tient ici. */
-describe("le correctif", () => {
-  const stations = CORRECTIF.stations;
+/* La prescription du bloc pubalgie est chiffrée dans le ticket : 4 x 45 s
+   d'isométrie en alternant les jambes, puis 2 x 1 min de dead bug. Elle ne se
+   relit nulle part ailleurs — ni dans une séance, ni dans un plan de chrono —
+   donc elle se tient ici. */
+describe("le bloc pubalgie", () => {
+  const [iso, db] = CORRECTIF;
 
-  it("prescrit quatre maintiens de 45 secondes", () => {
-    expect(stations.length * (CORRECTIF.loops || 1)).toBe(4);
-    const tenues = stations.flat().filter((it) => it.ex !== undefined);
+  it("tient quatre maintiens de 45 secondes, puis deux minutes", () => {
+    expect(iso.stations.length * (iso.loops || 1)).toBe(4);
+    expect(iso.sec).toBe(45);
+    expect(db.stations.length * (db.loops || 1)).toBe(2);
+    expect(db.sec).toBe(60);
+  });
+
+  it("l'isométrie alterne les jambes, deux séries chacune", () => {
+    const tenues = iso.stations.flat().filter((it) => it.ex !== undefined);
     expect(tenues.map((it) => it.n)).toEqual([45, 45, 45, 45]);
     expect(new Set(tenues.map((it) => it.ex))).toEqual(new Set(["flexionHancheIso"]));
     expect(EXERCISES.flexionHancheIso.unit).toBe("secondes");
+    expect(iso.stations.map((st) => st.find((it) => it.txt).txt))
+      .toEqual(["Jambe droite", "Jambe gauche", "Jambe droite", "Jambe gauche"]);
   });
 
-  it("alterne les jambes, deux séries chacune", () => {
-    const cotes = stations.map((s) => s.find((it) => it.txt).txt);
-    expect(cotes).toEqual(["Jambe droite", "Jambe gauche", "Jambe droite", "Jambe gauche"]);
+  /* Le dead bug se prescrit ici au temps, donc en note : la bibliothèque le
+     compte en répétitions et ne change pas d'unité pour un bloc. Son libellé
+     se lit quand même dans la table, sinon un renommage le laisserait
+     derrière. */
+  it("le dead bug s'y nomme comme dans la bibliothèque", () => {
+    expect(db.stations.every((st) => st.some((it) => it.txt === EXERCISES.deadBugs.fr))).toBe(true);
   });
 
-  /* Il se joue à part, jamais dans une séance : l'y retrouver voudrait dire
-     que quelqu'un l'a prescrit deux fois, et le cap de 25 minutes tomberait
-     sans que rien ne le dise. */
-  it("aucune séance ne le prescrit", () => {
+  /* L'isométrie se joue à part, jamais dans une séance : l'y retrouver
+     voudrait dire que quelqu'un l'a prescrite deux fois, et le cap de
+     25 minutes tomberait sans que rien ne le dise. */
+  it("aucune séance ne prescrit l'isométrie", () => {
     const dedans = [...allWorkouts, ...allFinishers].filter((w) =>
       w.blocks.some((b) => b.items.some((it) => it.ex === "flexionHancheIso")));
     expect(dedans.map((w) => w.name)).toEqual([]);
     expect(Object.entries(TIMERS).filter(([, plan]) => plan.some((p) =>
       (p.stations ? p.stations.flat() : p.list || []).some((it) => it.ex === "flexionHancheIso"),
     )).map(([n]) => n)).toEqual([]);
+  });
+
+  /* Le dead bug, lui, doit aussi vivre dans les séances : la case peut rester
+     décochée des semaines entières. La garantie est dans le contenu et non
+     dans le tirage — tout le jeudi et tout le vendredi en portent une ligne,
+     donc la semaine en voit deux quoi qu'il arrive. Une séance qui arriverait
+     sans, ou un jour retiré de la liste, ferait tomber la garantie en
+     silence. */
+  it("toutes les séances des jours correctifs prescrivent le dead bug", () => {
+    const sans = [];
+    JOURS_CORRECTIF.forEach((jour) => {
+      WORKOUTS[jour].forEach((w) => {
+        const fiche = w.blocks.some((b) => b.items.some((it) => it.ex === CORRECTIF_HEBDO));
+        const chrono = (TIMERS[w.name] || []).some((p) =>
+          (p.stations ? p.stations.flat() : p.list || []).some((it) => it.ex === CORRECTIF_HEBDO));
+        if (!fiche || !chrono) sans.push(w.name);
+      });
+    });
+    expect(sans).toEqual([]);
   });
 });
 

@@ -7,7 +7,7 @@ import { iso, fromIso, mondayOf, weekdayOf, daysBetween, shortFr, pad } from "./
 import { beep } from "./lib/audio.js";
 import { volumeOf, streakOf } from "./lib/volume.js";
 import { volumeReel } from "./lib/perfs.js";
-import { pickVariant, prescrit } from "./lib/generator.js";
+import { pickVariant } from "./lib/generator.js";
 import { RESSENTIS, askRessenti, finisherStance, retourDe } from "./lib/ressenti.js";
 import { DAYS, STRETCH_BY_DAY, FINISHER_BIAS } from "./data/days.js";
 import { WORKOUTS, WORKOUT_BY_NAME } from "./data/workouts.js";
@@ -17,7 +17,7 @@ import { TIMERS } from "./data/timers.js";
 import { PATTERNS, patternsOfWorkout } from "./data/patterns.js";
 import { LEVELS } from "./data/levels.js";
 import { f } from "./data/items.js";
-import { CORRECTIF, CORRECTIF_HEBDO, CORRECTIF_PAR_SEMAINE } from "./data/correctif.js";
+import { CORRECTIF } from "./data/correctif.js";
 import { Coche } from "./components/Coche.jsx";
 import { Rail } from "./components/Rail.jsx";
 import { Timer } from "./components/Timer.jsx";
@@ -116,21 +116,14 @@ export default function App() {
   const dowToday = weekdayOf(today);
   const entreeDuJour = entreeDeLOnglet(log, today, dayKey);
 
-  /* Ce que la semaine a déjà couvert, reconstruit depuis le journal — les
-     schémas moteurs, et le correctif qui se compte à part, au niveau de
-     l'exercice. Les deux se lisent du même passage sur le journal, mais ils ne
-     disent pas la même chose : l'un tient la variété, l'autre la répétition. */
+  /* Ce que la semaine a déjà couvert, reconstruit depuis le journal */
   const weekPatterns = new Set();
-  let correctifsFaits = 0;
   log.forEach((e) => {
     const d = fromIso(e.d);
-    const w = WORKOUT_BY_NAME[e.w];
-    if (d >= wkStart && w) {
-      patternsOfWorkout(w).forEach((p) => weekPatterns.add(p));
-      if (prescrit(w, CORRECTIF_HEBDO)) correctifsFaits++;
+    if (d >= wkStart && WORKOUT_BY_NAME[e.w]) {
+      patternsOfWorkout(WORKOUT_BY_NAME[e.w]).forEach((p) => weekPatterns.add(p));
     }
   });
-  const correctifDu = correctifsFaits < CORRECTIF_PAR_SEMAINE;
 
   const weeks = [];
   for (let i = 7; i >= 0; i--) {
@@ -170,7 +163,7 @@ export default function App() {
   const ligneDuJour = nonEnregistree ? null : entryToday;
 
   const generate = () => {
-    const next = pickVariant(pool, weekPatterns, seen, variant, Math.random, correctifDu);
+    const next = pickVariant(pool, weekPatterns, seen, variant);
     setVariant(next.index);
     setSeen(next.seen);
     setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
@@ -236,7 +229,7 @@ export default function App() {
       f("Squats latéraux"), f("Élévations latérales de jambe"),
       f("30 s de deep squat", "Talons au sol, coudes contre l'intérieur des genoux, tu pousses vers l'extérieur"),
     ] });
-    if (correctif) p.push(CORRECTIF);
+    if (correctif) p.push(...CORRECTIF);
     const w = TIMERS[wod.name];
     if (w) p.push(...w); else p.push({ t:"up", cap:1500, label:wod.name, sub:"Chrono libre" });
     launch(p, "workout");
@@ -927,8 +920,8 @@ export default function App() {
 
             <Coche on={warmup} onToggle={() => setWarmup(!warmup)} titre="Échauffement"
               detail="5 min au début. Tu peux le passer à tout moment." />
-            <Coche on={correctif} onToggle={() => setCorrectif(!correctif)} titre="Isométrie"
-              detail="3 min avant la séance : 4 × 45 s de flexion de hanche, deux par jambe." />
+            <Coche on={correctif} onToggle={() => setCorrectif(!correctif)} titre="Pubalgie"
+              detail="5 min avant la séance : 4 × 45 s de flexion de hanche, puis 2 × 1 min de dead bug." />
 
             <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, margin:"16px 0 18px" }}>
               Le chrono suit {wod.name}. Trois bips avant chaque bascule. À la fin, il te proposera

@@ -30,10 +30,10 @@ describe("perfsOf — ce que la feuille propose de saisir", () => {
   it("demande les tours d'un format ouvert, puis ses exercices", () => {
     const champs = perfsOf("AMRAP 20", 1);
     expect(champs[0]).toMatchObject({ kind:"tours", k:"tours:0", unit:"tours", pas:0 });
-    expect(champs[0].parTour).toBe(65); // 5 + 10 + 15 + 20 + 15
+    expect(champs[0].parTour).toBe(77); // 5 + 10 + 15 + 20 + 15 + 12
     /* Les lignes viennent après les tours dont elles découlent. */
     expect(champs.slice(1).map((c) => c.k)).toEqual(
-      ["t0:pullups", "t0:burpees", "t0:pompes", "t0:airSquats", "t0:hipThrusts"]);
+      ["t0:pullups", "t0:burpees", "t0:pompes", "t0:airSquats", "t0:hipThrusts", "t0:deadBugs"]);
     expect(champ(champs, "t0:pullups")).toMatchObject({ kind:"ex", de:"tours:0", n:5, prescrit:null });
   });
 
@@ -43,7 +43,7 @@ describe("perfsOf — ce que la feuille propose de saisir", () => {
     expect(tours.map((c) => c.k)).toEqual(["tours:0", "tours:1"]);
     expect(tours.map((c) => c.label)).toEqual(["AMRAP A", "AMRAP B"]);
     expect(champ(champs, "t0:pullups").de).toBe("tours:0");
-    expect(champ(champs, "t1:deadBugs").de).toBe("tours:1");
+    expect(champ(champs, "t1:situps").de).toBe("tours:1");
   });
 
   it("déclare le pas d'un escalier ouvert, sur le bloc comme sur ses lignes", () => {
@@ -130,14 +130,14 @@ describe("volumeReel — le total de ce qui a été fait", () => {
   });
 
   it("multiplie un tour d'AMRAP par les tours annoncés", () => {
-    expect(volumeReel("AMRAP 20", 1, { "tours:0": 4 }, null)).toEqual({ total:260, complet:true });
+    expect(volumeReel("AMRAP 20", 1, { "tours:0": 4 }, null)).toEqual({ total:308, complet:true });
   });
 
   it("préfère la ligne corrigée à ce que les tours laissaient attendre", () => {
     /* Quatre tours pleins, puis un cinquième arrêté après les tractions : le
        total ne se dit ni en 4 tours ni en 5, seulement ligne par ligne. */
     const perfs = { "tours:0": 4, "t0:pullups": 25 };
-    expect(volumeReel("AMRAP 20", 1, perfs, null)).toEqual({ total:265, complet:true });
+    expect(volumeReel("AMRAP 20", 1, perfs, null)).toEqual({ total:313, complet:true });
   });
 
   it("somme les paliers d'un escalier au lieu de répéter le premier tour", () => {
@@ -147,14 +147,14 @@ describe("volumeReel — le total de ce qui a été fait", () => {
 
   it("se déclare incomplet tant qu'un tour ou un score manque", () => {
     expect(volumeReel("AMRAP 20", 1, {}, null).complet).toBe(false);
-    expect(volumeReel("Test 4 min + finisher", 1, {}, null)).toEqual({ total:200, complet:false });
+    expect(volumeReel("Test 4 min + finisher", 1, {}, null)).toEqual({ total:248, complet:false });
   });
 
   it("ajoute le score du vendredi quand il est du volume, jamais quand c'est un temps", () => {
-    expect(volumeReel("Test 4 min + finisher", 1, {}, 62)).toEqual({ total:262, complet:true });
+    expect(volumeReel("Test 4 min + finisher", 1, {}, 62)).toEqual({ total:310, complet:true });
     /* Un temps sur 50 burpees ne s'additionne pas à des répétitions : le total
        est complet sans lui, puisque les burpees sont déjà comptés. */
-    expect(volumeReel("50 burpees for time", 1, {}, null)).toEqual({ total:179, complet:true });
+    expect(volumeReel("50 burpees for time", 1, {}, null)).toEqual({ total:215, complet:true });
   });
 });
 
@@ -203,7 +203,7 @@ describe("saisieApres — les lignes suivent les tours", () => {
   it("n'entraîne que les lignes de son propre bloc", () => {
     const deux = perfsOf("2 × AMRAP 10", 1);
     const o = saisieApres(deux, prefill(deux, null), "tours:1", "3", new Set());
-    expect(o["t1:deadBugs"]).toBe("45");
+    expect(o["t1:situps"]).toBe("45");
     expect(o["t0:pullups"]).toBe("");
   });
 });

@@ -37,7 +37,7 @@ cas (« PASSER »).
   terminer sur une phase de repos — garantit que « TERMINER » veut toujours dire « travail
   fini », même après un futur changement de contenu.
 
-### 2. F-03 · Prévention pubalgie — statut : Shipped (2026-09-27), avec écarts — voir le Log
+### 2. F-03 · Prévention pubalgie — statut : Shipped (2026-09-27)
 Isometric Hip Flexion (2x45sec/jambe) et Dead bug, garantis chacun au moins 3x/semaine.
 
 **Révision du 2026-09-27 : pas de bloc en plus, pas de changement de durée de séance.**
@@ -45,11 +45,16 @@ Martin a été précis là-dessus : ces deux exercices remplacent un exercice d�
 plan du jour (slot de temps/pattern compatible), jamais ajoutés en plus. Le corps de séance
 reste exactement ce qu'il est aujourd'hui, aucune minute supplémentaire.
 
-Techniquement : une substitution à fréquence hebdomadaire garantie, pas une addition de
+**Seconde révision du 2026-09-27, en cours d'implémentation — c'est elle qui a été livrée.**
+La substitution décrite ci-dessus est abandonnée : remplacer les sit-ups ne marchait pas. Le
+bloc « pubalgie » revient, porte les deux mouvements, et le dead bug est en plus prescrit par
+les séances pour les semaines où la case reste décochée. Détail dans le Log.
+
+~~Techniquement : une substitution à fréquence hebdomadaire garantie, pas une addition de
 temps — même famille d'opération que F-02 (remplacer un exercice en préservant le pattern),
 mais construite ici en version simple et autonome, fixée sur ces deux exercices précis, sans
 moteur générique. F-02 pourra généraliser plus tard si besoin, sans que ce ticket soit à
-refaire (décidé : F-03 passe avant F-02 pour cette raison).
+refaire (décidé : F-03 passe avant F-02 pour cette raison).~~
 
 - Garde-fou : simulation hebdomadaire qui vérifie que hip flexion apparaît ≥3x/semaine et
   dead bug ≥3x/semaine, en plus de la couverture des patterns existante (10/10).
@@ -120,47 +125,43 @@ le brief comme trop haut pour une partie des pratiquants — pas un problème is
   repos.
 - 158 tests verts, build OK.
 
-**2026-09-27 — F-03 · Prévention pubalgie.** Livré dans la forme arbitrée en cours de
-conversation : ni bloc en plus, ni moteur de substitution. Deux mécanismes séparés.
+**2026-09-27 — F-03 · Prévention pubalgie.** Livré dans la forme arbitrée en fin de
+conversation. Deux chemins indépendants, aucun moteur de substitution.
 
-- **Isométrie : une case à cocher.** À côté de « Échauffement » sur l'écran d'avant-lancement,
-  cochée par défaut. Elle insère une phase de chrono de 4 × 45 s (droite, gauche, droite,
-  gauche) entre l'échauffement et la séance. Nouvel exercice `flexionHancheIso`, nouvelle
-  donnée `app/src/data/correctif.js`. La phase est **hors des 25 minutes**, au même titre que
-  l'échauffement : `horsSeance` dans `chrono.js` porte maintenant les deux cas.
-- La ligne « Isométries kiné » de l'échauffement a été retirée : elle faisait doublon avec le
-  bloc qui la remplace.
-- Le chrono disait « MIN 1 / 4 » sur tout cycle, parce que tout cycle durait 60 s. Il dit
-  « SÉRIE » quand l'intervalle n'est pas une minute. L'EMOM est inchangé.
-- **Dead bug : dans le contenu, pas dans un moteur.** Il a pris la place du sit-up dans les
-  six séances qui en prescrivaient (fiche et chrono ensemble). Le sit-up reste dans deux
-  finishers, donc rien ne meurt.
+- **Le bloc pubalgie, une case à cocher.** À côté de « Échauffement » sur l'écran
+  d'avant-lancement, cochée par défaut. Cinq minutes insérées entre l'échauffement et la
+  séance : 4 × 45 s d'isométrie de flexion de hanche en alternant les jambes, puis 2 × 1 min
+  de dead bug. Deux phases de chrono, parce que les intervalles diffèrent et que c'est le
+  chrono qui doit marquer les changements. Nouvel exercice `flexionHancheIso`, nouvelle
+  donnée `app/src/data/correctif.js`.
+- Le bloc est **hors des 25 minutes**, comme l'échauffement : `horsSeance` dans `chrono.js`
+  porte maintenant les deux cas. La ligne « Isométries kiné » de l'échauffement a été retirée,
+  elle faisait doublon.
+- Le dead bug s'y prescrit au temps alors que la bibliothèque le compte en répétitions. Sa
+  ligne est donc une note, dont le texte se lit dans la table des exercices pour qu'un
+  renommage la suive.
+- **Le dead bug dans les séances, pour les semaines sans la case.** Les sit-ups n'ont pas
+  bougé d'un iota : une ligne de dead bug a été **ajoutée** aux dix séances du jeudi et du
+  vendredi. Mesuré sur 2 000 semaines simulées : **exactement 2 par semaine, minimum 2**. La
+  garantie est dans le contenu, pas dans le tirage — le générateur n'a pas été touché.
+- Pourquoi jeudi et vendredi : lundi et mardi ne peuvent rien recevoir sans changer la durée
+  (EMOM à minutes fixes, escaliers à arithmétique), et mercredi est le jour le plus chargé en
+  volume. Le jeudi est entièrement en AMRAP à durée fixe, où une ligne de plus ne coûte aucune
+  minute ; le vendredi absorbe la ligne dans ses blocs plafonnés. Les deux jours sont
+  consécutifs, ce qui n'est pas idéal et n'était pas évitable.
+- Deux séances portent une conséquence à connaître : « AMRAP 20 poussée-tirage » gagne de la
+  sangle alors que son intitulé annonce poussée et tirage, et l'EMOM 12 du vendredi loge les
+  dead bugs dans la minute des chin-ups plutôt que d'allonger le cycle.
 
-**Écart à signaler, et c'est le point à arbitrer.** L'objectif de 3×/semaine n'est pas
-atteint et ne l'est pas par construction :
+**Garde-fous ajoutés** (172 tests verts, build OK) :
 
-- Lundi et mardi ne peuvent pas porter le dead bug. Les EMOM et les escaliers n'ont aucune
-  ligne de sangle à lui donner ; lui en ajouter une allongerait la séance, ce que la révision
-  interdit. Seuls mercredi, jeudi et vendredi peuvent le porter.
-- Mesuré après la substitution seule : **0,72 par semaine**, et 40 % des semaines sans aucun.
-  La cause n'était pas le contenu mais le tirage — une séance qui n'apporte que de la sangle
-  perd contre toutes les autres dès que la sangle est couverte. Le mécanisme qui tient la
-  variété travaillait contre la répétition, qui est tout ce qui fait un correctif.
-- Le générateur connaît donc maintenant le correctif : il **départage à couverture égale**,
-  jamais devant elle. Résultat mesuré sur 2 000 semaines simulées : **1,73 par semaine, et
-  plus jamais une semaine à zéro** (minimum 1). Le plafond est à deux — viser trois ne fait
-  plus sortir une séance de plus, ça ne fait que retirer des séances de la rotation.
-- Aller au-delà demanderait soit de passer devant la couverture des schémas moteurs (10/10
-  tombe), soit d'ajouter une ligne aux séances du lundi et du mardi (du temps en plus). Les
-  deux sortent du cadre posé : à trancher si 3×/semaine reste l'objectif.
-
-**Garde-fous ajoutés** (171 tests verts, build OK) :
-
-- le correctif prescrit bien 4 × 45 s en alternant les jambes, et aucune séance ne le
-  prescrit par ailleurs ;
-- le correctif n'entre ni dans le total annoncé ni dans le temps fait ;
-- simulation sur 500 semaines : le dead bug sort au moins une fois, moyenne > 1,5 ;
-- les trois jours qui peuvent le porter sont nommés dans un test — si ça change, on
-  l'apprend là et pas par surprise ;
-- le départage ne passe jamais devant la couverture ;
-- la couverture des schémas moteurs reste à 10/10 sur 500 semaines, départage actif.
+- le bloc tient bien 4 × 45 s puis 2 × 1 min, et alterne les jambes ;
+- aucune séance ne prescrit l'isométrie — l'y trouver voudrait dire qu'elle est prescrite deux
+  fois et que le cap de 25 minutes est tombé en silence ;
+- toutes les séances des jours correctifs prescrivent le dead bug, fiche **et** chrono : c'est
+  ce test qui porte la garantie des 2 par semaine ;
+- le bloc n'entre ni dans le total annoncé ni dans le temps fait ;
+- **nouveau contrôle général** : fiche et chrono citent les mêmes exercices, pour les 45
+  séances. Il manquait, et neuf séances venaient d'être éditées à la main dans deux fichiers.
+  Il a révélé une anomalie antérieure, inscrite comme exception : « Gainage descendant » porte
+  son contenu dans des libellés de phase au lieu de lignes typées, donc rien ne le compte.
