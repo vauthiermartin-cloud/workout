@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   RESUME_WINDOW, beatAt, beatOf, doneWith, goToPhase, isOver, newBeat, newRun, pauseRun,
-  phaseDur, planDur, position, record, resumableKind, resumeRun, suspendRun, verdict,
+  phaseDur, planDur, position, record, resumableKind, resumeRun, sortie, suspendRun, verdict,
 } from "../src/lib/chrono.js";
 import { TIMERS } from "../src/data/timers.js";
 
@@ -246,5 +246,36 @@ describe("reprise au démarrage", () => {
   it("la position ne dépasse jamais le total annoncé", () => {
     const run = { ...newRun({ plan: PLAN }, T0), idx: 1 };
     expect(position(run, 99_999).minute).toBe(21);
+  });
+});
+
+/* Pendant un repos, un bouton nommé « PASSER » se lit comme un abandon. Il ne
+   l'a jamais été — il avance d'une phase, donc vers le bloc suivant. Seul le
+   libellé manquait. */
+describe("ce que dit le bouton de droite", () => {
+  const REPOS = [
+    { t:"cycle", sec:60, label:"Bloc 1", loops:1, stations:[[{ n:8, t:"burpees" }]] },
+    { t:"rest", sec:120, label:"Repos" },
+    { t:"cycle", sec:60, label:"Bloc 2", loops:1, stations:[[{ n:8, t:"burpees" }]] },
+  ];
+  const a = (idx, plan = REPOS) => sortie({ ...newRun({ plan }, T0), idx });
+
+  it("pendant un repos, il nomme le repos", () => {
+    expect(a(1)).toBe("repos");
+  });
+
+  it("ailleurs, il passe la phase", () => {
+    expect(a(0)).toBe("phase");
+  });
+
+  it("sur la dernière phase, il termine", () => {
+    expect(a(2)).toBe("fin");
+  });
+
+  /* Un repos en dernière phase dirait « TERMINER » sur un écran de
+     récupération. Le catalogue n'en a pas — un contrôle de cohérence le
+     tient — mais la fin prime de toute façon sur le repos. */
+  it("la fin prime sur le repos", () => {
+    expect(a(1, REPOS.slice(0, 2))).toBe("fin");
   });
 });

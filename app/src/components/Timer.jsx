@@ -6,7 +6,7 @@ import { mmss } from "../lib/dates.js";
 import { beep } from "../lib/audio.js";
 import {
   beatOf, doneWith, goToPhase, newBeat, pauseRun, phaseDur, position, record, resumeRun,
-  suspendRun, verdict,
+  sortie, suspendRun, verdict,
 } from "../lib/chrono.js";
 
 /* Un battement enregistré toutes les 5 s : assez fin pour retrouver sa place
@@ -187,7 +187,8 @@ export function Timer({ initial, level, onPersist, onDone }) {
 
   const accent = isRest ? C.ember : C.lime;
   const pos = position(run, elapsed);
-  const last = run.idx + 1 >= phases.length;
+  const issue = sortie(run);
+  const last = issue === "fin";
 
   return (
     <div style={{ position:"fixed", inset:0, zIndex:50, background:C.ink, display:"flex",
@@ -298,7 +299,7 @@ export function Timer({ initial, level, onPersist, onDone }) {
         </button>
         <button onClick={() => goTo(run.idx + 1)} style={{ flex:1, padding:"18px 0", border:`1px solid ${C.line}`,
           color:C.bone, fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 }}>
-          {last ? "TERMINER" : "PASSER"}
+          {last ? "TERMINER" : issue === "repos" ? "PASSER LE REPOS" : "PASSER"}
         </button>
       </div>
 
@@ -326,7 +327,9 @@ export function Timer({ initial, level, onPersist, onDone }) {
           <button onClick={() => goTo(run.idx + 1)} style={{ width:"100%", padding:"16px 0",
             border:`1px solid ${C.line}`, color:C.bone, fontFamily:DISPLAY, fontSize:16,
             letterSpacing:".04em", borderRadius:2 }}>
-            {last ? "TERMINER LA SÉANCE" : "PASSER À LA PHASE SUIVANTE"}
+            {last ? "TERMINER LA SÉANCE"
+              : issue === "repos" ? "PASSER LE REPOS"
+              : "PASSER À LA PHASE SUIVANTE"}
           </button>
         </div>
       )}

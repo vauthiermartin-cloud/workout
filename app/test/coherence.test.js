@@ -37,6 +37,18 @@ describe("bibliothèque", () => {
     expect(Object.keys(TIMERS).filter((n) => !noms.has(n))).toEqual([]);
   });
 
+  /* Le bouton de droite du chrono dit « TERMINER » sur la dernière phase. Un
+     plan qui finirait par un repos lui ferait dire « travail fini » alors que
+     le travail l'est déjà depuis deux minutes — et ferait finir la séance sur
+     un écran de récupération. Le libellé conditionnel du chrono (voir
+     `sortie` dans `lib/chrono.js`) s'appuie sur cette garantie. */
+  it("aucun plan de chrono ne se termine par un repos", () => {
+    const finitSurRepos = Object.entries(TIMERS)
+      .filter(([, plan]) => plan[plan.length - 1].t === "rest")
+      .map(([nom]) => nom);
+    expect(finitSurRepos).toEqual([]);
+  });
+
   it("noms de séances uniques", () => {
     expect(Object.keys(WORKOUT_BY_NAME).length).toBe(allWorkouts.length);
   });

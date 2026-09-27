@@ -89,6 +89,21 @@ export const goToPhase = (run, idx, now, elapsed = 0) => ({
 
 export const isOver = (run) => run.idx >= run.plan.length;
 
+/* Ce que fait le bouton de droite du chrono, en un mot : finir la séance,
+   passer un repos, ou passer la phase en cours.
+
+   Le distinguo n'est pas décoratif. Pendant un repos entre deux blocs, un
+   bouton nommé « PASSER » se lit comme un abandon, alors que c'est le seul
+   moment du chrono où il mène vers du travail et non vers la sortie. Le
+   comportement, lui, n'a jamais changé : on avance d'une phase.
+
+   `fin` suppose qu'aucun plan ne se termine par un repos — c'est vrai du
+   catalogue, et un contrôle de cohérence le tient. */
+export function sortie(run) {
+  if (run.idx + 1 >= run.plan.length) return "fin";
+  return run.plan[run.idx].t === "rest" ? "repos" : "phase";
+}
+
 /* L'enregistrement à écrire : le run plus la position vivante du battement.
    `seenAt` en fait partie — sans lui, l'app relue croirait n'avoir jamais
    battu et se déclarerait suspendue dès le premier rendu. */

@@ -21,7 +21,7 @@ l'autre côté (claude.ai) sans repasser par le code.
 
 ## Ordre d'envoi
 
-### 1. F-07 · Clarifier le skip pendant un repos — statut : à envoyer
+### 1. F-07 · Clarifier le skip pendant un repos — statut : Shipped (2026-09-27)
 Ce matin (2026-09-22) : pause de 2 min entre blocs, bouton présent mais ambiguïté sur ce
 qu'il fait (sauter le repos ou finir la séance).
 
@@ -97,5 +97,17 @@ les deux) → rupture trop rapide. À rapprocher du baseline HUMAN (voir F-06), 
 le brief comme trop haut pour une partie des pratiquants — pas un problème isolé du lundi.
 
 ## Log
-*(vide — chaque ticket traité s'y ajoute : date, ce qui a été fait, écarts éventuels avec la
-spec ci-dessus.)*
+
+**2026-09-27 — F-07 · Clarifier le skip pendant un repos.** Conforme à la spec, sans écart.
+
+- Le choix du libellé est sorti du composant : `sortie(run)` dans `lib/chrono.js` répond
+  `fin` / `repos` / `phase`. Le chrono affiche « TERMINER », « PASSER LE REPOS » ou
+  « PASSER » ; le comportement du bouton n'a pas bougé (`goTo(run.idx + 1)`).
+- L'écran « chrono interrompu » suit la même règle : « PASSER LE REPOS » y remplace
+  « PASSER À LA PHASE SUIVANTE » quand la phase gelée est un repos.
+- Garde-fou ajouté aux contrôles de cohérence : aucun plan de chrono ne se termine par un
+  repos. Vérifié en le cassant volontairement — le test tombe bien. Le catalogue actuel le
+  respecte déjà (8 plans contiennent un repos, aucun ne finit dessus).
+- `sortie` est testée dans `test/chrono.test.js`, y compris le cas où la fin prime sur le
+  repos.
+- 158 tests verts, build OK.
