@@ -46,9 +46,20 @@ temps, position retenue au dernier battement, écran de fin inatteignable par ac
 
 ## Contraintes du domaine
 
-**Matériel** : poids du corps, barre de traction, espalier. **Pas de barre basse ni
-d'anneaux** — aucun tirage horizontal n'est possible, ne pas réintroduire les tirages
-australiens.
+**Matériel** : poids du corps, barre de traction, espalier. **Mise à jour du 2026-09-27 :
+le tirage horizontal est désormais possible** — Martin a ajouté l'équipement nécessaire
+[À PRÉCISER : quel équipement — TRX, anneaux, sangle sur la barre existante]. La contrainte
+« pas de barre basse ni d'anneaux, aucun tirage horizontal, ne pas réintroduire les tirages
+australiens » ne tient plus : c'était une décision actée pour une raison matérielle qui a
+changé, pas un principe de conception. Les tirages australiens (et toute variante de tirage
+horizontal) peuvent revenir dans le catalogue.
+
+**Nouvelle règle actée (2026-09-27) : toute séance qui contient un créneau poussée doit
+contenir un créneau tirage.** Ratio cible de Martin, en équivalence de volume (pas un simple
+minimum de créneau) : pour 15–20 pompes, 3 tractions (pronation) OU 5 chin-ups (supination),
+et le double en tirage horizontal selon la prise (6 en pronation, 10 en supination). À
+encoder comme coefficients d'équivalence par exercice relatifs à la poussée, pas comme un
+nombre de reps fixe — voir F-06 révisé dans `idees-perso-backlog.md`, prochaine priorité.
 
 **Cap de 25 minutes** par séance, hors échauffement et finisher. Le nom de l'app est cette
 promesse.

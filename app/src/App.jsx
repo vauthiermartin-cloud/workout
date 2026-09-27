@@ -9,6 +9,8 @@ import { volumeOf, streakOf } from "./lib/volume.js";
 import { volumeReel } from "./lib/perfs.js";
 import { pickVariant } from "./lib/generator.js";
 import { RESSENTIS, askRessenti, finisherStance, retourDe } from "./lib/ressenti.js";
+import { aDocumenterDans, askQualite } from "./lib/qualite.js";
+import { lignesDeRevue } from "./lib/revue.js";
 import { DAYS, STRETCH_BY_DAY, FINISHER_BIAS } from "./data/days.js";
 import { WORKOUTS, WORKOUT_BY_NAME } from "./data/workouts.js";
 import { FINISHERS } from "./data/finishers.js";
@@ -24,6 +26,7 @@ import {
 } from "./lib/substitution.js";
 import { Coche } from "./components/Coche.jsx";
 import { Zones, ZonesEffet } from "./components/Zones.jsx";
+import { Qualite } from "./components/Qualite.jsx";
 import { Rail } from "./components/Rail.jsx";
 import { Timer } from "./components/Timer.jsx";
 import { Perfs } from "./components/Perfs.jsx";
@@ -291,6 +294,16 @@ export default function App() {
     setSetupOpen(false);
   };
 
+  /* Une correction ciblée sur une ligne déjà écrite. Elle ne recalcule rien et
+     ne touche pas à l'état d'enregistrement : taper une note n'est pas
+     enregistrer une séance, et faire clignoter « ENREGISTRÉE » à chaque
+     caractère dirait le contraire. */
+  const patchEntry = (d, patch) => {
+    const avant = log.find((e) => e.d === d);
+    if (!avant) return;
+    saveLog([...log.filter((e) => e.d !== d), { ...avant, ...patch }]);
+  };
+
   const writeEntry = (entry) => {
     const ok = saveLog([...log.filter((e) => e.d !== entry.d), entry]);
     setSaveState(ok ? "done" : "error");
@@ -316,6 +329,11 @@ export default function App() {
          montrerait des exercices que personne n'a faits. Reportées d'une
          écriture à l'autre pour la même raison que le finisher. */
       ...(zonesDuJour.length || (avant && avant.mal) ? { mal: zonesDuJour.length ? zonesDuJour : avant.mal } : {}),
+      /* Reportées comme le finisher : la ligne se réécrit à chaque étape de la
+         fin de séance, et une note de qualité donnée avant le ressenti ne doit
+         pas disparaître au tap suivant. */
+      ...(avant && avant.qualite ? { qualite: avant.qualite } : {}),
+      ...(avant && avant.note ? { note: avant.note } : {}),
       fin: ("fin" in o ? o.fin : finisher ? finisher.name : (avant && avant.fin) || null),
       str: ("str" in o ? o.str : stretch ? stretch.name : (avant && avant.str) || null),
       s: "s" in o ? o.s
@@ -539,13 +557,15 @@ export default function App() {
          être lisible. */
       `Ressentis : ${RESSENTIS.map((r) => `${r.label.toLowerCase()} ${log.filter((e) => e.ressenti === r.id).length}`).join(" · ")}`
         + ` · sans réponse ${log.filter((e) => !e.ressenti).length}`,
+      ...lignesDeRevue(log),
       "", "DÉTAIL 35 JOURS",
       ...recent.map((e) => `${shortFr(e.d)} ${DAYS.find((d) => d.key === e.day).short} · ${e.w} · N${e.lvl}`
         + (e.s != null ? ` · score ${e.s}` : "")
         + (e.ressenti ? ` · ${RESSENTIS.find((r) => r.id === e.ressenti).label.toLowerCase()}` : "")
         + (e.fin ? ` · finisher : ${e.fin}` : "")
         + (e.str ? ` · stretch : ${e.str}` : "")
-        + (e.mal && e.mal.length ? ` · zones : ${e.mal.join(", ")}` : "")),
+        + (e.mal && e.mal.length ? ` · zones : ${e.mal.join(", ")}` : "")
+        + (e.qualite === "garder" ? " · gardée" : e.qualite === "probleme" ? " · signalée" : "")),
     ].filter((l) => l !== null).join("\n");
     try { navigator.clipboard.writeText(txt); } catch {}
     setRecap(txt);
@@ -896,6 +916,31 @@ export default function App() {
               </div>
             )}
 
+            {/* Ce que la revue attend de toi, avant de proposer de l'exporter.
+                Une séance signalée sans un mot se relit mal dans trois
+                semaines : le récap la redemande, et cet écran aussi. */}
+            {(aDocumenterDans(log).length > 0 || log.some((e) => e.qualite === "garder")) && (
+              <React.Fragment>
+                <Label color={aDocumenterDans(log).length ? C.ember : undefined}>REVUE DES SÉANCES</Label>
+                <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"0 0 32px" }}>
+                  {aDocumenterDans(log).length > 0 && (
+                    <React.Fragment>
+                      <span style={{ color:C.ember }}>
+                        {aDocumenterDans(log).length === 1
+                          ? "Une séance signalée n'a pas de note"
+                          : `${aDocumenterDans(log).length} séances signalées n'ont pas de note`}
+                        {" "}({aDocumenterDans(log).map((e) => `${shortFr(e.d)} ${e.w}`).join(", ")}).
+                      </span>
+                      {" Ouvre son bilan pour dire ce qui clochait. "}
+                    </React.Fragment>
+                  )}
+                  {log.filter((e) => e.qualite === "garder").length > 0 && (
+                    `${log.filter((e) => e.qualite === "garder").length} séance${log.filter((e) => e.qualite === "garder").length > 1 ? "s gardées" : " gardée"} : le récap en donne le contenu complet.`
+                  )}
+                </p>
+              </React.Fragment>
+            )}
+
             <Label>SAUVEGARDE</Label>
             <button onClick={download} style={{ width:"100%", padding:"14px 0", marginBottom:8, background:C.bone,
               color:C.ink, fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em", borderRadius:2 }}>
@@ -1125,6 +1170,20 @@ export default function App() {
                 </div>
               )}
 
+              {/* La qualité vient après le ressenti, jamais en même temps :
+                  deux rangées de trois boutons côte à côte se répondraient
+                  l'une pour l'autre. Tant que le ressenti attend, celle-ci se
+                  tait ; une fois répondu, la séance peut être jugée. */}
+              {!nonEnregistree && ligneDuJour && askQualite({ stage: endStage })
+                && (ressenti || !askRessenti({ stage: endStage, aborted })) && (
+                <div style={{ marginBottom:28, padding:"15px 16px 16px", borderRadius:3,
+                  background:C.steel, border:`1px solid ${ligneDuJour.qualite ? C.line : C.lime}` }}>
+                  <Qualite valeur={ligneDuJour.qualite} note={ligneDuJour.note}
+                    onChoix={(v) => patchEntry(todayIso, { qualite: v })}
+                    onNote={(t) => patchEntry(todayIso, { note: t })} />
+                </div>
+              )}
+
               <BilanPatterns pats={pats} manque={manque} />
 
               {/* Proposition */}
@@ -1306,6 +1365,7 @@ export default function App() {
             manque={PATTERNS.filter((p) => !weekPatterns.has(p.id) && !perdus.includes(p.id))}
             reduced={reduced}
             onValider={validerRevoir} onRetour={quitterRevoir}
+            onQualite={(patch) => patchEntry(entreeDuJour.d, patch)}
             onSupprimer={supprimerLigne} />
         );
       })()}

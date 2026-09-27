@@ -3,6 +3,7 @@ import { C, DISPLAY, MONO } from "../lib/theme.js";
 import { volumeReel } from "../lib/perfs.js";
 import { BilanEntete, BilanPatterns } from "./Bilan.jsx";
 import { PerfsCorps } from "./Perfs.jsx";
+import { Qualite } from "./Qualite.jsx";
 import { Rail } from "./Rail.jsx";
 
 /* La relecture d'une séance faite.
@@ -73,7 +74,7 @@ export function SupprimerSeance({ onSupprimer }) {
 }
 
 export function Revoir({ wod, finisher, stretch, level, entry, accent, vol, volFin,
-  streak, weekCount, pats, manque, subs = {}, reduced, onValider, onRetour, onSupprimer }) {
+  streak, weekCount, pats, manque, subs = {}, reduced, onValider, onRetour, onQualite, onSupprimer }) {
   const [onglet, setOnglet] = useState("chiffres");
 
   const reel = entry && entry.valide
@@ -124,6 +125,19 @@ export function Revoir({ wod, finisher, stretch, level, entry, accent, vol, volF
               <span style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:accent }}>OBJECTIF</span>
               <div style={{ marginTop:6 }}>{wod.goal}</div>
             </div>
+
+            {/* La note de qualité se donne à la fin de la séance, mais elle
+                se corrige ici : ce qui clochait se voit parfois le lendemain,
+                et une note qu'on ne peut plus changer est une note qu'on ne
+                donne plus. */}
+            {onQualite && (
+              <div style={{ marginTop:20, padding:"15px 16px 16px", borderRadius:3,
+                background:C.steel, border:`1px solid ${C.line}` }}>
+                <Qualite valeur={entry.qualite} note={entry.note}
+                  onChoix={(v) => onQualite({ qualite: v })}
+                  onNote={(t) => onQualite({ note: t })} />
+              </div>
+            )}
 
             <button onClick={() => onRetour(null)} style={{ width:"100%", padding:"15px 0",
               marginTop:20, background:"transparent", border:`1px solid ${C.line}`, color:C.bone,

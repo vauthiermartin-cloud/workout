@@ -21,6 +21,7 @@ import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
 import { Timer } from "../src/components/Timer.jsx";
 import { Coche } from "../src/components/Coche.jsx";
 import { Zones, ZonesEffet } from "../src/components/Zones.jsx";
+import { Qualite } from "../src/components/Qualite.jsx";
 import { substitutionsPour, patternsPerdus } from "../src/lib/substitution.js";
 import { CORRECTIF } from "../src/data/correctif.js";
 import { newRun } from "../src/lib/chrono.js";
@@ -283,5 +284,33 @@ describe("les zones sensibles", () => {
 
   it("se tait quand aucune zone n'est déclarée", () => {
     expect(html(<ZonesEffet zones={[]} subs={{}} perdus={[]} />)).toBe("");
+  });
+});
+
+/* La note de qualité. Elle partage sa forme avec le ressenti — trois boutons,
+   un tap — et c'est la question posée qui doit les séparer. */
+describe("la note de qualité", () => {
+  const bloc = (props) => html(<Qualite onChoix={() => {}} onNote={() => {}} {...props} />);
+
+  it("demande ce que valait la séance, pas ce qu'on a ressenti", () => {
+    const out = bloc({});
+    expect(out).toContain("ELLE VALAIT QUOI ?");
+    expect(out).not.toContain("C'ÉTAIT COMMENT ?");
+    ["ON LA GARDE", "RIEN À DIRE", "ÇA NE VA PAS"].forEach((l) => expect(out).toContain(l));
+  });
+
+  it("n'ouvre le champ de texte que sur un signalement", () => {
+    expect(bloc({ valeur:"garder" })).not.toContain("<textarea");
+    expect(bloc({ valeur:"probleme" })).toContain("<textarea");
+  });
+
+  it("répond au choix", () => {
+    expect(bloc({ valeur:"garder" })).toContain("Gardée.");
+    expect(bloc({})).not.toContain("Gardée.");
+  });
+
+  it("réaffiche la note déjà écrite", () => {
+    expect(bloc({ valeur:"probleme", note:"volume aberrant au bloc 3" }))
+      .toContain("volume aberrant au bloc 3");
   });
 });

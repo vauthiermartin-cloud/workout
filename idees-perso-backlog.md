@@ -75,7 +75,40 @@ seulement ce dont F-02 a besoin maintenant — mais avec une forme générique
 la substitution équipement (étape 8 du brief officiel) et la substitution de régression
 (étape 9, chaînes déjà écrites dans `chains.js` mais pas branchées).
 
-### 4. F-04 · Flag séance incohérente — statut : à envoyer
+### 4. F-06 · Ratio push/pull (révisé 2026-09-27) — statut : prochaine priorité
+**Révision du 2026-09-27 : le blocage matériel qui limitait ce ticket a disparu.** Martin a
+ajouté l'équipement de tirage horizontal (voir `CLAUDE.md`, section Contraintes du domaine —
+équipement exact à préciser). Le ticket change de nature : ce n'était plus une contrainte
+insoluble, c'est maintenant une règle à construire.
+
+**Deux règles actées, à implémenter ensemble :**
+
+1. **Toute séance avec un créneau poussée contient un créneau tirage.** Règle dure, pas un
+   minimum hebdomadaire — remplace toute lecture antérieure en termes de fréquence.
+2. **Ratio cible de Martin, en équivalence de volume :** pour 15–20 pompes → 3 tractions
+   (pronation) ou 5 chin-ups (supination), et le double en tirage horizontal selon la prise
+   (6 en pronation, 10 en supination). À coder comme coefficients d'équivalence par exercice
+   relatifs à la poussée (nouveau champ ou table à part dans `exercises.js`), pas comme un
+   nombre de reps fixe recopié dans chaque séance.
+
+**Scope volontairement limité — ne pas construire le moteur générique de génération
+(formats-comme-templates) dans ce ticket.** Cette idée a été discutée en amont (session
+claude.ai « Fitness ») comme chantier séparé, plus lourd, pas encore arbitré. Ici, même
+philosophie que F-03 (deuxième révision) : éditer les séances existantes pour y ajouter ou
+dimensionner les créneaux tirage horizontal manquants selon le coefficient, puis un
+garde-fou de simulation hebdomadaire qui vérifie la règle 1 et le ratio de la règle 2 à une
+tolérance à définir — même famille que les gardes-fous F-03 (hip flexion / dead bug ≥3x/semaine).
+
+Pistes déjà écrites dans `brief-v2-multi-user.md`, toujours valables et à combiner avec ce
+qui précède :
+- Brancher la chaîne de régression tirage existante (`chains.js`) : suspension active →
+  tirages d'omoplates → négatives 5s → assistées à l'élastique → tractions.
+- Élastique de traction (~15€), toujours pertinent pour la progression, indépendamment du
+  tirage horizontal.
+- Revisiter le baseline HUMAN (4 tractions/12 pompes), noté dans le brief comme excluant
+  une partie des pratiquants.
+
+### 5. F-04 · Flag séance incohérente — statut : Shipped (2026-09-27), élargi en note de qualité — voir le Log
 Bouton flag sur une séance + note optionnelle. Export incluant les séances flaguées avec
 leurs paramètres complets (exercices, volumes, ordre) + la note, pour une revue à tête
 reposée.
@@ -83,18 +116,6 @@ reposée.
 À ne pas confondre avec les contrôles de cohérence Vitest existants : ceux-là valident les
 données du catalogue au build, celui-ci capture un ressenti utilisateur sur une séance
 générée, en usage réel.
-
-### 5. F-06 · Ratio push/pull — statut : à envoyer
-Déséquilibre réel (plus de poussée que de tirage), mais **pas de solution horizontale
-possible** — pas de barre basse ni d'anneaux, décision déjà actée dans ce repo, ne pas la
-rouvrir. La piste retenue est déjà écrite dans `brief-v2-multi-user.md` et pas construite :
-
-- Brancher la chaîne de régression tirage existante (`chains.js`) : suspension active →
-  tirages d'omoplates → négatives 5s → assistées à l'élastique → tractions.
-- Élastique de traction (~15€), seul achat matériel recommandé dans le brief — pas encore
-  acheté.
-- Revisiter le baseline HUMAN (4 tractions/12 pompes), noté dans le brief comme excluant
-  une partie des pratiquants — pourrait expliquer une partie du ressenti de déséquilibre.
 
 ### 6. F-01 · Fast Track Mode — statut : à envoyer
 Sélecteur de durée en amont de séance (10 min notamment). Réduction du volume + priorisation
@@ -108,6 +129,22 @@ imposée — un mode plus court ne contredit pas la promesse.
 Cas de test pour F-04 une fois posé : EMOM du lundi (5 burpees + 12 pompes/min, squats entre
 les deux) → rupture trop rapide. À rapprocher du baseline HUMAN (voir F-06), déjà noté dans
 le brief comme trop haut pour une partie des pratiquants — pas un problème isolé du lundi.
+
+### F-09 · Notation qualité de séance — tranché et livré avec F-04 le 2026-09-27
+Martin veut pouvoir noter chaque séance en qualité (pas juste signaler une incohérence),
+pour donner un signal d'amélioration au moteur de génération — pertinent surtout si/quand
+le chantier moteur générique (formats-comme-templates, discuté en amont sur claude.ai) se
+construit : c'est le signal qui manque pour savoir si l'enchaînement des créneaux choisis
+automatiquement est bon.
+
+~~**Distinct de F-04**~~ — **arbitré le 2026-09-27 : un seul bouton, une échelle à trois
+niveaux.** Martin a tranché la question laissée ouverte ci-dessous : ce n'est pas une note
+séparée, c'est la même. Le plus haut (« on la garde ») porte le signal d'apprentissage que
+décrivait F-09, le plus bas (« ça ne va pas ») porte le signalement de F-04, et l'échelon
+intermédiaire dit que l'app a fait le job. Voir le Log de F-04.
+
+~~À trancher avant de spécifier : une note séparée, ou un champ ajouté à F-04 (même bouton,
+deux signaux) ? Pas encore arbitré avec Martin.~~
 
 ## Log
 
@@ -211,3 +248,42 @@ doit être relue par le kiné. Trois entrées méritent un œil en particulier :
   seulement lui ;
 - aucune zone ne fait disparaître le dead bug des séances du jeudi et du vendredi — sans ce
   test, F-02 aurait pu casser la garantie de F-03 sans toucher à une ligne de F-03.
+
+**2026-09-27 — F-04 · Flag séance incohérente, élargi en note de qualité.** Livré dans la
+forme demandée en début de conversation : pas un bouton de flag, une échelle à trois niveaux.
+Elle absorbe F-09, qui posait exactement la question « note séparée ou même bouton ? ».
+
+- **Trois niveaux** (`app/src/lib/qualite.js`) : « ON LA GARDE » — cet enchaînement, tel
+  qu'il est sorti, on veut le rejouer ; « RIEN À DIRE » — l'app a fait le job ; « ÇA NE VA
+  PAS » — signalement, qui ouvre un champ de texte.
+- **La note est facultative.** Une séance signalée sans un mot part dans la liste « à
+  documenter » du récap, ce qui est plus honnête qu'un formulaire qui bloque la sortie de
+  l'écran de fin.
+- **Où elle se donne** : sur l'écran de fin, **après** le ressenti et jamais en même temps —
+  deux rangées de trois boutons côte à côte se répondraient l'une pour l'autre. Elle se
+  corrige ensuite depuis la relecture d'une séance : ce qui clochait se voit parfois le
+  lendemain.
+- **Ressenti et qualité restent deux choses.** Le ressenti parle du pratiquant (le dosage
+  était-il juste), la qualité parle de la séance (l'enchaînement tenait-il debout). Deux
+  modules, deux questions, et un test qui interdit qu'un identifiant soit partagé entre les
+  deux — une valeur écrite dans un champ se relirait sinon dans l'autre.
+- **Le dossier de revue** (`app/src/lib/revue.js`) part dans le récap copiable : les séances
+  sans note d'abord, puis les signalées avec leur note, puis les gardées — chacune avec son
+  **contenu complet**, exercices, nombres et ordre.
+- Ce contenu n'est pas stocké : il se reconstruit du nom, du mode et des zones, qui sont tous
+  sur la ligne du journal. Le stocker aurait fait grossir le journal et l'aurait périmé au
+  premier renommage d'exercice. C'est aussi ce qui rend « on la garde » réellement utile :
+  sans ça, on ne garderait qu'un nom.
+- L'onglet SUIVI réclame les notes manquantes avant de proposer l'export, et dit combien de
+  séances sont gardées.
+
+**Garde-fous ajoutés** (210 tests verts, build OK) :
+
+- aucun identifiant partagé entre ressenti et qualité ;
+- une note vide ou faite d'espaces ne compte pas comme une note ;
+- le dossier réclame d'abord les signalements sans note, et ne liste jamais une séance deux
+  fois ;
+- le contenu reconstruit applique le mode et les zones **de la ligne**, pas ceux du jour où
+  on relit ;
+- les 25 séances du catalogue savent se relire — un bloc sans texte ni exercice produirait
+  une ligne vide dans le dossier, et personne ne le verrait avant d'exporter.
