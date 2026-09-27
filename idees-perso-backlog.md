@@ -37,16 +37,24 @@ cas (« PASSER »).
   terminer sur une phase de repos — garantit que « TERMINER » veut toujours dire « travail
   fini », même après un futur changement de contenu.
 
-### 2. F-03 · Prévention pubalgie — bloc correctif permanent — statut : à envoyer
-Isometric Hip Flexion 3x/semaine (2x45sec/jambe) + Dead bug récurrent, garantis sur une
-fenêtre hebdo glissante, indépendamment des séances choisies — y compris en Fast Track
-(F-01, une fois construit). Décidé : ce bloc est non-négociable, jamais sauté par un mode
-plus court.
+### 2. F-03 · Prévention pubalgie — intégration par substitution — statut : à envoyer (révisé le 2026-09-27)
+Isometric Hip Flexion (2x45sec/jambe) et Dead bug, garantis chacun au moins 3x/semaine.
 
-Techniquement : la couverture hebdomadaire des schémas moteurs (10/10) existe déjà mais au
-niveau des *patterns*, pas des exercices précis. Ce ticket demande un axe de garantie
-supplémentaire, au niveau exercice — un nouveau mécanisme à côté de l'existant, pas une
-extension de la couverture par pattern.
+**Révision du 2026-09-27 : pas de bloc en plus, pas de changement de durée de séance.**
+Martin a été précis là-dessus : ces deux exercices remplacent un exercice déjà prévu dans le
+plan du jour (slot de temps/pattern compatible), jamais ajoutés en plus. Le corps de séance
+reste exactement ce qu'il est aujourd'hui, aucune minute supplémentaire.
+
+Techniquement : une substitution à fréquence hebdomadaire garantie, pas une addition de
+temps — même famille d'opération que F-02 (remplacer un exercice en préservant le pattern),
+mais construite ici en version simple et autonome, fixée sur ces deux exercices précis, sans
+moteur générique. F-02 pourra généraliser plus tard si besoin, sans que ce ticket soit à
+refaire (décidé : F-03 passe avant F-02 pour cette raison).
+
+- Garde-fou : simulation hebdomadaire qui vérifie que hip flexion apparaît ≥3x/semaine et
+  dead bug ≥3x/semaine, en plus de la couverture des patterns existante (10/10).
+- Conséquence sur Fast Track (F-01) : plus rien à trancher — comme rien ne s'ajoute en
+  temps, le correctif est présent quelle que soit la durée de la séance.
 
 ### 3. F-02 · Génération adaptée à la douleur (dynamique) — statut : à envoyer
 Sélecteur douleur en début de séance (cervicales / genoux / pubalgie / autre). Substitution
