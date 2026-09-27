@@ -98,13 +98,13 @@ export const WORKOUTS = {
   3: [
     { name:"5 rounds", dur:"≤ 25 min", meta:"Pour le temps · cap 25 min · repos libre entre les rounds",
       blocks:[
-        {tag:"1 ROUND",items:[r(40,"mountainClimbers"),r(30,"airSquats"),r(20,"situps"),r(20,"fentesArriere"),r(10,"pompes"),r(3,"pullups")]},
+        {tag:"1 ROUND",items:[r(40,"mountainClimbers"),r(30,"airSquats"),r(20,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),r(20,"fentesArriere"),r(10,"pompes"),r(3,"pullups")]},
         {tag:"× 5",items:[f("Enchaîne 5 fois")]},
       ],
       goal:"Note le temps total. C'est le seul chiffre à retenir." },
     { name:"4 rounds lourds", dur:"≤ 25 min", meta:"Pour le temps · rounds plus longs, moins nombreux",
       blocks:[
-        {tag:"1 ROUND",items:[r(50,"mountainClimbers"),r(40,"airSquats"),r(30,"situps"),r(20,"fentesArriere"),r(10,"pompes"),r(5,"chinups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps.")]},
+        {tag:"1 ROUND",items:[r(50,"mountainClimbers"),r(40,"airSquats"),r(30,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),r(20,"fentesArriere"),r(10,"pompes"),r(5,"chinups","Paumes tournées vers toi. C'est la prise qui charge le plus les biceps.")]},
         {tag:"× 4",items:[f("Enchaîne 4 fois")]},
       ],
       goal:"Découpe les mountain climbers en deux séries dès le round 2." },
@@ -112,7 +112,7 @@ export const WORKOUTS = {
       blocks:[
         {tag:"1",items:[r(100,"mountainClimbers")]},
         {tag:"2",items:[r(80,"airSquats")]},
-        {tag:"3",items:[r(60,"situps")]},
+        {tag:"3",items:[r(60,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
         {tag:"4",items:[r(40,"fentesArriere")]},
         {tag:"5",items:[r(30,"pompes")]},
         {tag:"6",items:[r(20,"burpees")]},
@@ -150,7 +150,7 @@ export const WORKOUTS = {
       blocks:[
         {tag:"AMRAP A",items:[r(5,"pullups"),r(10,"pompes"),r(15,"airSquats")]},
         {tag:"REPOS",items:[f("3 min")]},
-        {tag:"AMRAP B",items:[r(10,"fentesArriere"),r(15,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut."),r(15,"situps"),r(20,"mountainClimbers")]},
+        {tag:"AMRAP B",items:[r(10,"fentesArriere"),r(15,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut."),r(15,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent"),r(20,"mountainClimbers")]},
       ],
       goal:"Deux scores : tours du bloc A, tours du bloc B." },
     { name:"AMRAP 20", dur:"20 min", meta:"Max de tours en 20 min · un seul bloc, pas de pause programmée",
@@ -160,7 +160,7 @@ export const WORKOUTS = {
       goal:"Le rythme des 5 premières minutes décide de tout le reste." },
     { name:"3 × AMRAP 6", dur:"22 min", meta:"Trois blocs courts · 2 min de repos entre chaque",
       blocks:[
-        {tag:"BLOC A",items:[r(10,"pompes"),r(10,"situps")]},
+        {tag:"BLOC A",items:[r(10,"pompes"),r(10,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
         {tag:"BLOC B",items:[r(8,"fentesArriere"),r(8,"jumpSquats"),r(12,"hipThrusts","Sur le dos, genoux pliés, pieds à plat. Tu montes le bassin et tu serres 1 s en haut.")]},
         {tag:"BLOC C",items:[r(3,"pullups"),r(6,"burpees")]},
       ],
@@ -229,7 +229,7 @@ export const WORKOUTS = {
       blocks:[
         {tag:"TEST",items:[r(50,"burpees","Le plus vite possible")]},
         {tag:"REPOS",items:[f("4 min")]},
-        {tag:"3 ROUNDS",items:[r(10,"pompes"),r(15,"airSquats"),r(3,"pullups"),r(15,"situps")]},
+        {tag:"3 ROUNDS",items:[r(10,"pompes"),r(15,"airSquats"),r(3,"pullups"),r(15,"deadBugs","Sur le dos, bas du dos plaqué au sol, bras et jambe opposés qui s'éloignent")]},
       ],
       goal:"Note le temps en secondes. Sous 240 s, c'est déjà solide." },
     { name:"Test 4 min + sangle", dur:"≈ 22 min", test:true, testLabel:"Burpees en 4 min",

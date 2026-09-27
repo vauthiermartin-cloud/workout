@@ -43,7 +43,7 @@ describe("perfsOf — ce que la feuille propose de saisir", () => {
     expect(tours.map((c) => c.k)).toEqual(["tours:0", "tours:1"]);
     expect(tours.map((c) => c.label)).toEqual(["AMRAP A", "AMRAP B"]);
     expect(champ(champs, "t0:pullups").de).toBe("tours:0");
-    expect(champ(champs, "t1:situps").de).toBe("tours:1");
+    expect(champ(champs, "t1:deadBugs").de).toBe("tours:1");
   });
 
   it("déclare le pas d'un escalier ouvert, sur le bloc comme sur ses lignes", () => {
@@ -203,7 +203,7 @@ describe("saisieApres — les lignes suivent les tours", () => {
   it("n'entraîne que les lignes de son propre bloc", () => {
     const deux = perfsOf("2 × AMRAP 10", 1);
     const o = saisieApres(deux, prefill(deux, null), "tours:1", "3", new Set());
-    expect(o["t1:situps"]).toBe("45");
+    expect(o["t1:deadBugs"]).toBe("45");
     expect(o["t0:pullups"]).toBe("");
   });
 });

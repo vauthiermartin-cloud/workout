@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { WORKOUTS, WORKOUT_BY_NAME } from "../src/data/workouts.js";
 import { FINISHERS } from "../src/data/finishers.js";
 import { TIMERS } from "../src/data/timers.js";
+import { CORRECTIF } from "../src/data/correctif.js";
 import { EXERCISES, UNITS, PER_SIDE } from "../src/data/exercises.js";
 import { CHAINS, chainOf } from "../src/data/chains.js";
 import { PATTERNS, patternsOfWorkout, patternsOfTimer } from "../src/data/patterns.js";
@@ -11,12 +12,16 @@ const allFinishers = Object.values(FINISHERS).flat();
 
 /* Toutes les lignes de travail citées quelque part, fiches et chronos
    confondus. On collecte les lignes entières et non les seuls identifiants :
-   plusieurs contrôles ci-dessous portent sur la quantité. */
+   plusieurs contrôles ci-dessous portent sur la quantité.
+
+   Le correctif en fait partie bien qu'aucune séance ne le prescrive : c'est du
+   travail réellement prescrit, simplement par une case à cocher plutôt que par
+   le catalogue. Sans lui ici, son exercice passerait pour une entrée morte. */
 function workLines() {
   const lines = [];
   const item = (it) => { if (it.ex !== undefined) lines.push(it); };
   [...allWorkouts, ...allFinishers].forEach((w) => w.blocks.forEach((b) => b.items.forEach(item)));
-  Object.values(TIMERS).flat().forEach((p) => {
+  [...Object.values(TIMERS).flat(), CORRECTIF].forEach((p) => {
     if (p.stations) p.stations.forEach((s) => s.forEach(item));
     if (p.list) p.list.forEach(item);
   });
@@ -121,6 +126,38 @@ describe("bibliothèque", () => {
       if (familles.has("pullups") && familles.has("chinups")) fautives.push(w.name);
     });
     expect(fautives).toEqual([]);
+  });
+});
+
+/* La prescription du correctif est chiffrée dans le ticket : 4 x 45 s,
+   deux par jambe. Elle ne se relit nulle part ailleurs — ni dans une séance,
+   ni dans un plan de chrono — donc elle se tient ici. */
+describe("le correctif", () => {
+  const stations = CORRECTIF.stations;
+
+  it("prescrit quatre maintiens de 45 secondes", () => {
+    expect(stations.length * (CORRECTIF.loops || 1)).toBe(4);
+    const tenues = stations.flat().filter((it) => it.ex !== undefined);
+    expect(tenues.map((it) => it.n)).toEqual([45, 45, 45, 45]);
+    expect(new Set(tenues.map((it) => it.ex))).toEqual(new Set(["flexionHancheIso"]));
+    expect(EXERCISES.flexionHancheIso.unit).toBe("secondes");
+  });
+
+  it("alterne les jambes, deux séries chacune", () => {
+    const cotes = stations.map((s) => s.find((it) => it.txt).txt);
+    expect(cotes).toEqual(["Jambe droite", "Jambe gauche", "Jambe droite", "Jambe gauche"]);
+  });
+
+  /* Il se joue à part, jamais dans une séance : l'y retrouver voudrait dire
+     que quelqu'un l'a prescrit deux fois, et le cap de 25 minutes tomberait
+     sans que rien ne le dise. */
+  it("aucune séance ne le prescrit", () => {
+    const dedans = [...allWorkouts, ...allFinishers].filter((w) =>
+      w.blocks.some((b) => b.items.some((it) => it.ex === "flexionHancheIso")));
+    expect(dedans.map((w) => w.name)).toEqual([]);
+    expect(Object.entries(TIMERS).filter(([, plan]) => plan.some((p) =>
+      (p.stations ? p.stations.flat() : p.list || []).some((it) => it.ex === "flexionHancheIso"),
+    )).map(([n]) => n)).toEqual([]);
   });
 });
 

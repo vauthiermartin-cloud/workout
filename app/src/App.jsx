@@ -7,7 +7,7 @@ import { iso, fromIso, mondayOf, weekdayOf, daysBetween, shortFr, pad } from "./
 import { beep } from "./lib/audio.js";
 import { volumeOf, streakOf } from "./lib/volume.js";
 import { volumeReel } from "./lib/perfs.js";
-import { pickVariant } from "./lib/generator.js";
+import { pickVariant, prescrit } from "./lib/generator.js";
 import { RESSENTIS, askRessenti, finisherStance, retourDe } from "./lib/ressenti.js";
 import { DAYS, STRETCH_BY_DAY, FINISHER_BIAS } from "./data/days.js";
 import { WORKOUTS, WORKOUT_BY_NAME } from "./data/workouts.js";
@@ -17,6 +17,8 @@ import { TIMERS } from "./data/timers.js";
 import { PATTERNS, patternsOfWorkout } from "./data/patterns.js";
 import { LEVELS } from "./data/levels.js";
 import { f } from "./data/items.js";
+import { CORRECTIF, CORRECTIF_HEBDO, CORRECTIF_PAR_SEMAINE } from "./data/correctif.js";
+import { Coche } from "./components/Coche.jsx";
 import { Rail } from "./components/Rail.jsx";
 import { Timer } from "./components/Timer.jsx";
 import { Perfs } from "./components/Perfs.jsx";
@@ -42,6 +44,7 @@ export default function App() {
   const [stretch, setStretch] = useState(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [warmup, setWarmup] = useState(true);
+  const [correctif, setCorrectif] = useState(true);
   const [run, setRun] = useState(null);
   const [pending, setPending] = useState(null);
   const [endOpen, setEndOpen] = useState(false);
@@ -113,14 +116,21 @@ export default function App() {
   const dowToday = weekdayOf(today);
   const entreeDuJour = entreeDeLOnglet(log, today, dayKey);
 
-  /* Ce que la semaine a déjà couvert, reconstruit depuis le journal */
+  /* Ce que la semaine a déjà couvert, reconstruit depuis le journal — les
+     schémas moteurs, et le correctif qui se compte à part, au niveau de
+     l'exercice. Les deux se lisent du même passage sur le journal, mais ils ne
+     disent pas la même chose : l'un tient la variété, l'autre la répétition. */
   const weekPatterns = new Set();
+  let correctifsFaits = 0;
   log.forEach((e) => {
     const d = fromIso(e.d);
-    if (d >= wkStart && WORKOUT_BY_NAME[e.w]) {
-      patternsOfWorkout(WORKOUT_BY_NAME[e.w]).forEach((p) => weekPatterns.add(p));
+    const w = WORKOUT_BY_NAME[e.w];
+    if (d >= wkStart && w) {
+      patternsOfWorkout(w).forEach((p) => weekPatterns.add(p));
+      if (prescrit(w, CORRECTIF_HEBDO)) correctifsFaits++;
     }
   });
+  const correctifDu = correctifsFaits < CORRECTIF_PAR_SEMAINE;
 
   const weeks = [];
   for (let i = 7; i >= 0; i--) {
@@ -160,7 +170,7 @@ export default function App() {
   const ligneDuJour = nonEnregistree ? null : entryToday;
 
   const generate = () => {
-    const next = pickVariant(pool, weekPatterns, seen, variant);
+    const next = pickVariant(pool, weekPatterns, seen, variant, Math.random, correctifDu);
     setVariant(next.index);
     setSeen(next.seen);
     setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
@@ -215,14 +225,18 @@ export default function App() {
     beep(660, 120);
   };
 
-  /* Le plan ne contient que l'échauffement et la séance.
-     Le finisher et les étirements se décident à la fin, sur l'écran de bilan. */
+  /* Le plan ne contient que l'échauffement, le correctif et la séance.
+     Le finisher et les étirements se décident à la fin, sur l'écran de bilan.
+
+     Le correctif vient après l'échauffement : à froid l'isométrie n'a pas de
+     sens, et placée après la séance ce serait celle qu'on passe. */
   const startTimer = () => {
     const p = [];
     if (warmup) p.push({ t:"down", sec:300, warm:true, label:"Échauffement", sub:"À ton rythme", list:[
-      f("Squats latéraux"), f("Élévations latérales de jambe"), f("Isométries kiné"),
+      f("Squats latéraux"), f("Élévations latérales de jambe"),
       f("30 s de deep squat", "Talons au sol, coudes contre l'intérieur des genoux, tu pousses vers l'extérieur"),
     ] });
+    if (correctif) p.push(CORRECTIF);
     const w = TIMERS[wod.name];
     if (w) p.push(...w); else p.push({ t:"up", cap:1500, label:wod.name, sub:"Chrono libre" });
     launch(p, "workout");
@@ -911,20 +925,10 @@ export default function App() {
               AVANT DE LANCER
             </div>
 
-            <button onClick={() => setWarmup(!warmup)} style={{ width:"100%", display:"flex", alignItems:"center",
-              gap:14, padding:"14px 0", borderBottom:`1px solid ${C.line}`, textAlign:"left" }}>
-              <span style={{ width:22, height:22, flexShrink:0, borderRadius:2,
-                border:`1px solid ${warmup ? C.lime : C.line}`, background: warmup ? C.lime : "transparent",
-                color:C.ink, fontFamily:MONO, fontSize:13, fontWeight:700, lineHeight:"21px", textAlign:"center" }}>
-                {warmup ? "✓" : ""}
-              </span>
-              <span>
-                <span style={{ fontFamily:DISPLAY, fontSize:19 }}>Échauffement</span>
-                <span style={{ display:"block", fontSize:12, color:C.ash, lineHeight:1.4, marginTop:2 }}>
-                  5 min au début. Tu peux le passer à tout moment.
-                </span>
-              </span>
-            </button>
+            <Coche on={warmup} onToggle={() => setWarmup(!warmup)} titre="Échauffement"
+              detail="5 min au début. Tu peux le passer à tout moment." />
+            <Coche on={correctif} onToggle={() => setCorrectif(!correctif)} titre="Isométrie"
+              detail="3 min avant la séance : 4 × 45 s de flexion de hanche, deux par jambe." />
 
             <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, margin:"16px 0 18px" }}>
               Le chrono suit {wod.name}. Trois bips avant chaque bascule. À la fin, il te proposera

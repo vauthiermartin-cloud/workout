@@ -61,15 +61,15 @@ export const TIMERS = {
 
   /* Mercredi */
   "5 rounds": [{ t:"up", cap:1500, label:"5 rounds", sub:"1 tour, à répéter 5 fois", list:[
-    r(40,"mountainClimbers"), r(30,"airSquats"), r(20,"situps"),
+    r(40,"mountainClimbers"), r(30,"airSquats"), r(20,"deadBugs"),
     r(20,"fentesArriere"), r(10,"pompes"), r(3,"pullups"),
   ] }],
   "4 rounds lourds": [{ t:"up", cap:1500, label:"4 rounds", sub:"1 tour, à répéter 4 fois", list:[
-    r(50,"mountainClimbers"), r(40,"airSquats"), r(30,"situps"),
+    r(50,"mountainClimbers"), r(40,"airSquats"), r(30,"deadBugs"),
     r(20,"fentesArriere"), r(10,"pompes"), r(5,"chinups"),
   ] }],
   "Chipper": [{ t:"up", cap:1500, label:"Chipper", sub:"Dans l'ordre, une ligne à la fois", list:[
-    r(100,"mountainClimbers"), r(80,"airSquats"), r(60,"situps"),
+    r(100,"mountainClimbers"), r(80,"airSquats"), r(60,"deadBugs"),
     r(40,"fentesArriere"), r(30,"pompes"), r(20,"burpees"), r(10,"pullups"),
   ] }],
   "Tours explosifs": [{ t:"up", cap:1500, label:"4 tours explosifs", sub:"1 tour, à répéter 4 fois", list:[
@@ -88,13 +88,13 @@ export const TIMERS = {
       r(5,"pullups"), r(10,"pompes"), r(15,"airSquats") ] },
     { t:"rest", sec:180, label:"Repos" },
     { t:"down", sec:600, label:"AMRAP B", sub:"Max de tours", list:[
-      r(10,"fentesArriere"), r(15,"hipThrusts"), r(15,"situps"), r(20,"mountainClimbers") ] },
+      r(10,"fentesArriere"), r(15,"hipThrusts"), r(15,"deadBugs"), r(20,"mountainClimbers") ] },
   ],
   "AMRAP 20": [{ t:"down", sec:1200, label:"AMRAP 20", sub:"Max de tours", list:[
     r(5,"pullups"), r(10,"burpees"), r(15,"pompes"), r(20,"airSquats"), r(15,"hipThrusts"),
   ] }],
   "3 × AMRAP 6": [
-    { t:"down", sec:360, label:"Bloc A", sub:"Max de tours", list:[r(10,"pompes"), r(10,"situps")] },
+    { t:"down", sec:360, label:"Bloc A", sub:"Max de tours", list:[r(10,"pompes"), r(10,"deadBugs")] },
     { t:"rest", sec:120, label:"Repos" },
     { t:"down", sec:360, label:"Bloc B", sub:"Max de tours", list:[r(8,"fentesArriere"), r(8,"jumpSquats"), r(12,"hipThrusts")] },
     { t:"rest", sec:120, label:"Repos" },
@@ -125,7 +125,7 @@ export const TIMERS = {
     { t:"up", cap:480, label:"TEST", sub:"Le plus vite possible", test:true, list:[r(50,"burpees")] },
     { t:"rest", sec:240, label:"Repos" },
     { t:"up", cap:480, label:"3 rounds", sub:"1 tour, à répéter 3 fois", list:[
-      r(10,"pompes"), r(15,"airSquats"), r(3,"pullups"), r(15,"situps") ] },
+      r(10,"pompes"), r(15,"airSquats"), r(3,"pullups"), r(15,"deadBugs") ] },
   ],
 
   "Test 4 min + sangle": [

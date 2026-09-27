@@ -20,6 +20,10 @@ document sont à traiter au moment de l'appliquer.
   l'arbitrage doit rester cohérent avec eux.
 - **Un exercice a disparu** : « burpee » et « burpees » étaient deux entrées pour le même
   mouvement, comptées comme deux exercices distincts. Il n'en reste qu'une.
+- **Un exercice est arrivé depuis** (2026-09-27) : `flexionHancheIso`, l'isométrie de flexion
+  de hanche du bloc correctif. Il figure en section C avec un label provisoire. Sa seconde
+  ligne anglaise serait « isometric hip flexion » — à confirmer au moment de l'arbitrage,
+  comme le reste de la colonne.
 
 Quatre colonnes :
 
@@ -82,6 +86,7 @@ manger de la place.
 | fentes marchées | Fentes marchées | — |
 | montées sur pointes | Montées sur pointes | — |
 | soulevés de terre une jambe | Soulevés de terre une jambe | Soulevé une jambe |
+| flexion de hanche | Flexion de hanche | — |
 
 ## D. Burpees — conservés tels quels
 

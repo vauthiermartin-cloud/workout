@@ -126,7 +126,9 @@ export function Timer({ initial, level, onPersist, onDone }) {
     const k = Math.min(Math.floor(elapsed / ph.sec), total - 1);
     remaining = ph.sec - (elapsed % ph.sec);
     big = mmss(remaining);
-    progress = `MIN ${k + 1} / ${total}`;
+    /* « MIN » n'était vrai que parce que tout cycle durait 60 s. Le correctif
+       tourne en 45 s : il faut dire série, sinon l'écran ment sur l'unité. */
+    progress = ph.sec === 60 ? `MIN ${k + 1} / ${total}` : `SÉRIE ${k + 1} / ${total}`;
     station = ph.stations[k % ph.stations.length];
     next = k + 1 < total ? ph.stations[(k + 1) % ph.stations.length] : null;
     /* Un bloc = un cycle complet de stations, sauf indication contraire */
@@ -313,7 +315,7 @@ export function Timer({ initial, level, onPersist, onDone }) {
           </div>
           <div style={{ fontFamily:DISPLAY, fontSize:38, lineHeight:.95, marginBottom:12 }}>
             {!pos ? "TU ÉTAIS EN PLEINE SÉANCE"
-              : pos.warm ? "TU ÉTAIS DANS L'ÉCHAUFFEMENT"
+              : pos.warm ? (ph.corr ? "TU ÉTAIS DANS L'ISOMÉTRIE" : "TU ÉTAIS DANS L'ÉCHAUFFEMENT")
               : `TU ÉTAIS À LA MINUTE ${pos.minute} SUR ${pos.total}`}
           </div>
           <p style={{ fontSize:13.5, color:C.ash, lineHeight:1.55, margin:"0 0 26px" }}>
@@ -342,7 +344,7 @@ export function Timer({ initial, level, onPersist, onDone }) {
             ARRÊTER LE CHRONO ?
           </div>
           <p style={{ fontSize:13.5, color:C.ash, lineHeight:1.55, margin:"0 0 26px" }}>
-            {!pos ? "" : pos.warm ? "Tu es encore dans l'échauffement. "
+            {!pos ? "" : pos.warm ? (ph.corr ? "Tu es encore dans l'isométrie. " : "Tu es encore dans l'échauffement. ")
               : `Tu es à la minute ${pos.minute} sur ${pos.total}. `}
             Le chrono s'arrête et l'écran de bilan s'ouvre.
           </p>

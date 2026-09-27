@@ -4,6 +4,7 @@ import {
   phaseDur, planDur, position, record, resumableKind, resumeRun, sortie, suspendRun, verdict,
 } from "../src/lib/chrono.js";
 import { TIMERS } from "../src/data/timers.js";
+import { CORRECTIF } from "../src/data/correctif.js";
 
 const T0 = 1_700_000_000_000;
 const PLAN = [
@@ -277,5 +278,32 @@ describe("ce que dit le bouton de droite", () => {
      tient — mais la fin prime de toute façon sur le repos. */
   it("la fin prime sur le repos", () => {
     expect(a(1, REPOS.slice(0, 2))).toBe("fin");
+  });
+});
+
+/* Le correctif est du travail, mais pas de la séance : les 25 minutes que
+   promet le nom de l'app sont celles du corps de séance, et trois minutes
+   d'isométrie ne doivent ni les entamer ni les gonfler. */
+describe("le correctif reste hors des 25 minutes", () => {
+  const AVEC = [PLAN[0], CORRECTIF, PLAN[1]];
+
+  it("il dure trois minutes", () => {
+    expect(phaseDur(CORRECTIF)).toBe(180);
+  });
+
+  it("il n'entre pas dans le total annoncé", () => {
+    const run = { ...newRun({ plan: AVEC }, T0), idx: 2 };
+    expect(position(run, 0)).toEqual({ minute: 1, total: 21, warm: false });
+    expect(position(run, 99_999).minute).toBe(21);
+  });
+
+  it("pendant le correctif, la position dit qu'on est hors du compte", () => {
+    const run = { ...newRun({ plan: AVEC }, T0), idx: 1 };
+    expect(position(run, 60)).toEqual({ minute: 0, total: 21, warm: true });
+  });
+
+  it("le temps qu'il prend n'est pas soldé dans le temps fait", () => {
+    const run = { ...newRun({ plan: AVEC }, T0), idx: 1, done: 0 };
+    expect(doneWith(run, 180)).toBe(0);
   });
 });

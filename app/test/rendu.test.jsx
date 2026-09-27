@@ -1,5 +1,5 @@
-/* Le rendu des écrans de bilan.
-   ===========================
+/* Le rendu des écrans.
+   ==================
 
    Les autres tests tiennent les données et les calculs, jamais l'affichage :
    une séance sans plan de chrono est attrapée, un écran qui plante à l'ouverture
@@ -18,6 +18,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { BilanEntete, BilanPatterns } from "../src/components/Bilan.jsx";
 import { Perfs } from "../src/components/Perfs.jsx";
 import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
+import { Timer } from "../src/components/Timer.jsx";
+import { Coche } from "../src/components/Coche.jsx";
+import { CORRECTIF } from "../src/data/correctif.js";
+import { newRun } from "../src/lib/chrono.js";
 import { WORKOUTS } from "../src/data/workouts.js";
 import { TIMERS } from "../src/data/timers.js";
 import { PATTERNS, patternsOfWorkout } from "../src/data/patterns.js";
@@ -202,5 +206,40 @@ describe("la saisie en plein écran", () => {
     expect(vu).toContain("CE QUE TU AS FAIT");
     expect(vu).toContain("RETOUR AU BILAN");
     expect(vu).toContain("C'EST BON");
+  });
+});
+
+/* Le chrono du correctif. Il ne se relit nulle part ailleurs : c'est le seul
+   écran où la prescription se lit telle qu'on la fait, série par série. */
+describe("le chrono du correctif", () => {
+  const chrono = (plan) => html(
+    <Timer initial={newRun({ plan, segment:"workout" })} level={1}
+      onPersist={() => {}} onDone={() => {}} />
+  );
+
+  it("nomme la série en cours et le côté, jamais la minute", () => {
+    const out = chrono([CORRECTIF, ...TIMERS["EMOM 21"]]);
+    expect(out).toContain("ISOMÉTRIE");
+    expect(out).toContain("SÉRIE 1 / 4");
+    expect(out).toContain("Jambe droite");
+    expect(out).not.toContain("MIN 1 / 4");
+  });
+
+  /* L'EMOM garde son compte en minutes : le libellé suit la durée de
+     l'intervalle, il n'a pas été remplacé partout. */
+  it("un EMOM continue de compter en minutes", () => {
+    expect(chrono(TIMERS["EMOM 21"])).toContain("MIN 1 / 21");
+  });
+});
+
+/* Les deux cases d'avant-lancement : l'échauffement et le correctif se
+   décident du même geste, au même endroit, et se cochent pareil. */
+describe("les cases d'avant-lancement", () => {
+  it("dit ce qu'elle coche, et si elle est cochée", () => {
+    const coche = html(<Coche on titre="Isométrie" detail="3 min avant la séance" onToggle={() => {}} />);
+    expect(coche).toContain("Isométrie");
+    expect(coche).toContain("3 min avant la séance");
+    expect(coche).toContain("✓");
+    expect(html(<Coche on={false} titre="Isométrie" detail="x" onToggle={() => {}} />)).not.toContain("✓");
   });
 });

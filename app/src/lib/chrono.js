@@ -16,6 +16,12 @@ export const SUSPEND_GAP = 4;
 /* Au-delà, une séance retrouvée est trop vieille pour être reprise telle quelle. */
 export const RESUME_WINDOW = 4 * 3600;
 
+/* Les phases qui ne comptent pas dans les 25 minutes promises : l'échauffement
+   et le correctif. Le cap porte sur la séance, pas sur le temps passé
+   téléphone en main — c'était déjà vrai de l'échauffement, ça l'est pour la
+   même raison du bloc d'isométrie. */
+export const horsSeance = (p) => !!(p.warm || p.corr);
+
 export function phaseDur(p) {
   if (p.t === "cycle") return p.sec * p.stations.length * (p.loops || 1);
   if (p.t === "tabata") return (p.work + p.rest) * p.rounds;
@@ -43,12 +49,12 @@ export function newRun(ctx, now = Date.now()) {
    écrite nulle part. Déduire du plan aurait donné la seule réponse fausse
    précisément là où le chiffre est intéressant.
 
-   L'échauffement en est exclu, comme partout ailleurs : les 25 minutes que
-   promet le nom de l'app sont celles de la séance. Les pauses et les
+   L'échauffement et le correctif en sont exclus, comme partout ailleurs : les
+   25 minutes que promet le nom de l'app sont celles de la séance. Les pauses et les
    suspensions le sont aussi, `elapsed` ne comptant que le temps observé. */
 export function doneWith(run, elapsed) {
   const ph = run.plan[run.idx];
-  if (!ph || ph.warm) return run.done || 0;
+  if (!ph || horsSeance(ph)) return run.done || 0;
   return (run.done || 0) + Math.min(elapsed, phaseLimit(ph));
 }
 
@@ -119,17 +125,19 @@ export function resumableKind(rec, now = Date.now()) {
 }
 
 /* « Tu étais à la minute 12 sur 25 » : le repère qui permet de décider s'il
-   faut reprendre la phase ou passer à la suivante. L'échauffement reste hors
-   du compte — les 25 minutes que promet le nom de l'app sont celles de la
-   séance. Null sur un plan dont la durée dépend de toi, il n'y a alors rien
-   d'honnête à afficher. */
+   faut reprendre la phase ou passer à la suivante. L'échauffement et le
+   correctif restent hors du compte — les 25 minutes que promet le nom de
+   l'app sont celles de la séance. `warm` ne dit alors que « hors du compte » :
+   c'est au chrono de nommer laquelle des deux phases il affiche. Null sur un
+   plan dont la durée dépend de toi, il n'y a alors rien d'honnête à
+   afficher. */
 export function position(run, elapsed) {
-  const durs = run.plan.filter((p) => !p.warm).map(phaseDur);
+  const durs = run.plan.filter((p) => !horsSeance(p)).map(phaseDur);
   if (!durs.length || durs.some((d) => d === null)) return null;
   const totalMin = Math.max(1, Math.round(durs.reduce((a, b) => a + b, 0) / 60));
   const ph = run.plan[run.idx];
-  if (ph.warm) return { minute: 0, total: totalMin, warm: true };
-  const done = run.plan.slice(0, run.idx).filter((p) => !p.warm)
+  if (horsSeance(ph)) return { minute: 0, total: totalMin, warm: true };
+  const done = run.plan.slice(0, run.idx).filter((p) => !horsSeance(p))
     .reduce((a, p) => a + phaseDur(p), 0);
   const secs = done + Math.min(elapsed, phaseDur(ph));
   return { minute: Math.min(Math.floor(secs / 60) + 1, totalMin), total: totalMin, warm: false };

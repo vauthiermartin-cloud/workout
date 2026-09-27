@@ -34,12 +34,13 @@
    (étapes 9 et 10). Les champs seront ajoutés au moment où ils auront une
    valeur à porter, pas avant.
 
-   La table se lit en deux parties. Au-dessus, les exercices que le catalogue
-   prescrit. En dessous, les variantes de régression : mêmes entités, mêmes
-   champs, mais aucune séance ne les cite — on ne les atteint que par une
-   chaîne (`chains.js`). La séparation n'est pas décorative, c'est elle que
-   contrôle le test d'entrée morte : au-dessus, une entrée que plus aucune
-   séance n'utilise est un oubli ; en dessous, c'est la règle. */
+   La table se lit en trois parties. Au-dessus, les exercices que le catalogue
+   prescrit. Puis le correctif, que seul le bloc d'isométrie emploie. En
+   dessous, les variantes de régression : mêmes entités, mêmes champs, mais
+   aucune séance ne les cite — on ne les atteint que par une chaîne
+   (`chains.js`). La séparation n'est pas décorative, c'est elle que contrôle
+   le test d'entrée morte : en haut, une entrée que plus aucune séance
+   n'utilise est un oubli ; plus bas, c'est la règle. */
 
 export const EXERCISES = {
   /* Poussée */
@@ -100,6 +101,12 @@ export const EXERCISES = {
   planche:                { fr:"planche",                         unit:"secondes", patterns:["core"] },
   hollowHold:             { fr:"hollow hold",                     unit:"secondes", patterns:["core"] },
   gainageLateral:         { fr:"gainage latéral",                 unit:"secondes", perSide:"chaque", patterns:["core"] },
+
+  /* Correctif — aucune séance ne le prescrit non plus, et pour une autre
+     raison que les variantes ci-dessous : il ne remplace rien, il se coche
+     avant de lancer le chrono et se joue à part, hors des 25 minutes. Voir
+     `correctif.js`, qui porte la seule prescription qui l'emploie. */
+  flexionHancheIso:            { fr:"flexion de hanche",                          unit:"secondes", patterns:["core","unilat"] },
 
   /* Variantes de régression — aucune séance ne les prescrit.
      ------------------------------------------------------
