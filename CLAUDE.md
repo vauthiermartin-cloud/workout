@@ -8,6 +8,9 @@ vendredi. Hébergée sur GitHub Pages, installée sur l'écran d'accueil iPhone.
 1. `pickup-app-workout.md` — état technique, décisions déjà prises, questions réellement ouvertes.
 2. `brief-v2-multi-user.md` — intention produit, ordre de travail en douze étapes.
 3. `table-nommage-exercices.md` — labels français des 35 exercices, référence pour tout renommage.
+4. `idees-perso-backlog.md` — backlog d'idées produit de Martin, issues de l'usage réel, pas
+   encore dans le brief officiel. Un ticket à la fois, dans l'ordre du fichier. Mettre à jour
+   le statut du ticket traité directement dans ce fichier avant de conclure la conversation.
 
 Les décisions produit de ces documents sont tranchées. Ne pas les rouvrir sans demander.
 
