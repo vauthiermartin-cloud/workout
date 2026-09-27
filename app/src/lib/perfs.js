@@ -32,13 +32,19 @@ import { WORKOUT_BY_NAME } from "../data/workouts.js";
 import { EXERCISES } from "../data/exercises.js";
 import { scaleItem } from "../data/levels.js";
 import { roundsOfPhase } from "./volume.js";
+import { planSubstitue } from "./substitution.js";
 
-export function perfsOf(name, level) {
+/* `subs` porte les substitutions de la séance — une zone sensible déclarée,
+   demain un matériel absent. La feuille doit les suivre : une séance faite en
+   soulevés de terre ne se relit pas en fentes, et ses chiffres se rangent sous
+   le mouvement réellement fait. Les clés de champ changent donc avec elle, ce
+   qui est exact : elles nomment un exercice, pas une place dans la séance. */
+export function perfsOf(name, level, subs = {}) {
   const wod = WORKOUT_BY_NAME[name];
   const totaux = new Map();
   const ouverts = [];
 
-  (TIMERS[name] || []).forEach((p) => {
+  planSubstitue(TIMERS[name] || [], subs).forEach((p) => {
     const lignes = (p.stations ? p.stations.flat() : p.list || []).filter((it) => it.ex !== undefined);
     if (!lignes.length) return;
     /* Un cycle répète toute sa séquence de stations ; une liste tient son
@@ -153,9 +159,9 @@ export function correctionsDe(champs, saisie, initial, perfsAvant) {
 
    `complet` est faux dès qu'un chiffre manque encore : le total serait alors
    plus faux que le prescrit, mieux vaut ne pas le montrer. */
-export function volumeReel(name, level, perfs, score) {
+export function volumeReel(name, level, perfs, score, subs = {}) {
   let total = 0, complet = true;
-  perfsOf(name, level).forEach((c) => {
+  perfsOf(name, level, subs).forEach((c) => {
     if (c.kind === "ex") {
       if (c.unit !== "reps") return;
       /* Un bloc ouvert compte par ses lignes et non par ses tours : c'est le

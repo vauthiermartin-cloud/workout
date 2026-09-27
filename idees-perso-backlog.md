@@ -61,7 +61,7 @@ refaire (décidé : F-03 passe avant F-02 pour cette raison).~~
 - Conséquence sur Fast Track (F-01) : plus rien à trancher — comme rien ne s'ajoute en
   temps, le correctif est présent quelle que soit la durée de la séance.
 
-### 3. F-02 · Génération adaptée à la douleur (dynamique) — statut : à envoyer
+### 3. F-02 · Génération adaptée à la douleur (dynamique) — statut : Shipped (2026-09-27), table à valider — voir le Log
 Sélecteur douleur en début de séance (cervicales / genoux / pubalgie / autre). Substitution
 vers un exercice qui évite la zone touchée, en préservant si possible le schéma moteur.
 
@@ -165,3 +165,49 @@ conversation. Deux chemins indépendants, aucun moteur de substitution.
   séances. Il manquait, et neuf séances venaient d'être éditées à la main dans deux fichiers.
   Il a révélé une anomalie antérieure, inscrite comme exception : « Gainage descendant » porte
   son contenu dans des libellés de phase au lieu de lignes typées, donc rien ne le compte.
+
+**2026-09-27 — F-02 · Génération adaptée à la douleur.** Livré conforme à la spec, y compris
+la forme générique demandée pour le moteur.
+
+- **Le moteur** : `app/src/lib/substitution.js`, `substituer(exercice, raison, contrainte)`.
+  Une seule table par raison, dans `TABLES`. Brancher la substitution d'équipement (étape 8)
+  ou de régression (étape 9) se fera en ajoutant une entrée à cet objet, sans toucher à un
+  appelant. Le moteur ne choisit jamais une quantité : une substitution garde le nombre de la
+  ligne, donc le volume et la durée de la séance ne bougent pas.
+- **Les deux couches** : une condition chronique dans les réglages (onglet SUIVI, « zones
+  sensibles »), et un état du jour reposé avant chaque chrono. Elles s'additionnent, aucune
+  n'écrase l'autre ; une zone chronique apparaît verrouillée dans le sélecteur du jour, pour
+  qu'on aille la changer là où on l'a déclarée.
+- **La pubalgie est cochée par défaut** en chronique. C'est le seul changement de
+  comportement visible dès demain matin : sept exercices sont remplacés dans le catalogue.
+  Une touche pour l'enlever.
+- **Le journal porte les zones appliquées** (`mal`). Sans ça, relire une séance faite genou
+  bloqué l'aurait rejouée en squats le jour où le genou va mieux. La couverture hebdomadaire
+  se reconstruit elle aussi ligne par ligne avec les zones de chaque ligne.
+- **Un schéma moteur peut devenir inatteignable.** Le genou fait disparaître le squat : aucune
+  substitution ne le préserve, et c'est franc. La grille le barre et le sort du compte au lieu
+  d'afficher une case que rien ne peut cocher, et le générateur cesse de courir après. Le
+  brief avait tranché la même question pour le matériel manquant (section 2.1) ; c'est la même
+  règle, appliquée ici.
+
+**Ce qui reste à valider, et c'est le point important.** La table de `app/src/data/douleurs.js`
+est un arbitrage de mouvement, pas une prescription : elle applique des principes généraux et
+doit être relue par le kiné. Trois entrées méritent un œil en particulier :
+
+- `jumpSquats → airSquats` en pubalgie, l'entrée la plus large des trois zones : elle retire
+  le seul squat pliométrique de toutes les séances ;
+- `burpees → burpees sans saut ni pompe` en genou : c'est le seul cran sans saut du catalogue,
+  et il retire la pompe avec, donc on substitue un peu plus que la douleur ne l'exige ;
+- `airSquats → hipThrusts` en genou, qui est ce qui fait disparaître le schéma squat.
+
+**Garde-fous ajoutés** (193 tests verts, build OK) :
+
+- aucune substitution ne change l'unité d'une ligne — « 4 s de suspension » à la place de
+  4 tractions est la faute que ce genre de table produit en silence ;
+- aucun remplaçant n'est écarté par sa propre zone, et toute combinaison des quatre zones se
+  résout sans boucle ;
+- fiche et chrono citent les mêmes exercices une fois substitués, pour chaque zone ;
+- la pubalgie et les cervicales ne coûtent aucun schéma moteur ; le genou coûte le squat, et
+  seulement lui ;
+- aucune zone ne fait disparaître le dead bug des séances du jeudi et du vendredi — sans ce
+  test, F-02 aurait pu casser la garantie de F-03 sans toucher à une ligne de F-03.

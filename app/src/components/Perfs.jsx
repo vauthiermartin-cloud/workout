@@ -59,8 +59,8 @@ function Ligne({ champ, accent, valeur, attendu, onChange }) {
    Le corps est séparé du cadre parce qu'il sert à deux endroits : en plein
    écran depuis le bilan de fin, et comme premier onglet de la relecture.
    `sortie` nomme la sortie, qui n'est pas la même dans les deux cas. */
-export function PerfsCorps({ name, level, entry, accent, onValider, onRetour, sortie }) {
-  const champs = perfsOf(name, level);
+export function PerfsCorps({ name, level, entry, accent, subs = {}, onValider, onRetour, sortie }) {
+  const champs = perfsOf(name, level, subs);
   const [initial] = useState(() => {
     const o = {};
     champs.forEach((c) => {
@@ -104,7 +104,7 @@ export function PerfsCorps({ name, level, entry, accent, onValider, onRetour, so
 
      Le chrono, lui, est mesuré et non saisi : il vient de la ligne. */
   const lu = lecture();
-  const vu = volumeReel(name, level, lu.perfs, lu.s);
+  const vu = volumeReel(name, level, lu.perfs, lu.s, subs);
   const dur = entry && entry.dur != null ? entry.dur : null;
 
   /* Sortir sans valider n'est pas tout jeter, mais ce n'est pas tout garder

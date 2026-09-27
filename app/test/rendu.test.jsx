@@ -20,9 +20,12 @@ import { Perfs } from "../src/components/Perfs.jsx";
 import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
 import { Timer } from "../src/components/Timer.jsx";
 import { Coche } from "../src/components/Coche.jsx";
+import { Zones, ZonesEffet } from "../src/components/Zones.jsx";
+import { substitutionsPour, patternsPerdus } from "../src/lib/substitution.js";
 import { CORRECTIF } from "../src/data/correctif.js";
 import { newRun } from "../src/lib/chrono.js";
 import { WORKOUTS } from "../src/data/workouts.js";
+import { ZONES } from "../src/data/douleurs.js";
 import { TIMERS } from "../src/data/timers.js";
 import { PATTERNS, patternsOfWorkout } from "../src/data/patterns.js";
 import { attenduDe, perfsOf } from "../src/lib/perfs.js";
@@ -248,5 +251,37 @@ describe("les cases d'avant-lancement", () => {
     expect(coche).toContain("3 min avant la séance");
     expect(coche).toContain("✓");
     expect(html(<Coche on={false} titre="Isométrie" detail="x" onToggle={() => {}} />)).not.toContain("✓");
+  });
+});
+
+/* Le choix des zones sensibles, et surtout ce qu'il annonce. Une séance qui
+   change trois mouvements sans le dire serait prise pour un bug. */
+describe("les zones sensibles", () => {
+  it("montre les quatre zones, et marque celles qui valent toujours", () => {
+    const out = html(<Zones actives={["genoux"]} verrouillees={["pubalgie"]} onToggle={() => {}} />);
+    ZONES.forEach((z) => expect(out).toContain(z.label));
+    expect(out).toContain("TOUJOURS");
+  });
+
+  it("dit combien d'exercices changent dans la séance", () => {
+    const zones = ["pubalgie"];
+    const effet = html(<ZonesEffet zones={zones} subs={substitutionsPour(zones)} perdus={[]} />);
+    expect(effet).toContain("exercices remplacés, à volume égal");
+    expect(effet).toContain(ZONES.find((z) => z.id === "pubalgie").detail);
+  });
+
+  /* Le cas qui a motivé la mécanique : le genou rend le squat inatteignable,
+     et l'écran le dit avant de lancer plutôt que de laisser une case vide
+     apparaître dans la grille sans explication. */
+  it("annonce le schéma moteur qui devient inatteignable", () => {
+    const zones = ["genoux"];
+    const perdus = patternsPerdus(WORKOUTS, zones, patternsOfWorkout);
+    const effet = html(<ZonesEffet zones={zones} subs={substitutionsPour(zones)} perdus={perdus} />);
+    expect(effet).toContain("squat");
+    expect(effet).toContain("n'est pas atteignable");
+  });
+
+  it("se tait quand aucune zone n'est déclarée", () => {
+    expect(html(<ZonesEffet zones={[]} subs={{}} perdus={[]} />)).toBe("");
   });
 });

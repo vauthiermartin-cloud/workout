@@ -73,11 +73,11 @@ export function SupprimerSeance({ onSupprimer }) {
 }
 
 export function Revoir({ wod, finisher, stretch, level, entry, accent, vol, volFin,
-  streak, weekCount, pats, manque, reduced, onValider, onRetour, onSupprimer }) {
+  streak, weekCount, pats, manque, subs = {}, reduced, onValider, onRetour, onSupprimer }) {
   const [onglet, setOnglet] = useState("chiffres");
 
   const reel = entry && entry.valide
-    ? volumeReel(wod.name, level, entry.perfs, entry.s) : null;
+    ? volumeReel(wod.name, level, entry.perfs, entry.s, subs) : null;
   const fait = reel && reel.complet;
 
   return (
@@ -101,7 +101,7 @@ export function Revoir({ wod, finisher, stretch, level, entry, accent, vol, volF
         </div>
 
         {onglet === "chiffres" ? (
-          <PerfsCorps name={wod.name} level={level} entry={entry} accent={accent}
+          <PerfsCorps name={wod.name} level={level} entry={entry} accent={accent} subs={subs}
             onValider={onValider} onRetour={onRetour} sortie="FERMER" />
         ) : (
           <>

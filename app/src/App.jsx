@@ -18,7 +18,12 @@ import { PATTERNS, patternsOfWorkout } from "./data/patterns.js";
 import { LEVELS } from "./data/levels.js";
 import { f } from "./data/items.js";
 import { CORRECTIF } from "./data/correctif.js";
+import { ZONES, ZONE_IDS } from "./data/douleurs.js";
+import {
+  ficheSubstituee, patternsPerdus, planSubstitue, substitutionsPour,
+} from "./lib/substitution.js";
 import { Coche } from "./components/Coche.jsx";
+import { Zones, ZonesEffet } from "./components/Zones.jsx";
 import { Rail } from "./components/Rail.jsx";
 import { Timer } from "./components/Timer.jsx";
 import { Perfs } from "./components/Perfs.jsx";
@@ -45,6 +50,12 @@ export default function App() {
   const [setupOpen, setSetupOpen] = useState(false);
   const [warmup, setWarmup] = useState(true);
   const [correctif, setCorrectif] = useState(true);
+  /* Les deux couches de zones sensibles. La chronique est un réglage : elle
+     survit au rechargement et vaut pour toutes les séances. Celle du jour ne
+     vaut que pour la séance qu'on s'apprête à lancer, et repart à vide comme
+     l'échauffement. Elles s'ajoutent, aucune n'écrase l'autre. */
+  const [chroniques, setChroniques] = useState(["pubalgie"]);
+  const [malDuJour, setMalDuJour] = useState([]);
   const [run, setRun] = useState(null);
   const [pending, setPending] = useState(null);
   const [endOpen, setEndOpen] = useState(false);
@@ -65,7 +76,14 @@ export default function App() {
   useEffect(() => {
     let entries = [];
     try { const v = store.get(K_LOG); if (v) { entries = JSON.parse(v); setLog(entries); } } catch {}
-    try { const v = store.get(K_SET); if (v) { const s = JSON.parse(v); if (s.level) setLevel(s.level); } } catch {}
+    try {
+      const v = store.get(K_SET);
+      if (v) {
+        const s = JSON.parse(v);
+        if (s.level) setLevel(s.level);
+        if (Array.isArray(s.chroniques)) setChroniques(s.chroniques.filter((z) => ZONE_IDS.includes(z)));
+      }
+    } catch {}
     setLastBackup(store.get(K_BAK));
     /* Une séance interrompue se retrouve au démarrage. Trop vieille, elle n'est
        plus reprenable mais reste enregistrable. */
@@ -86,7 +104,21 @@ export default function App() {
   }, []);
 
   const saveLog = (next) => { setLog(next); return store.set(K_LOG, JSON.stringify(next)); };
-  const saveLevel = (l) => { setLevel(l); store.set(K_SET, JSON.stringify({ level: l })); };
+  /* Un seul objet de réglages : l'écrire par morceaux avait déjà effacé le
+     niveau le jour où une seconde clé est arrivée. */
+  const saveSettings = (patch) => {
+    const o = { level, chroniques, ...patch };
+    store.set(K_SET, JSON.stringify(o));
+    return o;
+  };
+  const saveLevel = (l) => { setLevel(l); saveSettings({ level: l }); };
+  const toggleChronique = (z) => {
+    const next = chroniques.includes(z) ? chroniques.filter((x) => x !== z) : [...chroniques, z];
+    setChroniques(next);
+    saveSettings({ chroniques: next });
+  };
+  const toggleMalDuJour = (z) =>
+    setMalDuJour(malDuJour.includes(z) ? malDuJour.filter((x) => x !== z) : [...malDuJour, z]);
 
   /* ---- calculs ---- */
   const entryToday = log.find((e) => e.d === todayIso);
@@ -116,12 +148,15 @@ export default function App() {
   const dowToday = weekdayOf(today);
   const entreeDuJour = entreeDeLOnglet(log, today, dayKey);
 
-  /* Ce que la semaine a déjà couvert, reconstruit depuis le journal */
+  /* Ce que la semaine a déjà couvert, reconstruit depuis le journal. Chaque
+     ligne se relit avec **ses** zones : une séance faite sans squat n'en a pas
+     fait, même si le genou va mieux aujourd'hui. */
   const weekPatterns = new Set();
   log.forEach((e) => {
     const d = fromIso(e.d);
-    if (d >= wkStart && WORKOUT_BY_NAME[e.w]) {
-      patternsOfWorkout(WORKOUT_BY_NAME[e.w]).forEach((p) => weekPatterns.add(p));
+    const w = WORKOUT_BY_NAME[e.w];
+    if (d >= wkStart && w) {
+      patternsOfWorkout(ficheSubstituee(w, substitutionsPour(e.mal || []))).forEach((p) => weekPatterns.add(p));
     }
   });
 
@@ -148,7 +183,23 @@ export default function App() {
      qui répare la perte du bilan au retour d'un autre onglet — la fiche ne
      dépend plus d'un tirage en mémoire, elle relit le journal. */
   const wodEnregistre = entreeDuJour ? WORKOUT_BY_NAME[entreeDuJour.w] || null : null;
-  const wod = wodEnregistre || (variant === null ? null : pool[variant]);
+
+  /* Les zones qui valent pour ce qu'on regarde. Une séance déjà enregistrée
+     relit **les siennes**, pas celles d'aujourd'hui : une journée jouée avec
+     les genoux en vrac ne doit pas se relire en squats sous prétexte que le
+     genou va mieux. Le journal porte donc les zones appliquées, et la
+     relecture les reprend telles quelles. */
+  const zonesDuJour = [...new Set([...chroniques, ...malDuJour])].filter((z) => ZONE_IDS.includes(z));
+  const zones = entreeDuJour && entreeDuJour.mal ? entreeDuJour.mal : zonesDuJour;
+  const subs = substitutionsPour(zones);
+  /* Les schémas moteurs qu'aucune séance ne peut plus couvrir. Les compter
+     comme couverts n'est pas un mensonge : c'est ce qui empêche la grille
+     d'afficher une case que rien ne peut cocher, et le générateur de courir
+     après une séance qui n'existe plus. L'écran les nomme à part. */
+  const perdus = patternsPerdus(WORKOUTS, zones, patternsOfWorkout);
+
+  const wodBrut = wodEnregistre || (variant === null ? null : pool[variant]);
+  const wod = ficheSubstituee(wodBrut, subs);
   const accent = wod && wod.test ? C.ember : C.lime;
   /* La séance du jour sélectionné est faite. La fiche n'a plus alors à décrire
      ce qui est derrière, ni à proposer de le rejouer : elle n'offre que la porte
@@ -163,7 +214,11 @@ export default function App() {
   const ligneDuJour = nonEnregistree ? null : entryToday;
 
   const generate = () => {
-    const next = pickVariant(pool, weekPatterns, seen, variant);
+    /* Le tirage vise ce qui manque, mais pas l'inatteignable : sans les
+       schémas perdus dans la mire, toutes les séances du jour se valent et
+       le choix redevient un tirage franc. */
+    const vise = new Set([...weekPatterns, ...perdus]);
+    const next = pickVariant(pool.map((w) => ficheSubstituee(w, subs)), vise, seen, variant);
     setVariant(next.index);
     setSeen(next.seen);
     setRunId((x) => x + 1); setSaveState("idle"); setAskScore(false); setScoreInput("");
@@ -231,7 +286,7 @@ export default function App() {
     ] });
     if (correctif) p.push(...CORRECTIF);
     const w = TIMERS[wod.name];
-    if (w) p.push(...w); else p.push({ t:"up", cap:1500, label:wod.name, sub:"Chrono libre" });
+    if (w) p.push(...planSubstitue(w, subs)); else p.push({ t:"up", cap:1500, label:wod.name, sub:"Chrono libre" });
     launch(p, "workout");
     setSetupOpen(false);
   };
@@ -256,6 +311,11 @@ export default function App() {
     if (dowToday <= 5 && dayKey !== dowToday) setDayKey(dowToday);
     writeEntry({
       d: todayIso, day: dayKey, w: wod.name, lvl: level,
+      /* Les zones appliquées partent sur la ligne, comme le mode. Sans elles,
+         la relecture rejouerait la séance avec les zones d'aujourd'hui et
+         montrerait des exercices que personne n'a faits. Reportées d'une
+         écriture à l'autre pour la même raison que le finisher. */
+      ...(zonesDuJour.length || (avant && avant.mal) ? { mal: zonesDuJour.length ? zonesDuJour : avant.mal } : {}),
       fin: ("fin" in o ? o.fin : finisher ? finisher.name : (avant && avant.fin) || null),
       str: ("str" in o ? o.str : stretch ? stretch.name : (avant && avant.str) || null),
       s: "s" in o ? o.s
@@ -471,7 +531,8 @@ export default function App() {
       `Séances sur 28 jours : ${last28} · ce mois : ${monthCount}`,
       `Semaines (ancienne → récente) : ${weeks.map((w) => w.n).join(", ")}`,
       tests.length ? `Tests : ${tests.slice(0, 8).map((t) => `${shortFr(t.d)} = ${t.s}`).join(" | ")}` : "Tests : aucun",
-      `Couverture de la semaine : ${weekPatterns.size}/${PATTERNS.length} — ${PATTERNS.filter((p) => weekPatterns.has(p.id)).map((p) => p.label.toLowerCase()).join(", ") || "rien"}`,
+      `Couverture de la semaine : ${weekPatterns.size}/${PATTERNS.length - perdus.length} — ${PATTERNS.filter((p) => weekPatterns.has(p.id)).map((p) => p.label.toLowerCase()).join(", ") || "rien"}`,
+      perdus.length ? `Hors d'atteinte (zones sensibles) : ${perdus.join(", ")}` : null,
       `Finishers : ${log.filter((e) => e.fin).length} · stretching : ${log.filter((e) => e.str).length} (sur ${log.length} séances)`,
       /* Le récap est la seule vue d'ensemble du ressenti tant que l'onglet de
          suivi n'a pas été repensé. Sans ça, la donnée existerait sans jamais
@@ -483,8 +544,9 @@ export default function App() {
         + (e.s != null ? ` · score ${e.s}` : "")
         + (e.ressenti ? ` · ${RESSENTIS.find((r) => r.id === e.ressenti).label.toLowerCase()}` : "")
         + (e.fin ? ` · finisher : ${e.fin}` : "")
-        + (e.str ? ` · stretch : ${e.str}` : "")),
-    ].join("\n");
+        + (e.str ? ` · stretch : ${e.str}` : "")
+        + (e.mal && e.mal.length ? ` · zones : ${e.mal.join(", ")}` : "")),
+    ].filter((l) => l !== null).join("\n");
     try { navigator.clipboard.writeText(txt); } catch {}
     setRecap(txt);
   };
@@ -728,27 +790,44 @@ export default function App() {
               ))}
             </div>
 
-            <Label>COUVERTURE DE LA SEMAINE · {weekPatterns.size}/{PATTERNS.length}</Label>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:10 }}>
-              {PATTERNS.map((p) => {
-                const on = weekPatterns.has(p.id);
-                return (
-                  <span key={p.id} style={{ fontFamily:MONO, fontSize:9, letterSpacing:".1em",
-                    padding:"6px 8px", borderRadius:2,
-                    background: on ? C.lime : "transparent", color: on ? C.ink : C.ash,
-                    border:`1px solid ${on ? C.lime : C.line}` }}>
-                    {p.label}
-                  </span>
-                );
-              })}
-            </div>
-            <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"0 0 32px" }}>
-              {weekPatterns.size === PATTERNS.length
-                ? "Semaine complète. Tous les schémas moteurs ont été travaillés."
-                : weekPatterns.size === 0
-                ? "Rien d'enregistré cette semaine. Le générateur partira de zéro."
-                : `Il manque ${PATTERNS.filter((p) => !weekPatterns.has(p.id)).map((p) => p.label.toLowerCase()).join(", ")}. Le générateur privilégie les séances qui les couvrent.`}
-            </p>
+            {/* Un schéma devenu inatteignable — le squat quand le genou est
+                déclaré — n'est ni couvert ni manquant. Le compter dans les
+                manquants ferait une case que rien ne peut cocher, et le
+                compter dans les couverts ferait dire à la semaine qu'elle a
+                squatté. Il sort donc du compte, et il est nommé. */}
+            {(() => {
+              const dispo = PATTERNS.filter((p) => !perdus.includes(p.id));
+              const faits = dispo.filter((p) => weekPatterns.has(p.id));
+              const manquants = dispo.filter((p) => !weekPatterns.has(p.id));
+              return (
+                <React.Fragment>
+                  <Label>COUVERTURE DE LA SEMAINE · {faits.length}/{dispo.length}</Label>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:10 }}>
+                    {PATTERNS.map((p) => {
+                      const hors = perdus.includes(p.id);
+                      const on = !hors && weekPatterns.has(p.id);
+                      return (
+                        <span key={p.id} style={{ fontFamily:MONO, fontSize:9, letterSpacing:".1em",
+                          padding:"6px 8px", borderRadius:2,
+                          background: on ? C.lime : "transparent", color: on ? C.ink : C.ash,
+                          border:`1px solid ${on ? C.lime : C.line}`,
+                          textDecoration: hors ? "line-through" : "none", opacity: hors ? .5 : 1 }}>
+                          {p.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"0 0 32px" }}>
+                    {manquants.length === 0
+                      ? "Semaine complète. Tous les schémas moteurs atteignables ont été travaillés."
+                      : faits.length === 0
+                      ? "Rien d'enregistré cette semaine. Le générateur partira de zéro."
+                      : `Il manque ${manquants.map((p) => p.label.toLowerCase()).join(", ")}. Le générateur privilégie les séances qui les couvrent.`}
+                    {perdus.length > 0 && ` ${perdus.length > 1 ? "Les schémas" : "Le schéma"} ${perdus.join(", ")} ${perdus.length > 1 ? "sortent" : "sort"} du compte : tes zones sensibles les rendent inatteignables.`}
+                  </p>
+                </React.Fragment>
+              );
+            })()}
 
             <Label>8 DERNIÈRES SEMAINES</Label>
             <div style={{ display:"flex", alignItems:"flex-end", gap:6, height:90, marginBottom:6 }}>
@@ -785,6 +864,14 @@ export default function App() {
                 : suggested < level
                 ? `${last28} séances sur 28 jours. Tu es au-dessus du niveau que l'assiduité justifie — garde-le si les séances passent bien.`
                 : `${last28} séances sur 28 jours. Niveau cohérent avec ton assiduité.`}
+            </p>
+
+            <Label>ZONES SENSIBLES</Label>
+            <Zones actives={chroniques} onToggle={toggleChronique} />
+            <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"10px 0 32px" }}>
+              Une zone cochée ici vaut pour toutes les séances : les exercices qui la sollicitent
+              sont remplacés, à volume égal. Pour une douleur passagère, ne coche rien ici — la
+              question est reposée avant chaque chrono.
             </p>
 
             <Label color={C.ember}>TESTS DU VENDREDI</Label>
@@ -923,6 +1010,14 @@ export default function App() {
             <Coche on={correctif} onToggle={() => setCorrectif(!correctif)} titre="Pubalgie"
               detail="5 min avant la séance : 4 × 45 s de flexion de hanche, puis 2 × 1 min de dead bug." />
 
+            <div style={{ margin:"18px 0 4px" }}>
+              <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginBottom:10 }}>
+                TU AS MAL QUELQUE PART ?
+              </div>
+              <Zones actives={malDuJour} verrouillees={chroniques} onToggle={toggleMalDuJour} />
+              <ZonesEffet zones={zonesDuJour} subs={subs} perdus={perdus} />
+            </div>
+
             <p style={{ fontSize:12, color:C.ash, lineHeight:1.5, margin:"16px 0 18px" }}>
               Le chrono suit {wod.name}. Trois bips avant chaque bascule. À la fin, il te proposera
               un finisher et des étirements. Garde le téléphone déverrouillé, le son activé.
@@ -947,7 +1042,7 @@ export default function App() {
         const volFin = finisher ? volumeOf(finisher.name, level) : null;
         const streak = streakOf(log, today);
         const pats = patternsOfWorkout(wod);
-        const manque = PATTERNS.filter((p) => !weekPatterns.has(p.id));
+        const manque = PATTERNS.filter((p) => !weekPatterns.has(p.id) && !perdus.includes(p.id));
         const ressenti = (ligneDuJour && ligneDuJour.ressenti) || null;
         const stance = finisherStance(ressenti);
         /* Une fois la séance relue, le total montre ce qui a été fait. Avant, il
@@ -1184,7 +1279,7 @@ export default function App() {
           </div>
 
           {perfsOpen && (
-            <Perfs name={wod.name} level={level} entry={ligneDuJour}
+            <Perfs name={wod.name} level={level} entry={ligneDuJour} subs={subs}
               accent={wod.test ? C.ember : C.lime}
               onValider={validerPerfs} onRetour={quitterPerfs} />
           )}
@@ -1201,14 +1296,14 @@ export default function App() {
         const lvl = entreeDuJour.lvl || level;
         const fin = entreeDuJour.fin ? { name: entreeDuJour.fin } : null;
         return (
-          <Revoir wod={wod} finisher={fin}
+          <Revoir wod={wod} finisher={fin} subs={subs}
             stretch={entreeDuJour.str ? { name: entreeDuJour.str } : null} level={lvl}
             entry={entreeDuJour} accent={accent}
             vol={volumeOf(wod.name, lvl)}
             volFin={fin ? volumeOf(fin.name, lvl) : null}
             streak={streakOf(log, today)} weekCount={weekCount}
             pats={patternsOfWorkout(wod)}
-            manque={PATTERNS.filter((p) => !weekPatterns.has(p.id))}
+            manque={PATTERNS.filter((p) => !weekPatterns.has(p.id) && !perdus.includes(p.id))}
             reduced={reduced}
             onValider={validerRevoir} onRetour={quitterRevoir}
             onSupprimer={supprimerLigne} />
