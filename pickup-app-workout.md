@@ -1,6 +1,6 @@
 ---
 topic: app-workout-25
-date: 2026-09-07
+date: 2026-09-28
 status: in-progress
 ---
 
@@ -12,7 +12,9 @@ Une PWA de séances au poids du corps est **en production et fonctionnelle**, h�
 
 **Le code vit dans `app/` : Vite 8 + React 19, testé sous Vitest.** Le mono-fichier de 100 Ko avec Babel dans le navigateur appartient au passé. Le déploiement passe par `.github/workflows/deploy.yml` : `npm ci`, `npm test`, `npm run build`, publication de `app/dist` sur Pages. **Les tests sont un garde-barrière du déploiement** — un échec bloque la mise en production.
 
-Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 finishers, 5 séquences d'étirement, 37 exercices prescrits — plus 17 variantes de régression que le catalogue ne prescrit pas et qu'on n'atteint que par une chaîne. Un chrono adaptatif (EMOM / Tabata / compte à rebours / chrono libre) et un générateur qui choisit la séance selon les schémas moteurs non encore couverts dans la semaine.
+Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 finishers, 5 séquences d'étirement, 40 exercices prescrits — plus 17 variantes de régression que le catalogue ne prescrit pas et qu'on n'atteint que par une chaîne. Un chrono adaptatif (EMOM / Tabata / compte à rebours / chrono libre) et un générateur qui choisit la séance selon les schémas moteurs non encore couverts dans la semaine.
+
+**Deux fils de travail coexistent depuis le 2026-09-27, et il faut le savoir avant de lire la suite.** Le phasage en douze étapes de `brief-v2-multi-user.md` reste la feuille de route officielle ; à côté, `idees-perso-backlog.md` porte les demandes nées de l'usage réel, arbitrées par Martin hors du dépôt. Cinq d'entre elles ont été livrées les 27 et 28 septembre et ne correspondent à aucune étape du brief. **Le journal de ce qui a été livré est le `## Log` de ce fichier-là** — cette note-ci en donne l'état, pas le détail.
 
 **Le chrono est reprenable** (étape 1, faite le 2026-09-07). `app/src/lib/chrono.js` sépare deux notions : le `run`, enregistrement d'une séance en cours écrit dans une clé unique (`workout.run`), et le `beat`, dernier battement réellement observé. Un trou de plus de 4 s entre deux battements ne peut venir que d'une app endormie : le chrono gèle, ne valide rien, et demande. Reprise proposée au démarrage sous 4 h, enregistrement ou abandon au-delà.
 
@@ -21,7 +23,7 @@ Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 1
 ## Ce qui est décidé (ne pas rouvrir sans raison)
 
 - **Cap de 25 min par séance**, lundi→vendredi, matin. Seul sport pratiqué, donc la couverture hebdomadaire compte plus que la performance sur une séance.
-- **Matériel disponible** : poids du corps, barre de traction, espalier. **Pas de barre basse ni d'anneaux** → aucun tirage horizontal (les tirages australiens ont été retirés pour cette raison, ne pas les réintroduire).
+- **Matériel disponible** : poids du corps, barre de traction, espalier, **et depuis le 2026-09-27 de quoi tirer à l'horizontale**. ~~Pas de barre basse ni d'anneaux → aucun tirage horizontal, ne pas réintroduire les tirages australiens.~~ **Cette contrainte est tombée** : elle était matérielle, pas une décision de conception, et sa cause a changé. Le catalogue nomme le mouvement « tirages horizontaux » sans nommer l'appareil — l'équipement exact est encore `[À PRÉCISER]` dans `CLAUDE.md`, et un nom d'appareil aurait figé l'inconnue dans les données.
 - **Un format par jour** : lundi EMOM, mardi volume burpees en escalier, mercredi rounds chronométrés, jeudi AMRAP, vendredi test de burpees + finisher.
 - **Le test de burpees du vendredi est la seule métrique de progression** conservée. Un chiffre par semaine.
 - **Un exercice est une entité, pas une chaîne de caractères.** `app/src/data/exercises.js` porte les 37 exercices : identifiant stable, libellé français, unité, latéralité, schémas moteurs. Les séances citent l'identifiant, jamais le libellé — renommer se fait dans une case de table et non dans 250 lignes de données. Les identifiants partent en base dans les exports : ne pas les renommer.
@@ -43,6 +45,16 @@ Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 1
     séparée : au-dessus ce que le catalogue prescrit, en dessous ce qu'on n'atteint que par une
     chaîne. Le test d'entrée morte s'appuie sur cette frontière.
 - **10 schémas suivis** : poussée, tirage, supination, squat, unilatéral, chaîne postérieure, sangle, cardio, mobilité, mollets.
+- **Toute séance qui contient un créneau de poussée contient un créneau de tirage** (2026-09-27). Règle dure, pas une moyenne hebdomadaire. La taille du créneau vient d'une table figée, `app/src/data/equivalences.js` : un créneau de 15 à 20 pompes s'équilibre par 3 tractions, 5 chin-ups, 6 tirages horizontaux ou 10 en supination. **Ce n'est pas un moteur** — deux règles de trois, et les nombres écrits dans le catalogue restent choisis à la main pour tenir la forme de chaque format.
+- **La prise suit deux règles qui ne parlent pas du même cas** (2026-09-28). **À la barre**, une séance s'en tient à une prise : les chin-ups se feraient sur la fatigue des pull-ups. **Entre les plans**, c'est l'inverse — un tirage horizontal prend la prise que le vertical n'a pas. Jamais deux mouvements de pronation ni deux de supination dans une même séance, on alterne. Les deux contrôles coexistent, l'un dans `coherence.test.js`, l'autre dans `ratio.test.js`.
+- **Le bloc pubalgie est une case à cocher, pas du contenu de séance** (2026-09-27). Cochée avant de lancer, au même endroit que l'échauffement : 4 × 45 s d'isométrie de flexion de hanche en alternant les jambes, puis 2 × 1 min de dead bug. **Hors des 25 minutes**, comme l'échauffement — `horsSeance` dans `chrono.js` porte les deux cas. Une première version le faisait entrer dans les séances par substitution des sit-ups : abandonnée le jour même, elle vidait le catalogue d'un mouvement sans atteindre la fréquence visée.
+- **Le dead bug est garanti deux fois par semaine par le contenu, pas par le tirage** (2026-09-27). Toutes les séances du jeudi et du vendredi en portent une ligne, donc la semaine en voit deux quoi qu'il arrive, même quand la case reste décochée. Passer par le générateur aurait donné une préférence, pas une garantie. Lundi et mardi ne peuvent rien recevoir sans changer leur durée, mercredi est le jour le plus chargé.
+- **Une zone sensible déclarée remplace des exercices, jamais la durée** (2026-09-27). Quatre zones — cervicales, genoux, pubalgie, autre — sur deux couches qui s'ajoutent : une condition chronique dans les réglages, un état du jour reposé avant chaque chrono. **Aucune n'est cochée par défaut** : une zone chronique s'affiche « TOUJOURS » dans le sélecteur du jour et ne se décoche donc pas d'un matin. La substitution garde le nombre de la ligne, ce qui laisse volume et durée intacts ; les substituts sont tenus de partager l'unité de l'exercice remplacé. La table de `app/src/data/douleurs.js` est un arbitrage de mouvement, **pas une prescription — elle attend la relecture du kiné**.
+- **Le journal porte les zones appliquées** (`mal`). Sans elles, relire une séance faite genou bloqué la rejouerait en squats le jour où le genou va mieux, et la couverture de la semaine compterait un schéma que personne n'a travaillé.
+- **Un schéma moteur peut devenir inatteignable, et la grille le dit.** Le genou fait disparaître le squat : aucune substitution ne le préserve. La grille le barre et le sort du compte plutôt que d'afficher une case que rien ne peut cocher, et le générateur cesse de le chercher. Même règle que celle que le brief avait tranchée pour le matériel manquant (section 2.1).
+- **Une séance se note en qualité, sur trois niveaux** (2026-09-27) : « on la garde » / « rien à dire » / « ça ne va pas ». Le signalement ouvre un champ de texte, jamais obligatoire — une séance signalée sans un mot part dans la liste « à documenter » du récap. **À ne pas confondre avec le ressenti** : le ressenti parle du pratiquant, la qualité de la séance. Deux modules, deux questions, jamais posées en même temps à l'écran, et un test interdit qu'elles partagent un identifiant. Les valeurs `garder` / `normale` / `probleme` et le champ `note` partent en base : ne pas les renommer.
+- **Le contenu d'une séance passée se reconstruit, il ne se stocke pas.** Le dossier de revue (`app/src/lib/revue.js`) redonne exercices, nombres et ordre à partir du nom, du mode et des zones, tous présents sur la ligne du journal. Le stocker aurait fait grossir le journal et l'aurait périmé au premier renommage d'exercice.
+- **Il existe un point de passage unique pour toute substitution d'exercice** : `substituer(exercice, raison, contrainte)` dans `app/src/lib/substitution.js`. Une table par raison, et une seule aujourd'hui — la douleur. Le matériel absent (étape 8) et les chaînes de régressions (étape 9) s'y brancheront en ajoutant une entrée à `TABLES`, sans toucher à un appelant. **Ce n'est pas un moteur de génération** : le chantier « formats-comme-templates » reste hors périmètre et non arbitré.
 - **Le générateur est conscient de la couverture** : il choisit la variante du jour qui apporte le plus de schémas non encore travaillés dans la semaine. Simulé sur 500 semaines → 10/10 systématiquement.
 - **Fiche et chrono partagent les mêmes données** ; un contrôle automatisé vérifie qu'ils ne divergent pas.
 - **Le finisher se décide à la fin**, jamais avant. Écran de bilan après la séance, puis après le finisher, avec CTA vers les stats.
@@ -55,7 +67,56 @@ Ce qui reste : **phase 1**, perfectionner l'app mono-utilisateur (étapes 3 à 1
 
 ## Prochaines actions, dans l'ordre
 
-### À prendre maintenant — étape 4, table de nommage
+### Le fil du backlog perso, ouvert le 2026-09-27
+
+**Il ne suit pas le phasage du brief, et c'est voulu.** `idees-perso-backlog.md` porte les
+demandes nées de l'usage réel, arbitrées par Martin dans une session claude.ai puis reprises
+ici un ticket à la fois. Six tickets étaient en file ; cinq sont livrés, et deux restent — F-10 s'est ajouté en tête le 2026-09-28.
+
+Le détail de chacun — écarts avec la spec, mesures, garde-fous — est dans le `## Log` de ce
+fichier-là. Ce qui suit n'est que l'état.
+
+- ~~**F-07 · Clarifier le skip pendant un repos**~~ **Fait le 2026-09-27.** Le bouton n'a
+  jamais abandonné la séance, seul le libellé était générique : `sortie(run)` dans
+  `chrono.js` répond `fin` / `repos` / `phase`. Garde-fou : aucun plan de chrono ne se termine
+  par un repos, sans quoi « TERMINER » s'afficherait sur un écran de récupération.
+- ~~**F-03 · Prévention pubalgie**~~ **Fait le 2026-09-27**, après une première version
+  abandonnée le jour même. Voir la liste des décisions ci-dessus : case à cocher, hors des
+  25 minutes, dead bug garanti par le contenu du jeudi et du vendredi.
+- ~~**F-02 · Génération adaptée à la douleur**~~ **Fait le 2026-09-27.** Zones sensibles sur
+  deux couches, moteur de substitution à la forme générique demandée, schémas moteurs
+  inatteignables nommés dans la grille.
+- ~~**F-04 · Flag séance incohérente**~~ **Fait le 2026-09-27, élargi en note de qualité.**
+  Ce faisant, il absorbe **F-09**, qui posait la question « note séparée ou même bouton ? » :
+  c'est le même bouton, à trois niveaux.
+- ~~**F-06 · Ratio push/pull**~~ **Fait le 2026-09-28.** Cinq séances poussaient sans tirer,
+  dont trois le mardi — c'est de là que venait le déséquilibre ressenti, pas d'un ratio mal
+  réglé. Deux exercices de tirage horizontal, une table d'équivalence figée, cinq séances
+  éditées à la main.
+Deux tickets restent en file, dans cet ordre.
+
+- **F-10 · Découpler format et journal du jour de la semaine — prochaine priorité**, ajouté le
+  2026-09-28. C'est un **prérequis structurel** à la feuille de route « programme sur-mesure »
+  discutée sur claude.ai : fréquence hebdomadaire choisie (3/4/5 séances), format différent
+  chaque jour, bibliothèque qui grandit par les likes. Rien de tout ça ne tient tant que le
+  format et le journal sont câblés sur le jour calendaire.
+
+  **Le ticket ne construit aucune de ces fonctionnalités** : un seul geste, remplacer partout
+  le jour de semaine (1–5) par une position dans le programme, à comportement visible
+  identique. Les deux endroits sont repérés — `app/src/data/days.js` (`DAYS`,
+  `STRETCH_BY_DAY`, `FINISHER_BIAS`, tables indexées sur le jour) et `app/src/lib/journal.js`
+  (une ligne par date ISO référençant un `dayKey`, rattrapage de week-end compris).
+- **F-01 · Fast Track Mode.** Sélecteur de durée en amont (10 min notamment), réduction du
+  volume et priorisation des mouvements composés, pas un raccourcissement proportionnel. Le
+  bloc pubalgie reste inclus quelle que soit la durée — comme rien ne s'ajoute en temps, il est
+  présent par construction.
+
+**Trois choses attendent une réponse humaine, aucune n'est bloquante pour la suite** :
+l'équipement de tirage horizontal exact (`[À PRÉCISER]` dans `CLAUDE.md`), la relecture de la
+table des zones sensibles par le kiné, et la question du plafond de ratio (voir Questions
+ouvertes).
+
+### À prendre maintenant, côté brief — étape 4, table de nommage
 
 **L'étape 3 n'est faite qu'à moitié, volontairement.** Les chaînes de régressions sont
 écrites, testées, et invisibles : rien dans l'app ne les affiche encore, et rien ne substitue.
@@ -391,6 +452,11 @@ Ce qui reste réellement ouvert :
 - **Badges du podium** : le premier est « THE GOAT », les deux autres restent à nommer. « THE BEAST » entrerait en collision avec le nom du mode BEAST. Sujet de phase 2, ne bloque rien.
 - **Seuils de progression de mode** : la règle proposée dans le brief demande quatre semaines de ressentis réels pour être validée. Elle ne pourra l'être qu'après usage.
 - **Contenu des séquences d'étirement** : à faire valider par le kiné avant d'en faire une habitude, en particulier le pigeon dans la séquence hanches, et les burpees sautés en longueur côté impact.
+- **La table des zones sensibles attend le même kiné** (`app/src/data/douleurs.js`, 2026-09-27). Trois entrées méritent un œil : `jumpSquats → airSquats` en pubalgie, la plus large des trois zones, qui retire le seul squat pliométrique du catalogue ; `burpees → burpees sans saut ni pompe` en genou, seul cran sans saut disponible, qui retire la pompe avec ; et `airSquats → hipThrusts` en genou, qui est ce qui fait disparaître le schéma squat.
+- **Quel équipement de tirage horizontal exactement** — TRX, anneaux, sangle sur la barre ? Le catalogue nomme le mouvement sans nommer l'appareil, donc rien n'est bloqué, mais les consignes des lignes restent vagues tant que la réponse manque.
+- **Le ratio poussée/tirage n'a pas de plafond, et c'est une décision à confirmer.** Mesuré après F-06, les séances qui avaient déjà du tirage sont **entre 146 % et 292 % de la parité** : par les coefficients de Martin, le catalogue tire plus qu'il ne pousse. Deux lectures — les coefficients sont généreux envers le tirage, ou le déséquilibre ressenti venait entièrement des cinq séances à zéro. Le garde-fou ne pose donc qu'un plancher à 90 %, la marge d'arrondi des nombres écrits à la main. À rouvrir si les 292 % se ressentent à l'usage.
+- **La règle poussée/tirage vaut-elle hors des 25 minutes ?** Aucun finisher ne prescrit de poussée aujourd'hui, donc la question ne s'est jamais posée. Un test la posera le jour où l'un en prescrira, plutôt que de laisser le cas passer sans que personne n'y pense.
+- **« Gainage descendant » porte son contenu dans des libellés de phase** au lieu de lignes typées, donc rien ne le compte ni ne sait le proposer à la saisie. Anomalie antérieure, découverte le 2026-09-27 en ajoutant le contrôle de parité fiche/chrono, et inscrite comme exception dans `coherence.test.js` sous `SANS_LIGNES`. Une session séparée a été ouverte pour la traiter.
 
 ## Matériaux clés
 
@@ -398,19 +464,20 @@ Ordre de lecture recommandé pour reprendre le projet :
 
 1. `pickup-app-workout.md` — cette note, l'état technique.
 2. `brief-v2-multi-user.md` — l'intention produit, toutes décisions tranchées, ordre de travail en douze étapes.
-3. `table-nommage-exercices.md` — les labels français, les labels courts pour le chrono et les termes anglais. Référence pour l'étape 4. **Lire l'avertissement en tête** : sa colonne « clé technique » n'est pas l'identifiant du code, et trois maintiens n'y figurent pas.
+3. `table-nommage-exercices.md` — les labels français, les labels courts pour le chrono et les termes anglais. Référence pour l'étape 4. **Lire l'avertissement en tête** : sa colonne « clé technique » n'est pas l'identifiant du code, trois maintiens n'y figurent pas, et trois exercices sont arrivés depuis (la flexion de hanche du bloc pubalgie, les deux tirages horizontaux).
+4. `idees-perso-backlog.md` — **le second fil de travail, et le seul journal de ce qui a été livré les 27 et 28 septembre.** Sa section « Ordre d'envoi » donne les tickets restants, son `## Log` ce qui a été fait et ce qui a dévié de la spec.
 
 Fichiers du projet :
 
-4. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
-5. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures.
-6. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits.
-7. `app/test/` — dix fichiers, 135 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans de bilan, dates de la semaine, journal et série. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement.
-8. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main, contrairement à ce que dit encore `CLAUDE.md`.
-9. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
-10. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.
-11. Dépôt GitHub `workout` (public, Pages publié par GitHub Actions depuis `app/dist`).
-12. `.claude/skills/video-to-sequence/` — skill de découpage des vidéos d'exercices en planches de positions. Chantier reporté en fin de parcours, le skill est prêt.
+5. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux, plus quatre tables arrivées en septembre — `correctif.js` (le bloc pubalgie), `douleurs.js` (les zones sensibles et leurs substitutions), `equivalences.js` (la table poussée/tirage), et les deux tirages horizontaux dans `exercises.js`. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
+6. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures. `app/src/lib/substitution.js` — le point de passage unique de toute substitution d'exercice. `app/src/lib/qualite.js` et `app/src/lib/revue.js` — la note de qualité et le dossier de revue qui part dans le récap.
+7. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits.
+8. `app/test/` — treize fichiers, 221 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans, dates de la semaine, journal et série, substitution et zones sensibles, note de qualité et dossier de revue, ratio poussée/tirage. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement. `test/hasard.js` n'est pas un fichier de tests mais le générateur pseudo-aléatoire déterministe que partagent les simulations hebdomadaires.
+9. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main. `CLAUDE.md` le dit désormais aussi — la contradiction signalée ici le 2026-09-07 a été levée.
+10. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
+11. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.
+12. Dépôt GitHub `workout` (public, Pages publié par GitHub Actions depuis `app/dist`).
+13. `.claude/skills/video-to-sequence/` — skill de découpage des vidéos d'exercices en planches de positions. Chantier reporté en fin de parcours, le skill est prêt.
 
 **Node n'est pas dans le PATH par défaut** sur cette machine (pas de Homebrew) :
 `export PATH="$HOME/.local/node/bin:$PATH"`.
@@ -419,4 +486,5 @@ Fichiers du projet :
 
 - **Empaquetage en app natif iOS.** Tranché : aucune voie gratuite et durable sans compte Apple Developer à 99 $/an. La PWA sur l'écran d'accueil est la réponse.
 - **Ajouter du contenu à la bibliothèque.** Elle est suffisamment fournie ; le sujet est désormais l'infrastructure. Sauf les mollets, listés en question ouverte.
-- **Nutrition, suppléments, protocole kiné.** Suivis ailleurs, hors app.
+- **Nutrition, suppléments, protocole kiné.** Suivis ailleurs, hors app — **à une exception près depuis le 2026-09-27** : le bloc pubalgie et les zones sensibles sont dans l'app, parce qu'ils changent ce qu'elle prescrit. Le reste du suivi kiné n'y entre pas.
+- **Le moteur générique de génération (« formats-comme-templates »).** Discuté sur claude.ai, jamais arbitré, explicitement écarté du périmètre de F-06 et de F-02. Les deux tickets ont été construits en version fixe et autonome pour que ce chantier reste ouvert sans que rien ne soit à refaire.

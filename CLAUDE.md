@@ -6,13 +6,28 @@ vendredi. Hébergée sur GitHub Pages, installée sur l'écran d'accueil iPhone.
 ## À lire avant d'agir
 
 1. `pickup-app-workout.md` — état technique, décisions déjà prises, questions réellement ouvertes.
+   **C'est le document de reprise à froid : il doit pouvoir se lire seul, sans remonter le Log.**
 2. `brief-v2-multi-user.md` — intention produit, ordre de travail en douze étapes.
-3. `table-nommage-exercices.md` — labels français des 35 exercices, référence pour tout renommage.
+3. `table-nommage-exercices.md` — labels français des exercices, référence pour tout renommage.
 4. `idees-perso-backlog.md` — backlog d'idées produit de Martin, issues de l'usage réel, pas
-   encore dans le brief officiel. Un ticket à la fois, dans l'ordre du fichier. Mettre à jour
-   le statut du ticket traité directement dans ce fichier avant de conclure la conversation.
+   encore dans le brief officiel. Un ticket à la fois, dans l'ordre du fichier « Ordre d'envoi »
+   — c'est ce fichier qui pilote le travail, les deux autres sont des références consultées mais
+   pas pilotées.
 
 Les décisions produit de ces documents sont tranchées. Ne pas les rouvrir sans demander.
+
+**Avant de conclure un ticket, deux mises à jour, pas une seule :**
+
+1. Le statut du ticket traité et son entrée dans le `## Log`, directement dans
+   `idees-perso-backlog.md` — c'est l'historique détaillé, écart par écart, garde-fou par
+   garde-fou.
+2. **L'état technique de `pickup-app-workout.md`** — nombre de fichiers, nombre de tests,
+   fonctionnalités livrées, décisions de domaine actées, questions réellement ouvertes.
+   `pickup-app-workout.md` n'est pas un doublon du Log : c'est son résumé courant, celui que
+   quelqu'un lit en entier pour reprendre le projet sans dérouler l'historique des tickets. Un
+   ticket n'est pas fini tant que ce fichier ne reflète pas ce qu'il a changé — c'est resté
+   faux du 2026-09-07 au 2026-09-28 (cinq tickets d'écart) parce que rien ne le rendait
+   obligatoire ; ça ne doit pas se reproduire.
 
 ## Règles de travail
 

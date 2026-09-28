@@ -117,7 +117,44 @@ reposée.
 données du catalogue au build, celui-ci capture un ressenti utilisateur sur une séance
 générée, en usage réel.
 
-### 6. F-01 · Fast Track Mode — statut : à envoyer
+### 6. F-10 · Découpler format et journal du jour de la semaine — statut : prochaine priorité (2026-09-28)
+**Prérequis structurel à la feuille de route « programme sur-mesure »** (discutée sur claude.ai,
+session du 2026-09-28) : fréquence hebdo choisie par l'utilisateur (3/4/5 séances), format
+différent chaque jour, pioche dans une bibliothèque qui grandit par les likes. Rien de tout ça
+ne tient tant que le format et le journal sont câblés sur le jour calendaire plutôt que sur une
+position dans le programme.
+
+**Ce ticket ne construit aucune de ces fonctionnalités.** Il ne fait qu'un seul geste : partout
+où le code lit ou écrit un jour de semaine (1 à 5) pour décider du format ou de la séance,
+faire lire ou écrire une position dans le programme (séance n° 1 à n) à la place. Le
+comportement visible ne change pas — toujours 5 séances/semaine, mêmes formats, même
+correspondance qu'aujourd'hui (position 1 = ce qu'était lundi, etc.).
+
+**Repéré dans le code (vérifié le 2026-09-27) :**
+- `app/src/data/days.js` : `DAYS`, `STRETCH_BY_DAY`, `FINISHER_BIAS` sont des tables indexées
+  `{1: ..., 5: ...}` sur le jour calendaire.
+- `app/src/lib/journal.js` : une ligne par date ISO, qui référence un `dayKey` (1-5) — y compris
+  la logique de rattrapage de week-end (`entreeDeLOnglet`), qui range une séance de samedi sous
+  l'onglet du thème qu'elle a joué.
+
+**Explicitement hors scope, pour plus tard :**
+- Le sélecteur de fréquence (3/4/5) à l'onboarding — étape suivante de la feuille de route.
+- La généralisation de `pickVariant` à un pool de formats indépendant du calendrier.
+- Le mécanisme de like → promotion, et le rebranchement du journal en entrée du générateur.
+- **Pas de moteur générique ici non plus** — même consigne que sur F-06 : si une généralisation
+  plus large te semble nécessaire en cours de route, note-la, ne la construis pas dans ce ticket.
+
+**Un point à garder en tête sans le construire :** les futurs signaux d'apprentissage (likes,
+historique) porteront un identifiant de profil (décidé le 2026-09-28, app mono-utilisateur
+aujourd'hui, multi-utilisateur prévue). Rien à faire ici — juste ne pas structurer `journal.js`
+d'une façon qui rendrait ça difficile à ajouter ensuite.
+
+**Garde-fous à ajouter, dans l'esprit des contrôles existants :** la position 1 à n produit
+exactement les mêmes séances et le même comportement de rattrapage de week-end qu'avant le
+refactor — un test de non-régression comparant l'ancien et le nouveau comportement sur les
+45 séances est probablement le plus sûr.
+
+### 7. F-01 · Fast Track Mode — statut : à envoyer
 Sélecteur de durée en amont de séance (10 min notamment). Réduction du volume + priorisation
 des mouvements composés à haute valeur, pas un raccourcissement proportionnel de la séance
 normale. Le bloc correctif F-03 reste inclus, toujours.
