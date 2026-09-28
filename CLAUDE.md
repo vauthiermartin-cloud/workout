@@ -48,13 +48,22 @@ temps, position retenue au dernier battement, écran de fin inatteignable par ac
 
 **Matériel** : poids du corps, barre de traction, espalier. **Mise à jour du 2026-09-27 :
 le tirage horizontal est désormais possible** — Martin a ajouté l'équipement nécessaire
-[À PRÉCISER : quel équipement — TRX, anneaux, sangle sur la barre existante]. La contrainte
+[À PRÉCISER : quel équipement — TRX, anneaux, sangle sur la barre existante]. Le catalogue
+nomme le mouvement « tirages horizontaux » sans nommer l'appareil, précisément pour ne pas
+figer cette inconnue. La contrainte
 « pas de barre basse ni d'anneaux, aucun tirage horizontal, ne pas réintroduire les tirages
 australiens » ne tient plus : c'était une décision actée pour une raison matérielle qui a
 changé, pas un principe de conception. Les tirages australiens (et toute variante de tirage
 horizontal) peuvent revenir dans le catalogue.
 
-**Nouvelle règle actée (2026-09-27) : toute séance qui contient un créneau poussée doit
+**Règle de prise (2026-09-28).** Deux règles qui ne se contredisent pas, parce qu'elles ne
+parlent pas du même cas. **À la barre** : une séance s'en tient à une prise — pull-ups et
+chin-ups se partagent les avant-bras, les seconds se feraient sur la fatigue des premiers.
+**Entre les plans** : dès qu'un tirage horizontal accompagne un tirage vertical, il prend la
+prise que l'autre n'a pas. Jamais deux mouvements de pronation ni deux de supination dans une
+même séance — on alterne.
+
+**Règle actée (2026-09-27) : toute séance qui contient un créneau poussée doit
 contenir un créneau tirage.** Ratio cible de Martin, en équivalence de volume (pas un simple
 minimum de créneau) : pour 15–20 pompes, 3 tractions (pronation) OU 5 chin-ups (supination),
 et le double en tirage horizontal selon la prise (6 en pronation, 10 en supination). À

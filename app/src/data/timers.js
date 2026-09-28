@@ -29,22 +29,22 @@ export const TIMERS = {
 
   /* Mardi */
   "Escalier montant": [{ t:"cycle", sec:60, bloc:5, label:"Escalier montant", stations:[
-    ...x5(st(r(2,"burpees"), r(6,"pompes"), r(8,"jumpSquats"))),
-    ...x5(st(r(3,"burpees"), r(8,"pompes"), r(10,"jumpSquats"))),
-    ...x5(st(r(4,"burpees"), r(10,"pompes"), r(12,"jumpSquats"))),
-    ...x5(st(r(5,"burpees"), r(12,"pompes"), r(14,"jumpSquats"))),
+    ...x5(st(r(2,"burpees"), r(6,"pompes"), r(2,"tiragesHorizontaux"), r(8,"jumpSquats"))),
+    ...x5(st(r(3,"burpees"), r(8,"pompes"), r(3,"tiragesHorizontaux"), r(10,"jumpSquats"))),
+    ...x5(st(r(4,"burpees"), r(10,"pompes"), r(4,"tiragesHorizontaux"), r(12,"jumpSquats"))),
+    ...x5(st(r(5,"burpees"), r(12,"pompes"), r(5,"tiragesHorizontaux"), r(14,"jumpSquats"))),
   ], loops:1 }],
   "Escalier descendant": [{ t:"cycle", sec:60, bloc:5, label:"Escalier descendant", stations:[
-    ...x5(st(r(5,"burpees"), r(12,"pompes"), r(16,"airSquats"))),
-    ...x5(st(r(4,"burpees"), r(10,"pompes"), r(14,"airSquats"))),
-    ...x5(st(r(3,"burpees"), r(8,"pompes"), r(16,"hipThrusts"))),
-    ...x5(st(r(2,"burpees"), r(6,"pompes"), r(20,"hipThrusts"))),
+    ...x5(st(r(5,"burpees"), r(12,"pompes"), r(5,"tiragesHorizontaux"), r(16,"airSquats"))),
+    ...x5(st(r(4,"burpees"), r(10,"pompes"), r(4,"tiragesHorizontaux"), r(14,"airSquats"))),
+    ...x5(st(r(3,"burpees"), r(8,"pompes"), r(3,"tiragesHorizontaux"), r(16,"hipThrusts"))),
+    ...x5(st(r(2,"burpees"), r(6,"pompes"), r(2,"tiragesHorizontaux"), r(20,"hipThrusts"))),
   ], loops:1 }],
   /* `pas` déclare ce que la consigne dit en prose : chaque round ajoute une
      répétition à chaque ligne. Sans lui, un nombre de tours saisi après coup se
      multiplierait par le tour 1 et sous-compterait de moitié. */
   "Escalier ouvert": [{ t:"down", sec:1200, label:"Escalier ouvert", sub:"Round 1, puis +1 rep partout", pas:1, list:[
-    r(1,"burpees"), r(2,"pompes"), r(3,"airSquats"),
+    r(1,"burpees"), r(2,"pompes"), r(1,"tiragesHorizontaux"), r(3,"airSquats"),
   ] }],
   "Escalier croisé": [{ t:"cycle", sec:60, bloc:5, label:"Escalier croisé", stations:[
     ...x5(st(r(2,"burpeesGenouDiagonal"), r(10,"fentesCroisees"))),
@@ -79,7 +79,7 @@ export const TIMERS = {
 
   "Tours au sol": [{ t:"up", cap:1500, label:"4 tours au sol", sub:"1 tour, à répéter 4 fois", list:[
     r(6,"bearCrawlThread"), r(20,"hipThrusts"), r(10,"hipThrustsUneJambe"),
-    r(20,"mountainClimbersCroises"), r(12,"superman"), r(10,"pompes"),
+    r(20,"mountainClimbersCroises"), r(12,"superman"), r(10,"pompes"), r(4,"tiragesHorizontaux"),
   ] }],
 
   /* Jeudi */
@@ -103,7 +103,7 @@ export const TIMERS = {
   ],
   "AMRAP 18 au sol": [{ t:"down", sec:1080, label:"AMRAP 18", sub:"Max de tours", list:[
     r(12,"sautsMogul"), r(8,"sweeps"), r(10,"vups"), r(15,"hipThrusts"), r(8,"pompes"),
-    r(12,"deadBugs"),
+    r(5,"tiragesHorizontauxSup"), r(12,"deadBugs"),
   ] }],
   "AMRAP 20 poussée-tirage": [{ t:"down", sec:1200, label:"AMRAP 20", sub:"Max de tours", list:[
     r(6,"pompesPiquees"), r(8,"chinups"), r(10,"pompes"), r(12,"deadBugs"),

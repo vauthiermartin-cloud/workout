@@ -2,17 +2,7 @@ import { describe, it, expect } from "vitest";
 import { WORKOUTS } from "../src/data/workouts.js";
 import { PATTERNS, patternsOfWorkout } from "../src/data/patterns.js";
 import { pickVariant } from "../src/lib/generator.js";
-
-/* Générateur pseudo-aléatoire déterministe : la simulation doit être rejouable. */
-function mulberry32(seed) {
-  let a = seed;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { mulberry32 } from "./hasard.js";
 
 /* Une semaine telle que l'app la vit : un tirage par jour, l'état de sélection
    repart de zéro à chaque changement de jour. */

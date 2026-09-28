@@ -52,6 +52,12 @@ export const EXERCISES = {
   chinups:                { fr:"chin-ups",                        unit:"reps", patterns:["tirage","supination"] },
   relevesGenouxSuspendu:  { fr:"relevés de genoux suspendu",      unit:"reps", patterns:["tirage","core"] },
 
+  /* Tirage horizontal — possible depuis le 2026-09-27, l'équipement a changé.
+     La contrainte « aucun tirage horizontal » était matérielle, pas une
+     décision de conception : elle tombe avec sa cause. */
+  tiragesHorizontaux:     { fr:"tirages horizontaux",             unit:"reps", patterns:["tirage"] },
+  tiragesHorizontauxSup:  { fr:"tirages horizontaux paume vers soi", unit:"reps", patterns:["tirage","supination"] },
+
   /* Squat */
   airSquats:              { fr:"air squats",                      unit:"reps", patterns:["squat"] },
   jumpSquats:             { fr:"jump squats",                     unit:"reps", patterns:["squat","cardio"] },

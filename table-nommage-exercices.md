@@ -20,6 +20,12 @@ document sont à traiter au moment de l'appliquer.
   l'arbitrage doit rester cohérent avec eux.
 - **Un exercice a disparu** : « burpee » et « burpees » étaient deux entrées pour le même
   mouvement, comptées comme deux exercices distincts. Il n'en reste qu'une.
+- **Deux exercices sont arrivés le 2026-09-28** : `tiragesHorizontaux` et
+  `tiragesHorizontauxSup`, le tirage horizontal dans ses deux prises, possible depuis que
+  l'équipement a changé. Ils figurent en section C. Leur seconde ligne anglaise serait
+  « horizontal row » / « supine row » — à confirmer à l'arbitrage. Le libellé est volontairement
+  générique : l'équipement exact reste `[À PRÉCISER]` dans `CLAUDE.md`, et un nom d'appareil
+  (anneaux, TRX, sangle) aurait figé dans le catalogue une chose qu'on ne sait pas encore.
 - **Un exercice est arrivé depuis** (2026-09-27) : `flexionHancheIso`, l'isométrie de flexion
   de hanche du bloc correctif. Il figure en section C avec un label provisoire. Sa seconde
   ligne anglaise serait « isometric hip flexion » — à confirmer au moment de l'arbitrage,
@@ -87,6 +93,8 @@ manger de la place.
 | montées sur pointes | Montées sur pointes | — |
 | soulevés de terre une jambe | Soulevés de terre une jambe | Soulevé une jambe |
 | flexion de hanche | Flexion de hanche | — |
+| tirages horizontaux | Tirages horizontaux | — |
+| tirages horizontaux paume vers soi | Tirages horizontaux paume vers soi | Tirages paume vers soi |
 
 ## D. Burpees — conservés tels quels
 

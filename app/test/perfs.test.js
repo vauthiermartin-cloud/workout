@@ -48,7 +48,7 @@ describe("perfsOf — ce que la feuille propose de saisir", () => {
 
   it("déclare le pas d'un escalier ouvert, sur le bloc comme sur ses lignes", () => {
     const champs = perfsOf("Escalier ouvert", 1);
-    expect(champs[0]).toMatchObject({ kind:"tours", pas:1, parTour:6, lignes:[1, 2, 3] });
+    expect(champs[0]).toMatchObject({ kind:"tours", pas:1, parTour:7, lignes:[1, 2, 1, 3] });
     expect(champ(champs, "t0:pompes")).toMatchObject({ kind:"ex", n:2, pas:1, de:"tours:0" });
   });
 
@@ -141,8 +141,8 @@ describe("volumeReel — le total de ce qui a été fait", () => {
   });
 
   it("somme les paliers d'un escalier au lieu de répéter le premier tour", () => {
-    /* 5 tours : 6 + 9 + 12 + 15 + 18. Multiplier le tour 1 aurait donné 30. */
-    expect(volumeReel("Escalier ouvert", 1, { "tours:0": 5 }, null).total).toBe(60);
+    /* 5 tours : 7 + 11 + 15 + 19 + 23. Multiplier le tour 1 aurait donné 35. */
+    expect(volumeReel("Escalier ouvert", 1, { "tours:0": 5 }, null).total).toBe(75);
   });
 
   it("se déclare incomplet tant qu'un tour ou un score manque", () => {

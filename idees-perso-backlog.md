@@ -75,7 +75,7 @@ seulement ce dont F-02 a besoin maintenant — mais avec une forme générique
 la substitution équipement (étape 8 du brief officiel) et la substitution de régression
 (étape 9, chaînes déjà écrites dans `chains.js` mais pas branchées).
 
-### 4. F-06 · Ratio push/pull (révisé 2026-09-27) — statut : prochaine priorité
+### 4. F-06 · Ratio push/pull (révisé 2026-09-27) — statut : Shipped (2026-09-28) — voir le Log
 **Révision du 2026-09-27 : le blocage matériel qui limitait ce ticket a disparu.** Martin a
 ajouté l'équipement de tirage horizontal (voir `CLAUDE.md`, section Contraintes du domaine —
 équipement exact à préciser). Le ticket change de nature : ce n'était plus une contrainte
@@ -289,3 +289,59 @@ Elle absorbe F-09, qui posait exactement la question « note séparée ou même 
   on relit ;
 - les 25 séances du catalogue savent se relire — un bloc sans texte ni exercice produirait
   une ligne vide dans le dossier, et personne ne le verrait avant d'exporter.
+
+**2026-09-28 — F-06 · Ratio push/pull.** Livré dans le scope serré demandé : une table figée,
+des séances éditées à la main, des garde-fous. Aucun moteur générique, `substituer()` n'a pas
+été touché.
+
+- **Deux exercices** dans `exercises.js` : `tiragesHorizontaux` (pronation, schéma `tirage`) et
+  `tiragesHorizontauxSup` (supination, schémas `tirage` + `supination`). Libellés volontairement
+  génériques — l'équipement exact est encore `[À PRÉCISER]` dans `CLAUDE.md`, et un nom
+  d'appareil aurait figé l'inconnue dans le catalogue.
+- **La table** : `app/src/data/equivalences.js`. Un créneau de 15–20 pompes s'équilibre par
+  3 tractions, 5 chin-ups, 6 tirages horizontaux ou 10 en supination. Deux règles de trois,
+  pas de moteur.
+- **Cinq séances éditées** (fiche et chrono ensemble) — les seules qui poussaient sans tirer :
+  Escalier montant et Escalier descendant (le tirage monte et descend avec le reste, 2/3/4/5 et
+  5/4/3/2), Escalier ouvert (1 rep, qui grandit avec le `pas`), Tours au sol (4 par tour),
+  AMRAP 18 au sol (5 par tour, en supination — la prise y était libre et ça donne au jeudi une
+  seconde source de biceps).
+- **Trois d'entre elles étaient le mardi.** Le déséquilibre ressenti venait de là : une journée
+  entière de poussée sans tirage, sauf « Escalier tirage ».
+
+**Ce que la mesure a montré, et qui mérite une décision.** Par les coefficients de Martin, les
+séances qui avaient déjà du tirage sont **au-dessus de la parité, de 146 % à 292 %** — le
+catalogue est plus lourd en tirage qu'en poussée, pas l'inverse. Deux lectures possibles : les
+coefficients sont généreux envers le tirage, ou le déséquilibre ressenti venait entièrement des
+cinq séances à zéro. Le garde-fou ne pose donc **qu'un plancher** (90 %, la marge d'arrondi des
+nombres écrits à la main), aucun plafond : en poser un ferait tomber la moitié du catalogue sur
+une règle que personne n'a demandée. À rouvrir si les 292 % se ressentent à l'usage.
+
+**Garde-fous ajoutés** (220 tests verts, build OK), dans `app/test/ratio.test.js` :
+
+- règle 1, sur les 25 séances : aucune poussée sans tirage, fiche **et** chrono ;
+- règle 2, par séance et sur 500 semaines simulées : le tirage vaut au moins 90 % de la poussée
+  en équivalence. Vérifié en le cassant — le test nomme la séance et son pourcentage ;
+- la table ne cite que des exercices de tirage, rend bien les nombres arbitrés, et les classe du
+  plus dur au plus accessible : une table inversée aurait donné des créneaux deux fois trop
+  courts sans rien signaler ;
+- **la règle de prise, précisée par Martin le 2026-09-28 et inscrite dans `CLAUDE.md`** : à la
+  barre une séance garde une seule prise (contrôle d'origine, inchangé), mais dès qu'un tirage
+  horizontal accompagne un vertical, il prend la prise opposée — jamais deux mouvements de
+  pronation ni deux de supination dans une même séance. Le premier jet de ce ticket testait
+  l'inverse ; le test a été remplacé. Aucune séance ne combine encore les deux plans, donc le
+  contrôle passe à vide : un second test vérifie qu'il attraperait bien le cas, un garde-fou
+  qu'on n'a jamais vu se déclencher n'en étant pas un ;
+- aucun finisher ne prescrit de poussée : la question ne s'est jamais posée hors des 25 minutes,
+  et le test la posera le jour où ça changera.
+
+**Noté, pas construit** (comme demandé) :
+
+- les deux nouveaux exercices ne sont **pas** dans `chains.js`, et l'arbitrage a eu lieu dans
+  la foulée : **le tirage horizontal aura sa propre chaîne**, pas un cran dans celle des
+  tractions. Une chaîne est le même mouvement à des difficultés différentes ; un tirage
+  horizontal est un autre plan, et l'y glisser laisserait l'étape 9 croire qu'elle baisse la
+  difficulté alors qu'elle change ce qui est travaillé. La chaîne à écrire ferait varier
+  l'angle du corps — pieds surélevés, pieds au sol, genoux pliés. À faire à l'étape 9.
+- la table traite toute poussée comme une pompe : les pompes piquées sont plus dures et comptent
+  pareil. À affiner le jour où une séance en pompes piquées pures paraîtra sous-dosée.
