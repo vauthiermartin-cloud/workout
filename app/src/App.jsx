@@ -56,8 +56,14 @@ export default function App() {
   /* Les deux couches de zones sensibles. La chronique est un réglage : elle
      survit au rechargement et vaut pour toutes les séances. Celle du jour ne
      vaut que pour la séance qu'on s'apprête à lancer, et repart à vide comme
-     l'échauffement. Elles s'ajoutent, aucune n'écrase l'autre. */
-  const [chroniques, setChroniques] = useState(["pubalgie"]);
+     l'échauffement. Elles s'ajoutent, aucune n'écrase l'autre.
+
+     Aucune zone chronique par défaut, pubalgie comprise. Déclarer une
+     condition à la place de quelqu'un, c'est verrouiller son catalogue sans
+     qu'il l'ait demandé — et une zone chronique se voit « TOUJOURS » dans le
+     sélecteur du jour, donc elle ne se décoche pas d'un matin. Le besoin se
+     coche quand il se présente. */
+  const [chroniques, setChroniques] = useState([]);
   const [malDuJour, setMalDuJour] = useState([]);
   const [run, setRun] = useState(null);
   const [pending, setPending] = useState(null);

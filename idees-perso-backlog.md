@@ -215,9 +215,11 @@ la forme générique demandée pour le moteur.
   sensibles »), et un état du jour reposé avant chaque chrono. Elles s'additionnent, aucune
   n'écrase l'autre ; une zone chronique apparaît verrouillée dans le sélecteur du jour, pour
   qu'on aille la changer là où on l'a déclarée.
-- **La pubalgie est cochée par défaut** en chronique. C'est le seul changement de
-  comportement visible dès demain matin : sept exercices sont remplacés dans le catalogue.
-  Une touche pour l'enlever.
+- **Aucune zone chronique par défaut** (corrigé le 2026-09-28). La pubalgie l'était à la
+  livraison ; Martin l'a retirée le lendemain, et la raison vaut d'être gardée : une zone
+  chronique s'affiche « TOUJOURS » dans le sélecteur du jour, donc elle ne se décoche pas
+  d'un matin. La cocher à la place de quelqu'un verrouille son catalogue sans qu'il l'ait
+  demandé. Le besoin se coche quand il se présente, séance par séance ou en réglage.
 - **Le journal porte les zones appliquées** (`mal`). Sans ça, relire une séance faite genou
   bloqué l'aurait rejouée en squats le jour où le genou va mieux. La couverture hebdomadaire
   se reconstruit elle aussi ligne par ligne avec les zones de chaque ligne.
