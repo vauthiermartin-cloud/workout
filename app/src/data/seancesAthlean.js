@@ -121,13 +121,13 @@ export function etapesAthlean(workoutId, mode, { echauffement = false } = {}) {
   const s = seanceAthlean(workoutId, mode);
   if (!s) return null;
   const tete = echauffement ? [bloc("Échauffement", ECHAUFFEMENT_SEC, ECHAUFFEMENT, "À ton rythme")] : [];
-  const joues = s.phases.flatMap((p) => p.exerciseIds.map((sourceId) => ({ sourceId, phase: p.id })));
+  const joues = s.phases.flatMap((p) => p.exerciseIds.map((sourceId) => ({ sourceId, phase: p.id, phaseLabel: p.label })));
   const ids = joues.map(({ sourceId }) => idOfSource(sourceId));
   let i = 0;
   return [...tete, ...deroule(ids.map(labelOf)).map((e) => {
     if (e.t !== "exercice") return e;
     const k = i++;
-    return { ...e, ex: ids[k], sourceId: joues[k].sourceId, phase: joues[k].phase };
+    return { ...e, ex: ids[k], sourceId: joues[k].sourceId, phase: joues[k].phase, phaseLabel: joues[k].phaseLabel };
   })];
 }
 

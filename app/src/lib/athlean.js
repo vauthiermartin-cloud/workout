@@ -175,6 +175,49 @@ export function ecran(run, now) {
   };
 }
 
+/* La progression de la séance, pour la jauge : un segment par tour, large
+   comme sa durée, et le pourcentage fait. Comme le reste de l'affichage des
+   durées, elle ne compte que la séance — l'échauffement reste à 0 %, il est
+   hors des 34:40 / 26:00. Pré-départ et transitions appartiennent au tour de
+   l'exercice qu'ils annoncent. Rien pour un chrono sans séance (des
+   étirements seuls).
+
+   `ecoule` est le temps passé dans l'étape en cours, en millisecondes. */
+export function progression(etapes, idx, ecoule) {
+  const phases = [];
+  let suivante = null;
+  const phaseDe = new Array(etapes.length).fill(null);
+  for (let i = etapes.length - 1; i >= 0; i--) {
+    const e = etapes[i];
+    if (e.t === "bloc") continue;
+    if (e.t === "exercice") suivante = { id: e.phase, label: e.phaseLabel };
+    phaseDe[i] = suivante;
+  }
+  etapes.forEach((e, i) => {
+    const p = phaseDe[i];
+    if (!p) return;
+    let seg = phases[phases.length - 1];
+    if (!seg || seg.id !== p.id) { seg = { id: p.id, label: p.label, ms: 0, fait: 0 }; phases.push(seg); }
+    const ms = e.sec * 1000;
+    seg.ms += ms;
+    seg.fait += i < idx ? ms : i === idx ? Math.min(ms, Math.max(0, ecoule)) : 0;
+  });
+  const total = phases.reduce((a, p) => a + p.ms, 0);
+  if (!total) return null;
+  const fait = phases.reduce((a, p) => a + p.fait, 0);
+  const exos = etapes.filter((e) => e.t === "exercice");
+  /* L'exercice en cours, ou celui qu'annoncent le pré-départ et la
+     transition. Pendant l'échauffement, aucun tour n'est encore entamé. */
+  const numero = Math.min(exos.length, etapes.slice(0, idx).filter((e) => e.t === "exercice").length + 1);
+  return {
+    pct: Math.min(100, Math.round((fait / total) * 100)),
+    segments: phases.map((p) => ({ id: p.id, grow: p.ms, fill: p.fait / p.ms, done: p.fait >= p.ms })),
+    phase: phaseDe[idx] ? phaseDe[idx].label : null,
+    numero,
+    total: exos.length,
+  };
+}
+
 /* Les trois sons, et la vibration qui les double. Elle n'existe qu'en
    complément : aucun signal ne vibre sans sonner. Il n'y a pas de quatrième
    son à la fin d'un exercice — le spec source en prévoyait un, Martin a gardé

@@ -367,6 +367,13 @@ une UI qui rassemble les exercices par bloc — le programme est fait de blocs d
 
 ---
 
+### F-19 · Jauge de séance et récap des reps par bloc — statut : Shipped (2026-10-26) — voir le Log
+
+Deux demandes de Martin : une jauge de complétion pendant la séance Athlean X, comme en
+Classique ; et la saisie de fin rangée par bloc, en distinguant tour 1 et tour 2 dans chacun.
+
+---
+
 ### Tranché — le spec est l'adaptation de la version « advanced » (2026-10-26)
 
 Les captures jointes à F-18 montrent la version ADVANCED originale du programme, qui diffère du
@@ -384,7 +391,7 @@ pourra se lire séance après séance, et d'un tour à l'autre dans une même s�
 
 ---
 
-**Ordre d'envoi du fil** : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15 (F-16, F-17 et F-18, demandés en cours de route), une étape à la fois avec Claude Code, jamais plusieurs dans la même conversation (règle actée dans `CLAUDE.md`). Indépendant de l'ordre d'envoi
+**Ordre d'envoi du fil** : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15 (F-16 à F-19, demandés en cours de route), une étape à la fois avec Claude Code, jamais plusieurs dans la même conversation (règle actée dans `CLAUDE.md`). Indépendant de l'ordre d'envoi
 ci-dessus : les deux fils ne se bloquent pas. Les entrées de Log des deux fils vont dans le `## Log`
 ci-dessous.
 
@@ -1069,3 +1076,38 @@ défilement horizontal, huit ×2, le correctif visible au-dessus de la barre LAN
 
 **Tranché par Martin** : les captures jointes sont la version ADVANCED originale ; le spec est
 son adaptation volontaire de cette version, substituts compris. On ne change rien.
+
+**2026-10-26 — F-19 · Jauge de séance et récap des reps par bloc (fil Athlean X).** Demandes
+de Martin, même conversation.
+
+**La jauge.** `progression(etapes, idx, ecoule)` dans `lib/athlean.js`, pure : un segment par
+tour (tour 1, tour 2, correctif ; deux en NORMAL), large comme sa durée, le pourcentage fait,
+le tour courant et l'exercice sur le total. **Elle ne compte que la séance** : l'échauffement
+reste à 0 % et s'annonce « HORS SÉANCE », comme il est hors des 34:40 / 26:00 ; pré-départ et
+transitions appartiennent au tour de l'exercice qu'ils annoncent. Un chrono d'étirements seuls
+n'en a pas. Dans `ChronoAthlean`, sous la ligne SON / FERMER, dans la grammaire de la jauge
+Classique : « TOUR 1 — CORPS ENTIER · 10 / 24 » à gauche (le repère du spec §2.5), « 38 % » à
+droite, segments faits en blanc, segment courant rempli en rouge. Les étapes d'exercice portent
+désormais `phaseLabel`.
+
+**Le récap par bloc.** `saisieParBloc(w, mode)` dans `lib/repsAthlean.js` : les six blocs de la
+fiche, chaque exercice avec ses champs, un par passage, et le tour de chacun lu à sa phase —
+TOUR 1, TOUR 2, **FIN** pour le correctif que BUILD et DEFINE jouent après le deuxième tour.
+`SaisieReps` affiche par bloc un en-tête « 1 · SQUAT » avec deux colonnes, TOUR 1 et TOUR 2 ;
+un exercice que le mode ne rejoue pas a un tiret en colonne TOUR 2. Ce qui s'enregistre ne
+change pas : chaque champ garde l'indice de son passage, `repsDeSaisie` lit dans l'ordre joué.
+
+**Tests** (379 verts = 366 + 13, build OK) : 6 dans `athlean.test.js` pour `progression`
+(échauffement hors compte ; un segment par tour, pré-départ et transitions compris ; une
+transition appartient au tour qu'elle annonce ; temps de l'étape en cours ; 100 % au bout ;
+rien pour des étirements seuls) ; 3 dans `repsAthlean.test.js` (chaque passage a un champ et
+un seul ; six blocs et le tour de chaque champ ; le tour d'un champ est celui de son passage) ;
+de rendu, le récap remplacé par 4 tests (par bloc ; TOUR 1 / TOUR 2 dans chaque bloc, FIN pour
+le correctif de BUILD ; tout en double en NORMAL ; saisie montrée, jamais bloquée) et 3 pour la
+jauge (tour, exercice, pourcentage, trois segments ; hors séance à 0 % ; pas de jauge pour des
+étirements).
+
+**Vérifié dans le navigateur**, largeur iPhone : A · BUILD au 10ᵉ exercice, « TOUR 1 — CORPS
+ENTIER · 10 / 24 », 38 % (592 s sur 1 560) ; récap par bloc sans défilement horizontal ; 11
+tapé au tour 2 du box squat, 22 aux jump squats, 30 au correctif → `{ "A-1.1": [null, 11],
+"A-1.3": [22], "A-6.1": [30] }`.

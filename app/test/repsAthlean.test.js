@@ -1,7 +1,7 @@
 /* La saisie des reps d'une séance Athlean X (F-15). */
 
 import { describe, it, expect } from "vitest";
-import { passagesDe, lireSaisie, repsDeSaisie } from "../src/lib/repsAthlean.js";
+import { passagesDe, lireSaisie, repsDeSaisie, saisieParBloc } from "../src/lib/repsAthlean.js";
 import { etapesAthlean, WORKOUTS_ATHLEAN, MODES_ATHLEAN } from "../src/data/seancesAthlean.js";
 import { idOfSource } from "../src/data/exercises.js";
 
@@ -81,5 +81,34 @@ describe("les reps enregistrés", () => {
     const reps = repsDeSaisie(p, v);
     expect(Object.keys(reps)).toEqual(["A-4.3"]);
     expect(reps[idOfSource("A-4.3")]).toBe(undefined);
+  });
+});
+
+describe("le récap par bloc", () => {
+  it("chaque passage a un champ, et un seul", () => {
+    SEANCES.forEach(([w, m]) => {
+      const indices = saisieParBloc(w, m).flatMap((b) => b.exercices.flatMap((e) => e.champs.map((c) => c.i)));
+      expect([...indices].sort((a, b) => a - b)).toEqual(passagesDe(w, m).map((_, i) => i));
+    });
+  });
+
+  it("six blocs, les exercices du bloc, et le tour de chaque champ", () => {
+    const b = saisieParBloc("A", "BUILD");
+    expect(b.map((x) => x.exercices.length)).toEqual([3, 3, 3, 3, 3, 1]);
+    const box = b[0].exercices[0];
+    expect(box.champs.map((c) => [c.tour, c.colonne])).toEqual([["TOUR 1", 1], ["TOUR 2", 2]]);
+    expect(b[0].exercices[2].champs.map((c) => c.tour)).toEqual(["TOUR 1"]);
+    expect(b[5].exercices[0].champs.map((c) => [c.tour, c.colonne])).toEqual([["FIN", 1]]);
+  });
+
+  it("le tour d'un champ est celui de son passage", () => {
+    SEANCES.forEach(([w, m]) => {
+      const p = passagesDe(w, m);
+      const TOUR = { round1: "TOUR 1", round2: "TOUR 2", finisher: "FIN" };
+      saisieParBloc(w, m).forEach((b) => b.exercices.forEach((e) => e.champs.forEach((c) => {
+        expect(p[c.i].sourceId).toBe(e.sourceId);
+        expect(c.tour).toBe(TOUR[p[c.i].phase]);
+      })));
+    });
   });
 });

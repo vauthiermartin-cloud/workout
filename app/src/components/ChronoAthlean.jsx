@@ -4,7 +4,7 @@ import { mmss } from "../lib/dates.js";
 import { couper, deverrouiller, ton, vibrer } from "../lib/audio.js";
 import {
   WARNING, avancer, demarrer, dureeSeance, dureeTotale, ecran, fini, mettreEnPause, passer,
-  effet, instantane, recommencer, reprendre,
+  effet, instantane, progression, recommencer, reprendre,
 } from "../lib/athlean.js";
 
 /* L'horloge du chrono Athlean X : monotone, insensible à un réglage de
@@ -129,6 +129,8 @@ export function ChronoAthlean({ etapes, warning = WARNING, initial = null, onFin
      pré-départ et transitions, sont en blanc. L'orange reste aux alertes. */
   const travail = v.t === "exercice" || v.t === "bloc";
   const accent = travail ? C.rouge : C.bone;
+  const restantMs = run.pause !== null ? run.pause : run.fin - now;
+  const prog = progression(run.etapes, run.idx, run.etapes[run.idx].sec * 1000 - restantMs);
 
   return (
     <div style={cadre}>
@@ -143,6 +145,28 @@ export function ChronoAthlean({ etapes, warning = WARNING, initial = null, onFin
           {arme ? "ARRÊTER ? TOUCHE ENCORE" : "FERMER ✕"}
         </button>
       </div>
+
+      {/* La jauge de séance, comme en Classique : un segment par tour, large
+          comme sa durée, le pourcentage au-dessus. L'échauffement n'y entre
+          pas — il est hors séance. Un chrono d'étirements seuls n'en a pas. */}
+      {prog && (
+        <React.Fragment>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginTop:14, flexShrink:0,
+            fontFamily:MONO, letterSpacing:".06em", color:C.ash, fontVariantNumeric:"tabular-nums" }}>
+            <span style={{ fontSize:10, letterSpacing:".12em" }}>
+              {prog.phase ? `${prog.phase.toUpperCase()} · ${String(prog.numero).padStart(2, "0")} / ${prog.total}` : "HORS SÉANCE"}
+            </span>
+            <span style={{ fontSize:13 }}>{prog.pct} %</span>
+          </div>
+          <div style={{ display:"flex", gap:2, height:7, marginTop:8, flexShrink:0 }}>
+            {prog.segments.map((g) => (
+              <div key={g.id} style={{ flexGrow:g.grow, flexBasis:0, background:C.line, borderRadius:2, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${g.fill * 100}%`, background: g.done ? C.bone : C.rouge }} />
+              </div>
+            ))}
+          </div>
+        </React.Fragment>
+      )}
 
       <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", textAlign:"center" }}>
         <div style={{ fontFamily:DISPLAY, fontSize: travail ? "clamp(34px, 10vw, 52px)" : "clamp(40px, 12vw, 64px)",

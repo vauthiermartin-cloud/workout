@@ -23,7 +23,7 @@ import { Coche } from "../src/components/Coche.jsx";
 import { ChoixMode, EntreeAthlean, RepriseAthlean, EtirementsAthlean, SaisieReps, CompoAthlean } from "../src/components/Mode.jsx";
 import { passagesDe } from "../src/lib/repsAthlean.js";
 import { C } from "../src/lib/theme.js";
-import { etapesAthlean, etirementSuggere } from "../src/data/seancesAthlean.js";
+import { etapesAthlean, etirementSuggere, etapesEtirement } from "../src/data/seancesAthlean.js";
 import { ChronoAthlean } from "../src/components/ChronoAthlean.jsx";
 import { deroule, demarrer, avancer, mettreEnPause } from "../src/lib/athlean.js";
 import { MODES, MODE_PAR_DEFAUT } from "../src/data/modes.js";
@@ -555,30 +555,40 @@ describe("échauffement et étirements d'Athlean X", () => {
   });
 });
 
-/* Le récap des reps (F-15). */
+/* Le récap des reps (F-15), rangé par bloc avec une colonne par tour. */
 describe("la saisie des reps d'Athlean X", () => {
-  const seance = { workoutId: "A", mode: "BUILD" };
-  const passages = passagesDe("A", "BUILD");
-  const rendre = (valeurs = []) => html(<SaisieReps seance={seance} passages={passages} valeurs={valeurs}
+  const rendre = (mode = "BUILD", valeurs = []) => html(<SaisieReps seance={{ workoutId: "A", mode }} valeurs={valeurs}
     onChange={() => {}} onValider={() => {}} />);
 
-  it("une ligne par passage, sous sa phase, champs vides", () => {
+  it("un champ par passage, rangé sous son bloc, champs vides", () => {
     const h = rendre();
     expect(h.match(/<input/g)).toHaveLength(24);
     expect(h).not.toMatch(/value="[^"]/);
-    ["TOUR 1 — CORPS ENTIER", "TOUR 2 — FORCE", "CORRECTIF"].forEach((t) => expect(h).toContain(t));
-    expect(h.match(/TOUR 2 — FORCE/g)).toHaveLength(1);
+    ["SQUAT", "POUSSÉE", "POSTÉRIEURE", "TIRAGE", "ABDOS", "CORRECTIF"].forEach((t) => expect(h).toContain(t));
     expect(h).toContain("WORKOUT A · BUILD");
   });
 
-  it("l'exercice repris a deux lignes, chacune avec son tour", () => {
+  it("chaque bloc distingue tour 1 et tour 2 ; le correctif de BUILD est la fin", () => {
     const h = rendre();
+    expect(h.match(/>TOUR 1</g)).toHaveLength(5);
+    expect(h.match(/>TOUR 2</g)).toHaveLength(5);
+    expect(h).toContain(">FIN<");
     expect(h).toContain('aria-label="box squat alterné, tour 1"');
     expect(h).toContain('aria-label="box squat alterné, tour 2"');
+    // jump squats n'est pas rejoué en BUILD : sa colonne TOUR 2 est vide
+    expect(h).toContain('aria-label="jump squats, tour 1"');
+    expect(h).not.toContain('aria-label="jump squats, tour 2"');
+  });
+
+  it("en NORMAL, tout a ses deux tours, correctif compris", () => {
+    const h = rendre("NORMAL");
+    expect(h.match(/<input/g)).toHaveLength(32);
+    expect(h.match(/>TOUR 2</g)).toHaveLength(6);
+    expect(h).not.toContain(">FIN<");
   });
 
   it("montre ce qui a été tapé, et s'enregistre toujours", () => {
-    const h = rendre(["14"]);
+    const h = rendre("BUILD", ["14"]);
     expect(h).toContain('value="14"');
     expect(h).toContain("ENREGISTRER");
     expect(h).not.toContain("disabled");
@@ -617,5 +627,32 @@ describe("la fiche d'Athlean X", () => {
     expect(html(<EntreeAthlean {...props} propose={null} />)).not.toContain("LA SÉANCE");
     expect(html(<EntreeAthlean {...props} propose={null} workout="B" />)).toContain("LA SÉANCE");
     expect(html(<EntreeAthlean {...props} propose="A" dernier="B" />)).toContain("LA SÉANCE");
+  });
+});
+
+/* La jauge du chrono Athlean X, comme en Classique. */
+describe("la jauge d'Athlean X", () => {
+  const etapes = etapesAthlean("A", "BUILD", { echauffement: true });
+
+  it("pendant la séance : le tour, l'exercice sur le total, le pourcentage, un segment par tour", () => {
+    // échauffement, pré-départ, 30 s du premier exercice ; en pause, pour que l'horloge du rendu n'y touche pas
+    const t = 300_000 + 5_000 + 30_000;
+    const run = mettreEnPause(avancer(demarrer(etapes, 0), t).run, t);
+    const h = html(<ChronoAthlean etapes={etapes} initial={run} />);
+    expect(h).toContain("TOUR 1 — CORPS ENTIER · 01 / 24");
+    expect(h).toContain("2 %");
+    expect(h.match(/flex-grow:/g)).toHaveLength(3);
+  });
+
+  it("pendant l'échauffement : hors séance, 0 %", () => {
+    const h = html(<ChronoAthlean etapes={etapes} initial={demarrer(etapes, 0)} />);
+    expect(h).toContain("HORS SÉANCE");
+    expect(h).toContain("0 %");
+  });
+
+  it("des étirements seuls n'ont pas de jauge", () => {
+    const e = etapesEtirement(etirementSuggere());
+    const h = html(<ChronoAthlean etapes={e} initial={demarrer(e, 0)} />);
+    expect(h).not.toContain("%");
   });
 });

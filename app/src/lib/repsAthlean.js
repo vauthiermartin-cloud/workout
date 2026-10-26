@@ -15,7 +15,7 @@
    spec, jamais l'id maison : un renommage dans la bibliothèque ne périme
    rien. */
 
-import { seanceAthlean, etapesAthlean } from "../data/seancesAthlean.js";
+import { seanceAthlean, etapesAthlean, compositionAthlean } from "../data/seancesAthlean.js";
 
 /* Les passages de la séance jouée — pas le catalogue : seulement ses
    exercices, autant de fois qu'elle les joue, l'échauffement à part. */
@@ -47,4 +47,27 @@ export function repsDeSaisie(passages, valeurs) {
   });
   Object.keys(reps).forEach((k) => { if (reps[k].every((n) => n === null)) delete reps[k]; });
   return reps;
+}
+
+/* Le récap rangé comme la fiche : par bloc, chaque exercice avec ses champs,
+   un par passage. Le tour se lit à la phase — TOUR 1, TOUR 2, et FIN pour le
+   correctif que BUILD et DEFINE jouent après le deuxième tour. Chaque champ
+   garde l'indice de son passage : c'est toujours `repsDeSaisie` qui lit les
+   valeurs, dans l'ordre joué. */
+const TOURS = { round1: "TOUR 1", round2: "TOUR 2", finisher: "FIN" };
+
+export function saisieParBloc(workoutId, mode) {
+  const passages = passagesDe(workoutId, mode);
+  const blocs = compositionAthlean(workoutId, mode);
+  if (!blocs) return [];
+  return blocs.map((b) => ({
+    numero: b.numero,
+    titre: b.titre,
+    exercices: b.exercices.map((e) => ({
+      sourceId: e.sourceId,
+      nom: e.nom,
+      champs: passages.flatMap((p, i) => (p.sourceId === e.sourceId
+        ? [{ i, tour: TOURS[p.phase], colonne: p.phase === "round2" ? 2 : 1 }] : [])),
+    })),
+  }));
 }

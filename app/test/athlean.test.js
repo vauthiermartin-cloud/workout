@@ -9,7 +9,7 @@
 import { describe, it, expect } from "vitest";
 import {
   RETARD, SONS, WARNING, effet, avancer, demarrer, deroule, dureeTotale, ecran, fini, mettreEnPause,
-  passer, recommencer, reprendre, restantes, instantane, restaurer, bloc, dureeSeance,
+  passer, recommencer, reprendre, restantes, instantane, restaurer, bloc, dureeSeance, progression,
 } from "../src/lib/athlean.js";
 
 const T0 = 1_000_000;
@@ -347,5 +347,47 @@ describe("bloc libre", () => {
   it("se reprend comme une autre étape", () => {
     const run = restaurer(e, { idx: 0, restant: 120_000 }, 0);
     expect(ecran(run, 0)).toMatchObject({ t: "bloc", restant: 120, enPause: true });
+  });
+});
+
+/* La jauge : un segment par tour, le pourcentage de la séance seule. */
+describe("progression", () => {
+  const e = [
+    bloc("Échauffement", 300, []),
+    ...deroule(noms(4)).map((x, i, all) => {
+      if (x.t !== "exercice") return x;
+      const k = all.slice(0, i).filter((y) => y.t === "exercice").length;
+      return { ...x, phase: k < 2 ? "round1" : "round2", phaseLabel: k < 2 ? "Tour 1" : "Tour 2" };
+    }),
+  ];
+  // séance : départ 5 + ex 60 + tr 5 + ex 60 | tr 5 + ex 60 + tr 5 + ex 60 = 130 + 130
+
+  it("ignore l'échauffement : 0 % pendant, aucun tour annoncé", () => {
+    expect(progression(e, 0, 200_000)).toMatchObject({ pct: 0, phase: null, numero: 1, total: 4 });
+  });
+
+  it("un segment par tour, large comme sa durée, pré-départ et transitions compris", () => {
+    expect(progression(e, 1, 0).segments.map((s) => [s.id, s.grow])).toEqual([["round1", 130_000], ["round2", 130_000]]);
+  });
+
+  it("une transition appartient au tour de l'exercice qu'elle annonce", () => {
+    // idx 5 : la transition entre l'exercice 2 (tour 1) et l'exercice 3 (tour 2)
+    expect(e[5].t).toBe("transition");
+    expect(progression(e, 5, 0)).toMatchObject({ phase: "Tour 2", numero: 3, pct: 50 });
+  });
+
+  it("compte le temps passé dans l'étape en cours", () => {
+    expect(progression(e, 2, 30_000).pct).toBe(Math.round((35_000 / 260_000) * 100));
+    expect(progression(e, 2, 30_000).segments[0].fill).toBeCloseTo(35 / 130);
+  });
+
+  it("au bout : 100 %, tous les tours faits", () => {
+    const fin = progression(e, e.length - 1, 60_000);
+    expect(fin.pct).toBe(100);
+    expect(fin.segments.every((s) => s.done)).toBe(true);
+  });
+
+  it("des étirements seuls n'ont pas de progression", () => {
+    expect(progression([bloc("Étirements", 300, [])], 0, 0)).toBe(null);
   });
 });

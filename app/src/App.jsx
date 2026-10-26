@@ -824,7 +824,7 @@ export default function App() {
           <div className="univers-athlean">
             <ChoixMode mode={mode} onChoix={setMode} />
             {axSaisie && axFaite ? (
-              <SaisieReps seance={axFaite} passages={axSaisie.passages} valeurs={axSaisie.valeurs}
+              <SaisieReps seance={axFaite} valeurs={axSaisie.valeurs}
                 onChange={(i, v) => setAxSaisie((cur) => { const valeurs = [...cur.valeurs]; valeurs[i] = v; return { ...cur, valeurs }; })}
                 onValider={validerReps} />
             ) : (
