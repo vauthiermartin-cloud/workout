@@ -20,7 +20,7 @@ import { Perfs } from "../src/components/Perfs.jsx";
 import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
 import { Timer } from "../src/components/Timer.jsx";
 import { Coche } from "../src/components/Coche.jsx";
-import { ChoixMode, EntreeAthlean, RepriseAthlean, EtirementsAthlean, SaisieReps } from "../src/components/Mode.jsx";
+import { ChoixMode, EntreeAthlean, RepriseAthlean, EtirementsAthlean, SaisieReps, CompoAthlean } from "../src/components/Mode.jsx";
 import { passagesDe } from "../src/lib/repsAthlean.js";
 import { C } from "../src/lib/theme.js";
 import { etapesAthlean, etirementSuggere } from "../src/data/seancesAthlean.js";
@@ -582,5 +582,40 @@ describe("la saisie des reps d'Athlean X", () => {
     expect(h).toContain('value="14"');
     expect(h).toContain("ENREGISTRER");
     expect(h).not.toContain("disabled");
+  });
+});
+
+/* La fiche d'une séance Athlean X, avant de lancer. */
+describe("la fiche d'Athlean X", () => {
+  it("six blocs numérotés, seize exercices, le nom du spec en seconde ligne", () => {
+    const h = html(<CompoAthlean workoutId="A" mode={null} />);
+    ["1 · SQUAT", "2 · POUSSÉE", "3 · POSTÉRIEURE", "4 · TIRAGE", "5 · ABDOS", "6 · CORRECTIF"]
+      .forEach((t) => expect(h).toContain(t));
+    expect(h).toContain("box squat alterné");
+    expect(h).toContain("Alternating Single Leg Box Squats");
+    expect(h).toContain("Choisis un mode");
+    expect(h).not.toContain("×");
+  });
+
+  it("le B a ses propres blocs", () => {
+    const h = html(<CompoAthlean workoutId="B" mode={null} />);
+    expect(h).toContain("1 · POSTÉRIEURE");
+    expect(h).toContain("3 · FENTE");
+  });
+
+  it("avec un mode : ce qui est joué deux fois, ce qui ne l'est qu'une", () => {
+    const h = html(<CompoAthlean workoutId="A" mode="BUILD" />);
+    expect(h).toContain("huit exercices, axe force");
+    expect(h.match(/×2/g)).toHaveLength(8);
+    expect(h.match(/×1/g)).toHaveLength(8);
+    expect(html(<CompoAthlean workoutId="A" mode="NORMAL" />).match(/×2/g)).toHaveLength(16);
+  });
+
+  it("l'entrée la montre dès que le workout est connu, pas avant", () => {
+    const props = { dernier: null, workout: null, onWorkout: () => {}, modeSeance: null,
+      onModeSeance: () => {}, onLancer: () => {}, enregistree: null };
+    expect(html(<EntreeAthlean {...props} propose={null} />)).not.toContain("LA SÉANCE");
+    expect(html(<EntreeAthlean {...props} propose={null} workout="B" />)).toContain("LA SÉANCE");
+    expect(html(<EntreeAthlean {...props} propose="A" dernier="B" />)).toContain("LA SÉANCE");
   });
 });

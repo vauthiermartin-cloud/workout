@@ -35,6 +35,15 @@ export const WORKOUTS_ATHLEAN = {
       ["A-5.1", "A-5.2", "A-5.3"],
     ],
     correctif: "A-6.1",
+    /* Le nom de chaque bloc, dans l'ordre des groupes : français d'abord,
+       le groupe du spec en seconde ligne. */
+    titres: [
+      { fr: "Squat", en: "Anterior Lower — Squat" },
+      { fr: "Poussée", en: "Upper Push" },
+      { fr: "Postérieure", en: "Posterior Lower — Hinge" },
+      { fr: "Tirage", en: "Upper Pull" },
+      { fr: "Abdos", en: "Abs" },
+    ],
     tour2: {
       BUILD:  ["A-1.1", "A-1.2", "A-2.1", "A-2.2", "A-3.1", "A-4.1", "A-4.3", "A-5.1"],
       DEFINE: ["A-1.3", "A-2.1", "A-2.2", "A-3.2", "A-3.3", "A-4.1", "A-4.3", "A-5.3"],
@@ -49,6 +58,13 @@ export const WORKOUTS_ATHLEAN = {
       ["B-5.1", "B-5.2", "B-5.3"],
     ],
     correctif: "B-6.1",
+    titres: [
+      { fr: "Postérieure", en: "Posterior Lower — Hinge" },
+      { fr: "Poussée", en: "Upper Push" },
+      { fr: "Fente", en: "Anterior Lower — Lunge" },
+      { fr: "Tirage", en: "Upper Pull" },
+      { fr: "Abdos", en: "Abs" },
+    ],
     tour2: {
       BUILD:  ["B-1.1", "B-1.3", "B-2.1", "B-2.3", "B-3.1", "B-4.1", "B-4.2", "B-5.2"],
       DEFINE: ["B-1.2", "B-2.1", "B-2.2", "B-3.1", "B-3.3", "B-4.1", "B-4.2", "B-5.2"],
@@ -57,6 +73,8 @@ export const WORKOUTS_ATHLEAN = {
 };
 
 export const MODES_ATHLEAN = ["NORMAL", "BUILD", "DEFINE"];
+
+export const TITRE_CORRECTIF = { fr: "Correctif", en: "Corrective" };
 
 /* Les libellés de phase sont en français, comme tout ce que montre le
    chrono ; le spec les donne en anglais (Full Body, Strength Focus, Hybrid
@@ -135,3 +153,24 @@ export const etirementSuivant = (courant) =>
 
 export const etapesEtirement = (seq) =>
   [bloc("Étirements", 300, seq.blocks.map((b) => ({ txt: `${b.items[0].txt} — ${b.tag.toLowerCase()}` })), seq.name)];
+
+/* La composition d'une séance, telle que la montre la fiche avant de lancer :
+   les six blocs du programme — trois exercices chacun, le correctif seul —,
+   et pour chaque exercice le nombre de fois que la séance le joue. Sans mode
+   choisi, ce nombre est inconnu (`null`) : le programme est le même, seul le
+   deuxième tour change. */
+export function compositionAthlean(workoutId, mode = null) {
+  const w = WORKOUTS_ATHLEAN[workoutId];
+  if (!w) return null;
+  const s = mode ? seanceAthlean(workoutId, mode) : null;
+  const joues = s ? s.phases.flatMap((p) => p.exerciseIds) : null;
+  const exercice = (sourceId) => {
+    const ex = idOfSource(sourceId);
+    return { sourceId, ex, nom: labelOf(ex), nameEn: EXERCISES[ex].nameEn,
+      passages: joues ? joues.filter((x) => x === sourceId).length : null };
+  };
+  return [
+    ...w.groupes.map((ids, i) => ({ numero: i + 1, titre: w.titres[i], exercices: ids.map(exercice) })),
+    { numero: w.groupes.length + 1, titre: TITRE_CORRECTIF, exercices: [exercice(w.correctif)] },
+  ];
+}

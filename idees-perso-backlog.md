@@ -359,6 +359,24 @@ transitions du chrono passent en blanc. SUIVI reste vert, commun aux deux modes.
 
 ---
 
+### F-18 · Fiche d'une séance Athlean X avant de lancer — statut : Shipped (2026-10-26) — voir le Log
+
+Demande de Martin : voir la composition de la séance avant d'attaquer, comme en Classique, dans
+une UI qui rassemble les exercices par bloc — le programme est fait de blocs de trois exercices
+(captures de la vidéo source à l'appui).
+
+---
+
+### Tranché — le spec est l'adaptation de la version « advanced » (2026-10-26)
+
+Les captures jointes à F-18 montrent la version ADVANCED originale du programme, qui diffère du
+spec source sur 13 noms (11 vrais mouvements). **Martin : on ne change rien.** Le spec
+`perfect_home_workout_spec_v2.md` est son adaptation de cette version avancée, où il a
+volontairement remplacé certains mouvements par des substituts. C'est le spec qui fait foi ;
+les captures n'illustrent que la structure en blocs de trois.
+
+---
+
 ### Idée — suivi de progression Athlean X (pas un ticket)
 Une fois quelques semaines de reps saisis via F-15 : affichage d'évolution par exercice (sourceId).
 **Depuis F-15**, les reps sont une liste par passage (`{ "A-1.1": [14, 12] }`) : l'évolution
@@ -366,7 +384,7 @@ pourra se lire séance après séance, et d'un tour à l'autre dans une même s�
 
 ---
 
-**Ordre d'envoi du fil** : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15 (F-16 et F-17, demandés en cours de route, sont livrés avant F-15), une étape à la fois avec Claude Code, jamais plusieurs dans la même conversation (règle actée dans `CLAUDE.md`). Indépendant de l'ordre d'envoi
+**Ordre d'envoi du fil** : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15 (F-16, F-17 et F-18, demandés en cours de route), une étape à la fois avec Claude Code, jamais plusieurs dans la même conversation (règle actée dans `CLAUDE.md`). Indépendant de l'ordre d'envoi
 ci-dessus : les deux fils ne se bloquent pas. Les entrées de Log des deux fils vont dans le `## Log`
 ci-dessous.
 
@@ -1017,3 +1035,37 @@ tombent à chaque fois.
 journal ; 8 et 6 tapés sur les pull-ups des deux tours → `{ "A-4.1": [8, 6] }` ; étirements
 ensuite, inscrits sur la même entrée ; une séance B · NORMAL tuée sur le récap reste au
 journal, reps vides, sans reprise fantôme.
+
+**2026-10-26 — F-18 · Fiche d'une séance Athlean X avant de lancer (fil Athlean X).** Demande
+de Martin, même conversation.
+
+Ce qui est livré :
+
+- **`compositionAthlean(w, mode)`** dans `seancesAthlean.js` : les six blocs du programme —
+  trois exercices, le correctif seul —, et pour chaque exercice son libellé, son nom du spec
+  et le nombre de fois que la séance le joue (`null` sans mode). Les données gagnent `titres`
+  par workout (français d'abord, groupe du spec en seconde ligne : « Squat · Anterior Lower —
+  Squat », « Fente · Anterior Lower — Lunge »…) et `TITRE_CORRECTIF`.
+- **`CompoAthlean` dans `Mode.jsx`**, dans la grammaire de la fiche Classique (`Rail`) : une
+  ligne, un repère rouge par bloc, « 1 · SQUAT · ANTERIOR LOWER — SQUAT », les libellés en
+  grand, **le nom anglais du spec en seconde ligne** (permis sur la fiche par `CLAUDE.md`,
+  jamais dans le chrono). Une phrase dit ce que fait le mode ; avec un mode, chaque exercice
+  porte « ×2 » en rouge ou « ×1 » en gris. Sans mode, la fiche montre le programme et invite à
+  choisir.
+- **L'entrée d'Athlean X** montre la fiche dès que le workout est connu, sous la case
+  d'échauffement. **LANCER passe dans une barre fixe en bas d'écran**, comme en Classique : la
+  fiche se lit en entier sans le perdre de vue.
+
+**Tests** (366 verts = 356 + 10, build OK) : 6 dans `seancesAthlean.test.js` — six blocs de
+trois et le correctif, dans l'ordre du catalogue ; **la fiche montre ce que joue le chrono,
+autant de fois** (règle de `CLAUDE.md`, ici pour les six séances) ; sans mode, passages
+inconnus ; libellé et nom du spec ; séance inconnue ; **les titres de blocs sont les groupes
+du spec §4**, lus dans le document source. 4 de rendu — blocs, libellés et seconde ligne ; les
+blocs propres au B ; ×2 et ×1 selon le mode ; la fiche dès que le workout est connu. Garde-fou
+cassé : un titre de bloc faussé fait tomber le test du spec.
+
+**Vérifié dans le navigateur**, en largeur iPhone (375 px) : fiche A · BUILD lisible sans
+défilement horizontal, huit ×2, le correctif visible au-dessus de la barre LANCER.
+
+**Tranché par Martin** : les captures jointes sont la version ADVANCED originale ; le spec est
+son adaptation volontaire de cette version, substituts compris. On ne change rien.

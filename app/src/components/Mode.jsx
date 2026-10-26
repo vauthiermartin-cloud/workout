@@ -1,7 +1,7 @@
 import React from "react";
 import { C, DISPLAY, MONO } from "../lib/theme.js";
 import { MODES } from "../data/modes.js";
-import { MODES_ATHLEAN, etapesAthlean } from "../data/seancesAthlean.js";
+import { MODES_ATHLEAN, etapesAthlean, compositionAthlean } from "../data/seancesAthlean.js";
 import { dureeSeance } from "../lib/athlean.js";
 import { Coche } from "./Coche.jsx";
 import { mmss, shortFr } from "../lib/dates.js";
@@ -106,18 +106,26 @@ export function EntreeAthlean({ propose, dernier, workout, onWorkout, modeSeance
 
       {/* L'échauffement du Classique, cochée par défaut comme lui. Il ouvre le
           chrono, avant le pré-départ, et ne compte pas dans la durée annoncée. */}
-      <div style={{ marginBottom:20 }}>
+      <div style={{ marginBottom:28 }}>
         <Coche on={echauffement} onToggle={onEchauffement} titre="Échauffement" couleur={C.rouge}
           detail="5 min avant la séance, hors de sa durée. Tu peux le passer à tout moment." />
       </div>
 
-      <button onClick={pret ? onLancer : undefined} disabled={!pret}
-        style={{ width:"100%", padding:"18px 0", background: pret ? C.rouge : "transparent",
-          color: pret ? C.ink : C.ash, border: pret ? "none" : `1px solid ${C.line}`,
-          fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
-        {pret ? `LANCER · ${mmss(dureeSeance(etapesAthlean(choisi, modeSeance)))}`
-          : enCours ? "UNE SÉANCE EST EN COURS" : !choisi ? "CHOISIS UN WORKOUT" : "CHOISIS UN MODE"}
-      </button>
+      {choisi && <CompoAthlean workoutId={choisi} mode={modeSeance} />}
+
+      {/* Comme en Classique, le lancement tient en bas de l'écran : la fiche
+          se lit en entier sans le perdre de vue. */}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, display:"flex", justifyContent:"center",
+        padding:"16px 20px calc(20px + env(safe-area-inset-bottom))",
+        background:`linear-gradient(to top, ${C.ink} 62%, rgba(11,11,12,0))` }}>
+        <button onClick={pret ? onLancer : undefined} disabled={!pret}
+          style={{ width:"100%", maxWidth:460, padding:"18px 0", background: pret ? C.rouge : C.ink,
+            color: pret ? C.ink : C.ash, border: pret ? "none" : `1px solid ${C.line}`,
+            fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
+          {pret ? `LANCER · ${mmss(dureeSeance(etapesAthlean(choisi, modeSeance)))}`
+            : enCours ? "UNE SÉANCE EST EN COURS" : !choisi ? "CHOISIS UN WORKOUT" : "CHOISIS UN MODE"}
+        </button>
+      </div>
     </React.Fragment>
   );
 }
@@ -231,5 +239,50 @@ export function SaisieReps({ seance, passages, valeurs, onChange, onValider }) {
         ENREGISTRER
       </button>
     </React.Fragment>
+  );
+}
+
+/* Ce que dit le deuxième tour, selon le mode. */
+const TOURS = {
+  NORMAL: "Deux tours des six blocs, correctif compris.",
+  BUILD: "Tour 1 : les cinq premiers blocs. Tour 2 : huit exercices, axe force. Puis le correctif.",
+  DEFINE: "Tour 1 : les cinq premiers blocs. Tour 2 : huit exercices, axe hybride. Puis le correctif.",
+};
+
+/* La fiche d'une séance Athlean X : ses blocs de trois exercices, dans la
+   grammaire de la fiche Classique (`Rail`) — un repère par bloc, le
+   libellé en grand. Le nom anglais du spec vient en seconde ligne : c'est
+   la fiche, pas le chrono. Le mode choisi dit, exercice par exercice, s'il
+   est joué une ou deux fois. */
+export function CompoAthlean({ workoutId, mode }) {
+  const blocs = compositionAthlean(workoutId, mode);
+  return (
+    <div style={{ marginBottom:8 }}>
+      <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash, marginBottom:6 }}>LA SÉANCE</div>
+      <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"0 0 18px" }}>
+        {mode ? TOURS[mode] : "Choisis un mode pour voir ce que rejoue le deuxième tour."}
+      </p>
+      <div style={{ borderLeft:`1px solid ${C.line}`, marginLeft:6 }}>
+        {blocs.map((b) => (
+          <div key={b.numero} style={{ position:"relative", paddingLeft:20, paddingBottom:20 }}>
+            <span style={{ position:"absolute", left:-4, top:5, width:7, height:7, background:C.rouge, borderRadius:1 }} />
+            <div style={{ fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".14em", color:C.ash, marginBottom:5 }}>
+              {b.numero} · {b.titre.fr.toUpperCase()} <span style={{ fontWeight:400 }}>· {b.titre.en.toUpperCase()}</span>
+            </div>
+            {b.exercices.map((e) => (
+              <div key={e.sourceId} style={{ marginBottom:8 }}>
+                <div style={{ fontFamily:DISPLAY, fontSize:21, lineHeight:1.24 }}>
+                  {e.passages !== null && (
+                    <span style={{ color: e.passages > 1 ? C.rouge : C.ash }}>×{e.passages} </span>
+                  )}
+                  {e.nom}
+                </div>
+                <div style={{ fontFamily:MONO, fontSize:10.5, letterSpacing:".05em", color:C.ash, marginTop:2 }}>{e.nameEn}</div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   WORKOUTS_ATHLEAN, MODES_ATHLEAN, seanceAthlean, etapesAthlean, patternsAthlean,
-  etirementSuggere, etirementSuivant, etapesEtirement,
+  etirementSuggere, etirementSuivant, etapesEtirement, compositionAthlean,
 } from "../src/data/seancesAthlean.js";
 import { ECHAUFFEMENT, ECHAUFFEMENT_SEC } from "../src/data/echauffement.js";
 import { STRETCHES } from "../src/data/stretches.js";
@@ -222,6 +222,57 @@ describe("échauffement et étirements", () => {
       expect(reste).toEqual([]);
       expect(b).toMatchObject({ t: "bloc", nom: "Étirements", sec: 300, sous: seq.name });
       expect(b.liste.length).toBe(seq.blocks.length);
+    });
+  });
+});
+
+/* La fiche d'avant lancement : six blocs, trois exercices chacun, le
+   correctif seul — la structure du programme. */
+describe("la composition", () => {
+  it("six blocs de trois, le correctif seul, dans l'ordre du catalogue", () => {
+    ["A", "B"].forEach((w) => {
+      const c = compositionAthlean(w);
+      expect(c.map((b) => b.exercices.length)).toEqual([3, 3, 3, 3, 3, 1]);
+      expect(c.map((b) => b.numero)).toEqual([1, 2, 3, 4, 5, 6]);
+      expect(c.flatMap((b) => b.exercices.map((e) => e.sourceId)))
+        .toEqual([...WORKOUTS_ATHLEAN[w].groupes.flat(), WORKOUTS_ATHLEAN[w].correctif]);
+    });
+  });
+
+  /* CLAUDE.md : la fiche et le chrono affichent les mêmes exercices. */
+  it("la fiche montre ce que joue le chrono, autant de fois", () => {
+    SEANCES.forEach(([w, m]) => {
+      const fiche = compositionAthlean(w, m).flatMap((b) => b.exercices);
+      const chrono = exercices(w, m).map((x) => x.sourceId);
+      expect(new Set(fiche.map((e) => e.sourceId))).toEqual(new Set(chrono));
+      fiche.forEach((e) => expect(e.passages).toBe(chrono.filter((x) => x === e.sourceId).length));
+    });
+  });
+
+  it("sans mode, le nombre de passages n'est pas encore connu", () => {
+    expect(compositionAthlean("A").flatMap((b) => b.exercices).every((e) => e.passages === null)).toBe(true);
+  });
+
+  it("chaque exercice porte son libellé et le nom du spec", () => {
+    compositionAthlean("B", "BUILD").flatMap((b) => b.exercices).forEach((e) => {
+      expect(e.nom).toBe(labelOf(e.ex));
+      expect(e.nameEn).toBe(EXERCISES[e.ex].nameEn);
+    });
+  });
+
+  it("une séance inconnue n'a pas de composition", () => {
+    expect(compositionAthlean("C")).toBe(null);
+  });
+
+  /* Le groupe de chaque bloc, tel que l'écrit le spec §4 pour ses trois
+     exercices. */
+  it("les titres de blocs sont les groupes du spec", () => {
+    const spec = readFileSync(new URL("../../perfect_home_workout_spec_v2.md", import.meta.url), "utf8");
+    const groupeDe = (sid) => spec.match(new RegExp(`${sid}\\s+(.+?)\\s{2,}`))[1].replace(/ --- /g, " — ");
+    ["A", "B"].forEach((w) => {
+      compositionAthlean(w).forEach((b) => {
+        b.exercices.forEach((e) => expect(groupeDe(e.sourceId)).toBe(b.titre.en));
+      });
     });
   });
 });
