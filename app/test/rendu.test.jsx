@@ -20,6 +20,8 @@ import { Perfs } from "../src/components/Perfs.jsx";
 import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
 import { Timer } from "../src/components/Timer.jsx";
 import { Coche } from "../src/components/Coche.jsx";
+import { ChoixMode, AthleanAVenir } from "../src/components/Mode.jsx";
+import { MODES, MODE_PAR_DEFAUT } from "../src/data/modes.js";
 import { Zones, ZonesEffet } from "../src/components/Zones.jsx";
 import { Qualite } from "../src/components/Qualite.jsx";
 import { substitutionsPour, patternsPerdus } from "../src/lib/substitution.js";
@@ -312,5 +314,30 @@ describe("la note de qualité", () => {
   it("réaffiche la note déjà écrite", () => {
     expect(bloc({ valeur:"probleme", note:"volume aberrant au bloc 3" }))
       .toContain("volume aberrant au bloc 3");
+  });
+});
+
+/* Le sélecteur de mode, Classique / Athlean X. Pur aiguillage : il ne montre
+   que deux portes, et la seconde ne mène encore à rien de lançable. */
+describe("le choix du mode", () => {
+  it("s'ouvre sur Classique", () => {
+    expect(MODE_PAR_DEFAUT).toBe("classique");
+    expect(MODES.map((m) => m.id)).toEqual(["classique", "athleanX"]);
+  });
+
+  it("montre les deux modes, et marque celui qui est choisi", () => {
+    const choix = html(<ChoixMode mode="classique" onChoix={() => {}} />);
+    expect(choix).toContain("CLASSIQUE");
+    expect(choix).toContain("ATHLEAN X");
+    expect(choix.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(choix.indexOf('aria-pressed="true"')).toBeLessThan(choix.indexOf("CLASSIQUE"));
+    const autre = html(<ChoixMode mode="athleanX" onChoix={() => {}} />);
+    expect(autre.indexOf('aria-pressed="true"')).toBeGreaterThan(autre.indexOf("CLASSIQUE"));
+  });
+
+  it("Athlean X ne porte encore rien à lancer", () => {
+    const vide = html(<AthleanAVenir />);
+    expect(vide).toContain("ATHLEAN X");
+    ["LANCER", "DÉMARRER", "TIRER", "<button"].forEach((interdit) => expect(vide).not.toContain(interdit));
   });
 });

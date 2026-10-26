@@ -32,6 +32,8 @@ import { Timer } from "./components/Timer.jsx";
 import { Perfs } from "./components/Perfs.jsx";
 import { BilanEntete, BilanPatterns } from "./components/Bilan.jsx";
 import { Revoir } from "./components/Revoir.jsx";
+import { ChoixMode, AthleanAVenir } from "./components/Mode.jsx";
+import { MODE_PAR_DEFAUT } from "./data/modes.js";
 
 export default function App() {
   const today = new Date();
@@ -39,6 +41,9 @@ export default function App() {
   const dow = today.getDay();
 
   const [tab, setTab] = useState("seance");
+  /* Pur aiguillage : passer sur Athlean X ne touche à aucun état de la
+     séance classique, qui se retrouve telle quelle au retour. */
+  const [mode, setMode] = useState(MODE_PAR_DEFAUT);
   const [dayKey, setDayKey] = useState(dow >= 1 && dow <= 5 ? dow : 1);
   const [variant, setVariant] = useState(null);
   const [seen, setSeen] = useState([]);
@@ -489,6 +494,10 @@ export default function App() {
     const i = (WORKOUTS[rec.day] || []).findIndex((w) => w.name === rec.w);
     if (i < 0) { dropPending(); return; }
     setTab("seance");
+    /* La séance retrouvée est une séance classique : le bandeau s'affiche
+       aussi sous Athlean X, et le bilan qui suit le chrono doit retomber sur
+       sa fiche, pas sur l'autre mode. */
+    setMode("classique");
     setDayKey(rec.day);
     setVariant(i);
     setSeen([i]);
@@ -668,8 +677,14 @@ export default function App() {
           </div>
         )}
 
-        {tab === "seance" ? (
+        {tab === "seance" && mode === "athleanX" ? (
           <React.Fragment>
+            <ChoixMode mode={mode} onChoix={setMode} />
+            <AthleanAVenir />
+          </React.Fragment>
+        ) : tab === "seance" ? (
+          <React.Fragment>
+            <ChoixMode mode={mode} onChoix={setMode} />
             <div style={{ display:"flex", gap:6, marginBottom:28 }}>
               {DAYS.map((d) => {
                 const on = d.key === dayKey, done = weekDone[d.key];

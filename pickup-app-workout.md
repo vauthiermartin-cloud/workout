@@ -1,6 +1,6 @@
 ---
 topic: app-workout-25
-date: 2026-09-28
+date: 2026-10-26
 status: in-progress
 ---
 
@@ -15,6 +15,8 @@ Une PWA de séances au poids du corps est **en production et fonctionnelle**, h�
 Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 finishers, 5 séquences d'étirement, 40 exercices prescrits — plus 17 variantes de régression que le catalogue ne prescrit pas et qu'on n'atteint que par une chaîne. Un chrono adaptatif (EMOM / Tabata / compte à rebours / chrono libre) et un générateur qui choisit la séance selon les schémas moteurs non encore couverts dans la semaine.
 
 **Deux fils de travail coexistent depuis le 2026-09-27, et il faut le savoir avant de lire la suite.** Le phasage en douze étapes de `brief-v2-multi-user.md` reste la feuille de route officielle ; à côté, `idees-perso-backlog.md` porte les demandes nées de l'usage réel, arbitrées par Martin hors du dépôt. Cinq d'entre elles ont été livrées les 27 et 28 septembre et ne correspondent à aucune étape du brief. **Le journal de ce qui a été livré est le `## Log` de ce fichier-là** — cette note-ci en donne l'état, pas le détail.
+
+**Un troisième fil s'est ouvert le 2026-10-26 : Athlean X**, un second mode de séance à programme fixe (Workout A/B × NORMAL/BUILD/DEFINE), spécifié dans `athlean-x-backlog.md` en six tickets (F-11 → F-15). Le cap des 25 minutes ne vaut que pour le mode Classique. **F-11 est livré** : un sélecteur CLASSIQUE / ATHLEAN X en tête de l'onglet SÉANCE, défaut Classique non enregistré, rien derrière Athlean X pour l'instant. Le reste du fil n'est pas commencé.
 
 **Le chrono est reprenable** (étape 1, faite le 2026-09-07). `app/src/lib/chrono.js` sépare deux notions : le `run`, enregistrement d'une séance en cours écrit dans une clé unique (`workout.run`), et le `beat`, dernier battement réellement observé. Un trou de plus de 4 s entre deux battements ne peut venir que d'une app endormie : le chrono gèle, ne valide rien, et demande. Reprise proposée au démarrage sous 4 h, enregistrement ou abandon au-delà.
 
@@ -110,6 +112,21 @@ Deux tickets restent en file, dans cet ordre.
   volume et priorisation des mouvements composés, pas un raccourcissement proportionnel. Le
   bloc pubalgie reste inclus quelle que soit la durée — comme rien ne s'ajoute en temps, il est
   présent par construction.
+
+### Le fil Athlean X, ouvert le 2026-10-26
+
+`athlean-x-backlog.md` porte un second mode de séance, à côté de la génération du jour.
+Ordre d'envoi : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15, un ticket par conversation.
+
+- ~~**F-11 · Sélecteur de mode**~~ **Fait le 2026-10-26.** `ChoixMode` et `AthleanAVenir`
+  dans `app/src/components/Mode.jsx`, `MODES` et `MODE_PAR_DEFAUT` dans
+  `app/src/data/modes.js`. Le mode vit dans l'état d'`App`, jamais dans `workout.settings` :
+  chaque ouverture repart sur Classique. Reprendre une séance interrompue repasse en
+  Classique.
+- **F-12 · Chrono Athlean X — suivant.** Moteur dédié, séparé de `chrono.js`.
+
+**F-10 et F-01 restent en file dans `idees-perso-backlog.md`** : F-11 a été pris avant F-10
+sur demande explicite, les deux fils ne se bloquent pas.
 
 **Trois choses attendent une réponse humaine, aucune n'est bloquante pour la suite** :
 l'équipement de tirage horizontal exact (`[À PRÉCISER]` dans `CLAUDE.md`), la relecture de la
@@ -471,8 +488,8 @@ Fichiers du projet :
 
 5. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux, plus quatre tables arrivées en septembre — `correctif.js` (le bloc pubalgie), `douleurs.js` (les zones sensibles et leurs substitutions), `equivalences.js` (la table poussée/tirage), et les deux tirages horizontaux dans `exercises.js`. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
 6. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures. `app/src/lib/substitution.js` — le point de passage unique de toute substitution d'exercice. `app/src/lib/qualite.js` et `app/src/lib/revue.js` — la note de qualité et le dossier de revue qui part dans le récap.
-7. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits.
-8. `app/test/` — treize fichiers, 221 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans, dates de la semaine, journal et série, substitution et zones sensibles, note de qualité et dossier de revue, ratio poussée/tirage. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement. `test/hasard.js` n'est pas un fichier de tests mais le générateur pseudo-aléatoire déterministe que partagent les simulations hebdomadaires.
+7. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits. `Mode.jsx` le sélecteur Classique / Athlean X.
+8. `app/test/` — treize fichiers, 224 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans, dates de la semaine, journal et série, substitution et zones sensibles, note de qualité et dossier de revue, ratio poussée/tirage, sélecteur de mode. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement. `test/hasard.js` n'est pas un fichier de tests mais le générateur pseudo-aléatoire déterministe que partagent les simulations hebdomadaires.
 9. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main. `CLAUDE.md` le dit désormais aussi — la contradiction signalée ici le 2026-09-07 a été levée.
 10. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 11. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.

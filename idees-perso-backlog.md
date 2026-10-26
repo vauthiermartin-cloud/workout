@@ -382,3 +382,29 @@ une règle que personne n'a demandée. À rouvrir si les 292 % se ressentent à 
   l'angle du corps — pieds surélevés, pieds au sol, genoux pliés. À faire à l'étape 9.
 - la table traite toute poussée comme une pompe : les pompes piquées sont plus dures et comptent
   pareil. À affiner le jour où une séance en pompes piquées pures paraîtra sous-dosée.
+
+**2026-10-26 — F-11 · Sélecteur de mode (fil Athlean X, `athlean-x-backlog.md`).** Conforme à
+la spec : pur aiguillage, aucun contenu, aucun chrono, aucune donnée Athlean X.
+
+- Deux boutons **CLASSIQUE / ATHLEAN X** en tête de l'onglet SÉANCE, au-dessus de la rangée
+  des jours. Aucune condition de date : ils s'affichent aussi le week-end.
+- **Pas un écran intermédiaire, un sélecteur posé sur l'écran existant.** Un écran de choix
+  à traverser aurait ajouté un tap à chaque séance du matin ; Classique étant présélectionné,
+  la fiche du jour reste là où elle était.
+- **Le mode n'est pas enregistré** : l'app rouvre toujours sur Classique (`MODE_PAR_DEFAUT`
+  dans `app/src/data/modes.js`). Retenir Athlean X d'une veille aurait fait de l'usage
+  quotidien une exception à décocher.
+- Sous Athlean X, un écran vide qui dit que le programme n'est pas en place — rien à lancer.
+  Passer d'un mode à l'autre ne touche à aucun état de la séance classique (tirage, cases,
+  zones du jour), qu'on retrouve telle quelle au retour.
+- **Écart avec la spec, un seul** : reprendre une séance interrompue depuis le bandeau
+  repasse en Classique. Le bandeau s'affiche dans les deux modes ; sans ce retour, le bilan qui
+  suit le chrono serait retombé sur l'écran vide d'Athlean X.
+- **Non-régression** : le rendu de la branche Classique de `App.jsx` n'a pas été modifié —
+  le diff se limite à la condition d'aiguillage et à l'insertion du sélecteur. `App` ne se
+  rend pas en test (il touche `window`) ; le sélecteur et l'écran vide sont donc sortis dans
+  `components/Mode.jsx`, testés dans `rendu.test.jsx` : défaut sur Classique, un seul mode
+  marqué choisi, aucun bouton ni CTA de lancement sous Athlean X.
+- 224 tests verts (221 + 3), build OK. Vérification visuelle dans un navigateur non faite :
+  le renderer de preview expire sur cette machine, le repli reste le rendu statique en test.
+
