@@ -34,44 +34,46 @@
    (étapes 9 et 10). Les champs seront ajoutés au moment où ils auront une
    valeur à porter, pas avant.
 
-   La table se lit en trois parties. Au-dessus, les exercices que le catalogue
+   La table se lit en quatre parties. Au-dessus, les exercices que le catalogue
    prescrit. Puis le correctif, que seul le bloc d'isométrie emploie. En
    dessous, les variantes de régression : mêmes entités, mêmes champs, mais
    aucune séance ne les cite — on ne les atteint que par une chaîne
    (`chains.js`). La séparation n'est pas décorative, c'est elle que contrôle
    le test d'entrée morte : en haut, une entrée que plus aucune séance
-   n'utilise est un oubli ; plus bas, c'est la règle. */
+   n'utilise est un oubli ; plus bas, c'est la règle. Tout en bas, les
+   exercices propres à Athlean X, que le moteur classique ne voit pas
+   (`exclusiveTo`). */
 
 export const EXERCISES = {
   /* Poussée */
   pompes:                 { fr:"pompes",                          unit:"reps", patterns:["poussee"] },
-  pompesPiquees:          { fr:"pompes piquées",                  unit:"reps", patterns:["poussee"] },
+  pompesPiquees:          { fr:"pompes piquées",                  unit:"reps", patterns:["poussee"], nameEn:"Pike Pushups", sourceIds:["A-2.1"] },
 
   /* Tirage */
-  pullups:                { fr:"pull-ups",                        unit:"reps", patterns:["tirage"] },
-  chinups:                { fr:"chin-ups",                        unit:"reps", patterns:["tirage","supination"] },
+  pullups:                { fr:"pull-ups",                        unit:"reps", patterns:["tirage"], nameEn:"Pullups", sourceIds:["A-4.1"] },
+  chinups:                { fr:"chin-ups",                        unit:"reps", patterns:["tirage","supination"], nameEn:"Chinups", sourceIds:["B-4.1"] },
   relevesGenouxSuspendu:  { fr:"relevés de genoux suspendu",      unit:"reps", patterns:["tirage","core"] },
 
   /* Tirage horizontal — possible depuis le 2026-09-27, l'équipement a changé.
      La contrainte « aucun tirage horizontal » était matérielle, pas une
      décision de conception : elle tombe avec sa cause. */
-  tiragesHorizontaux:     { fr:"tirages horizontaux",             unit:"reps", patterns:["tirage"] },
+  tiragesHorizontaux:     { fr:"tirages horizontaux",             unit:"reps", patterns:["tirage"], nameEn:"Australian Pullups", sourceIds:["A-4.3", "B-4.2"] },
   tiragesHorizontauxSup:  { fr:"tirages horizontaux paume vers soi", unit:"reps", patterns:["tirage","supination"] },
 
   /* Squat */
   airSquats:              { fr:"air squats",                      unit:"reps", patterns:["squat"] },
-  jumpSquats:             { fr:"jump squats",                     unit:"reps", patterns:["squat","cardio"] },
+  jumpSquats:             { fr:"jump squats",                     unit:"reps", patterns:["squat","cardio"], nameEn:"Jump Squats", sourceIds:["A-1.3"] },
 
   /* Unilatéral */
-  fentesArriere:          { fr:"fentes arrière",                  unit:"reps", perSide:"reparti", patterns:["unilat"] },
+  fentesArriere:          { fr:"fentes arrière",                  unit:"reps", perSide:"reparti", patterns:["unilat"], nameEn:"Alternating Sprinter Lunges", sourceIds:["A-3.2"] },
   fentesMarchees:         { fr:"fentes marchées",                 unit:"reps", perSide:"reparti", patterns:["unilat"] },
   fentesCroisees:         { fr:"fentes croisées",                 unit:"reps", perSide:"reparti", patterns:["unilat"] },
 
   /* Chaîne postérieure */
-  hipThrusts:             { fr:"hip thrusts",                     unit:"reps", patterns:["hinge"] },
+  hipThrusts:             { fr:"hip thrusts",                     unit:"reps", patterns:["hinge"], nameEn:"Hip Thrust", sourceIds:["B-1.3"] },
   hipThrustsUneJambe:     { fr:"hip thrusts sur une jambe",       unit:"reps", perSide:"reparti", patterns:["hinge","unilat"] },
   sdtUneJambe:            { fr:"soulevés de terre une jambe",     unit:"reps", perSide:"reparti", patterns:["hinge","unilat"] },
-  superman:               { fr:"superman",                        unit:"reps", patterns:["hinge"] },
+  superman:               { fr:"superman",                        unit:"reps", patterns:["hinge"], nameEn:"Superman", sourceIds:["A-6.1"] },
 
   /* Mollets */
   monteesPointes:         { fr:"montées sur pointes",             unit:"reps", patterns:["mollets"] },
@@ -94,7 +96,7 @@ export const EXERCISES = {
   situps:                 { fr:"sit-ups",                         unit:"reps", patterns:["core"] },
   vups:                   { fr:"V-ups",                           unit:"reps", patterns:["core"] },
   ciseaux:                { fr:"ciseaux",                         unit:"reps", patterns:["core"] },
-  corkscrews:             { fr:"corkscrews",                      unit:"reps", perSide:"reparti", patterns:["core"] },
+  corkscrews:             { fr:"corkscrews",                      unit:"reps", perSide:"reparti", patterns:["core"], nameEn:"Reverse Corkscrews", sourceIds:["A-5.1"] },
   deadBugs:               { fr:"dead bugs",                       unit:"reps", patterns:["core"] },
   crunchsInverses:        { fr:"crunchs inversés",                unit:"reps", patterns:["core"] },
   relevesJambesSol:       { fr:"relevés de jambes au sol",        unit:"reps", patterns:["core"] },
@@ -131,7 +133,7 @@ export const EXERCISES = {
   pompesMur:                   { fr:"pompes au mur",                              unit:"reps", patterns:["poussee"] },
   pompesInclinees:             { fr:"pompes inclinées",                           unit:"reps", patterns:["poussee"] },
   pompesGenoux:                { fr:"pompes sur les genoux",                      unit:"reps", patterns:["poussee"] },
-  pompesPiedsSureleves:        { fr:"pompes pieds surélevés",                     unit:"reps", patterns:["poussee"] },
+  pompesPiedsSureleves:        { fr:"pompes pieds surélevés",                     unit:"reps", patterns:["poussee"], nameEn:"Elevated Feet Pushups", sourceIds:["B-2.1"] },
   pompesPiqueesPartielles:     { fr:"pompes piquées amplitude partielle",         unit:"reps", patterns:["poussee"] },
   pompesPiqueesPiedsSureleves: { fr:"pompes piquées pieds surélevés",             unit:"reps", patterns:["poussee"] },
 
@@ -153,16 +155,76 @@ export const EXERCISES = {
   burpeesSansSautNiPompe:      { fr:"burpees sans saut ni pompe",                 unit:"reps", patterns:["cardio"] },
   burpeesSansPompe:            { fr:"burpees sans pompe",                         unit:"reps", patterns:["cardio"] },
 
-  vupsGenouxFlechis:           { fr:"V-ups genoux fléchis",                       unit:"reps", patterns:["core"] },
+  vupsGenouxFlechis:           { fr:"V-ups genoux fléchis",                       unit:"reps", patterns:["core"], nameEn:"V-Up Tucks", sourceIds:["B-5.2"] },
   vupsUneJambe:                { fr:"V-ups une jambe",                            unit:"reps", perSide:"reparti", patterns:["core"] },
 
   sdtUneJambeAppui:            { fr:"soulevés de terre une jambe, main en appui", unit:"reps", perSide:"reparti", patterns:["hinge","unilat"] },
+
+  /* Athlean X — exclusifs au programme fixe.
+     ----------------------------------------
+     Le mode Athlean X joue Workout A et B tels que les décrit
+     `perfect_home_workout_spec_v2.md`. Trente-deux identifiants de ce
+     document, deux origines :
+
+     - douze désignent un exercice que la bibliothèque avait déjà — pull-ups,
+       chin-ups, tirages horizontaux (deux fois : A-4.3 et B-4.2), etc. On ne
+       recrée rien : l'entité existante reçoit `nameEn` et `sourceIds`, et
+       rien d'autre. Surtout pas `exclusiveTo` : le moteur classique les
+       perdrait.
+     - vingt n'existaient pas. Ils sont ci-dessous, et `exclusiveTo` les tient
+       hors du moteur classique — ni séance, ni chaîne, ni substitution, ni
+       couverture.
+
+     `nameEn` est le nom du spec, tel quel : c'est lui qui permet de rejouer
+     une séance à l'identique. `sourceIds` est une liste parce que le spec
+     cite deux fois les tirages horizontaux.
+
+     Les schémas moteurs suivent le groupe du spec (Anterior Lower — Squat,
+     Upper Push, Abs…), pas une lecture du mouvement : c'est ce qui les rend
+     traçables. Aucun ne compte pour la couverture tant que `exclusiveTo`
+     tient. Pas de `perSide` : Athlean X se joue en fenêtres de 60 s, aucune
+     quantité n'est prescrite à répartir. */
+
+  boxSquatAlterne:             { fr:"box squat alterné",                          unit:"reps", patterns:["squat"], nameEn:"Alternating Single Leg Box Squats", sourceIds:["A-1.1"], source:"athleanX", exclusiveTo:["athleanX"] },
+  squatUnEtDemiBas:            { fr:"squat 1½ (position basse)",                  unit:"reps", patterns:["squat"], nameEn:"1½ Bottomed Out Squats", sourceIds:["A-1.2"], source:"athleanX", exclusiveTo:["athleanX"] },
+  pompesRotationEpaule:        { fr:"pompes rotation épaule",                     unit:"reps", patterns:["poussee"], nameEn:"Rotational Pushups", sourceIds:["A-2.2"], source:"athleanX", exclusiveTo:["athleanX"] },
+  pompesCobra:                 { fr:"pompes cobra",                               unit:"reps", patterns:["poussee"], nameEn:"Cobra Pushups", sourceIds:["A-2.3"], source:"athleanX", exclusiveTo:["athleanX"] },
+  squatToucherTalon:           { fr:"squat toucher-talon",                        unit:"reps", patterns:["hinge"], nameEn:"Heel Touch Squats", sourceIds:["A-3.1"], source:"athleanX", exclusiveTo:["athleanX"] },
+  fenteArriereSautee:          { fr:"fente arrière sautée",                       unit:"reps", patterns:["hinge"], nameEn:"Plyo Sprinter Lunges", sourceIds:["A-3.3"], source:"athleanX", exclusiveTo:["athleanX"] },
+  dragonFly:                   { fr:"dragon fly",                                 unit:"reps", patterns:["tirage"], nameEn:"Dragon Fly", sourceIds:["A-4.2"], source:"athleanX", exclusiveTo:["athleanX"] },
+  plancheDynamiqueNavySeal:    { fr:"planche dynamique Navy Seal",                unit:"reps", patterns:["core"], nameEn:"Navy Seal Knee Slides", sourceIds:["A-5.2"], source:"athleanX", exclusiveTo:["athleanX"] },
+  abdosCrunchUnEtDemi:         { fr:"abdos crunch 1½",                            unit:"reps", patterns:["core"], nameEn:"Levitation Crunches", sourceIds:["A-5.3"], source:"athleanX", exclusiveTo:["athleanX"] },
+
+  pontIschioJambiersGlissant:  { fr:"pont ischio-jambiers glissant",              unit:"reps", patterns:["hinge"], nameEn:"Slick Floor Bridge Curls", sourceIds:["B-1.1"], source:"athleanX", exclusiveTo:["athleanX"] },
+  marchePontJambesTendues:     { fr:"marche en pont, jambes tendues",             unit:"reps", patterns:["hinge"], nameEn:"Long Leg Marches", sourceIds:["B-1.2"], source:"athleanX", exclusiveTo:["athleanX"] },
+  plancheLateraleAlternee:     { fr:"planche latérale alternée",                  unit:"reps", patterns:["poussee"], nameEn:"Alternating Side Plank", sourceIds:["B-2.2"], source:"athleanX", exclusiveTo:["athleanX"] },
+  frenchPressTriceps:          { fr:"french press triceps",                       unit:"reps", patterns:["poussee"], nameEn:"Triceps Extension", sourceIds:["B-2.3"], source:"athleanX", exclusiveTo:["athleanX"] },
+  stepUpHaut:                  { fr:"step up haut",                               unit:"reps", patterns:["unilat"], nameEn:"High Step Ups", sourceIds:["B-3.1"], source:"athleanX", exclusiveTo:["athleanX"] },
+  /* Le spec supposait une « fente avant » déjà là : il n'y en avait pas
+     (arrière, marchées, croisées seulement). Création, arbitrée par Martin. */
+  fentesAvant:                 { fr:"fentes avant",                               unit:"reps", patterns:["unilat"], nameEn:"Lunges", sourceIds:["B-3.2"], source:"athleanX", exclusiveTo:["athleanX"] },
+  splitSquatSaute:             { fr:"split squat sauté",                          unit:"reps", patterns:["unilat"], nameEn:"Split Squat Jumps", sourceIds:["B-3.3"], source:"athleanX", exclusiveTo:["athleanX"] },
+  elevationHautDosSol:         { fr:"élévation du haut du dos au sol",            unit:"reps", patterns:["tirage"], nameEn:"Back Widows", sourceIds:["B-4.3"], source:"athleanX", exclusiveTo:["athleanX"] },
+  haloAbdos:                   { fr:"halo abdos",                                 unit:"reps", patterns:["core"], nameEn:"Ab Halos", sourceIds:["B-5.1"], source:"athleanX", exclusiveTo:["athleanX"] },
+  situpPousseeCoude:           { fr:"sit-up poussée de coude",                    unit:"reps", patterns:["core"], nameEn:"Sit-Up Elbow Thrusts", sourceIds:["B-5.3"], source:"athleanX", exclusiveTo:["athleanX"] },
+  reverseHyperBanc:            { fr:"reverse hyper sur banc",                     unit:"reps", patterns:["hinge"], nameEn:"Reverse Hypers", sourceIds:["B-6.1"], source:"athleanX", exclusiveTo:["athleanX"] },
 };
 
 export const UNITS = ["reps", "secondes"];
 export const PER_SIDE = ["reparti", "chaque"];
 
 export const exercise = (id) => EXERCISES[id];
+
+/* Exclu d'un mode : invisible partout ailleurs. Seul Athlean X s'en sert
+   aujourd'hui. */
+export const estExclusif = (id) => Boolean(EXERCISES[id] && EXERCISES[id].exclusiveTo);
+
+/* L'identifiant maison d'un identifiant du spec Athlean X (« A-1.1 »), ou
+   null. C'est par là qu'une séquence écrite avec les ids du spec retrouve ses
+   exercices. */
+const PAR_SOURCE = new Map(Object.entries(EXERCISES)
+  .flatMap(([id, ex]) => (ex.sourceIds || []).map((sid) => [sid, id])));
+export const idOfSource = (sourceId) => PAR_SOURCE.get(sourceId) ?? null;
 
 /* Le nom affiché. Passe par la table : le jour où un libellé change, il change
    partout, y compris dans les données déjà écrites sur le disque. */

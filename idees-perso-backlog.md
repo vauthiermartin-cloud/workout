@@ -227,7 +227,7 @@ Moteur dédié, séparé du moteur existant (EMOM/Tabata/etc. intouchés).
 
 ---
 
-### F-12.5 · Fusion bibliothèque Athlean X (Workout A + B) — statut : Spec prête
+### F-12.5 · Fusion bibliothèque Athlean X (Workout A + B) — statut : Shipped (2026-10-26) — voir le Log (20 créations et 12 fusions après arbitrage, pas 26 et 6)
 
 **Objectif.** Ajouter les exercices Athlean X à `exercises.js` sans dupliquer ceux déjà présents, en gardant la traçabilité vers le spec original pour pouvoir rejouer une séance Athlean X à l'identique.
 
@@ -292,6 +292,10 @@ Moteur dédié, séparé du moteur existant (EMOM/Tabata/etc. intouchés).
 ---
 
 ### F-13 · Catalogue et séquences Athlean X — statut : Spec prête (dépend de F-12.5 pour les ids)
+
+**Depuis F-12.5** : écrire les séquences avec les ids du spec (`A-1.1`…) et les résoudre par
+`idOfSource` (`app/src/data/exercises.js`). Plusieurs ids maison de la table F-12.5 n'existent
+pas — les doublons ont été fusionnés (voir le Log) : ne jamais recopier cette table.
 
 Données statiques Workout A/B × NORMAL/BUILD/DEFINE au format JSON du §6 du spec (`perfect_home_workout_spec_v2.md`), avec les ids issus de F-12.5 (`id` maison + `sourceId`). Génère la liste chronologique `exercise`/`transition` à partir des phases.
 
@@ -643,3 +647,69 @@ garde-fous ont été cassés un par un pour vérifier qu'un test tombe à chaque
 255 tests verts (224 + 31), build OK. **Non vérifié sur iPhone** : déverrouillage du son,
 comportement de `performance.now()` écran verrouillé, et absence de vibration sur iOS sont
 à constater à l'usage, une fois F-14 branché.
+
+**2026-10-26 — F-12.5 · Fusion bibliothèque Athlean X (fil Athlean X).** Livré, non branché :
+rien ne lit encore ces exercices, c'est F-13 qui les citera. **La table de la spec n'a pas été
+appliquée telle quelle** : sept de ses « créations » existaient déjà, et une de ses
+« fusions » visait un exercice absent. Tout a été arbitré par Martin avant d'écrire.
+
+- **Doublons fusionnés au lieu d'être créés** (arbitrage de Martin) : A-1.3 Jump Squats →
+  `jumpSquats` (et non `squatSaute`) ; B-4.1 Chinups → `chinups` (et non
+  `tractionSupination` — pull-ups et chin-ups restent deux exercices, mais celui-ci existait) ;
+  A-2.1 Pike Pushups → `pompesPiquees` (et non `pompesEnV`) ; B-2.1 Elevated Feet Pushups →
+  `pompesPiedsSureleves`, **qui existait déjà sous ce même id** comme variante de régression —
+  la création aurait écrasé la clé ; A-5.1 Reverse Corkscrews → `corkscrews` (et non
+  `abdosCorkscrew`) ; B-5.2 V-Up Tucks → `vupsGenouxFlechis` (et non `vUpGroupe`) ; A-3.2
+  Alternating Sprinter Lunges → `fentesArriere` (et non `fenteArriere`, à une lettre de
+  l'existant).
+- **Fusions confirmées contre `exercises.js`** : A-4.1 → `pullups`, A-6.1 → `superman`,
+  B-1.3 → `hipThrusts`, A-4.3 et B-4.2 → `tiragesHorizontaux`.
+- **B-3.2 Lunges n'avait pas de cible** : la spec supposait une « fente avant », le dépôt n'a
+  que arrière, marchées et croisées. **Création de `fentesAvant`** « fentes avant »
+  (arbitrage de Martin).
+- **Bilan : 20 créations, 12 identifiants du spec fusionnés sur 11 exercices existants**,
+  32 au total. 77 exercices dans la table (57 + 20).
+
+**Écarts avec la spec, choisis sans arbitrage — à relire :**
+
+- **`sourceIds`, une liste, au lieu de `sourceId`.** Le spec cite deux fois les tirages
+  horizontaux (A-4.3 et B-4.2) : une seule entité, deux ids. Toutes les entités portent donc
+  une liste, même d'un élément. Le journal de F-14 (clé = id du spec) n'en est pas affecté :
+  ses clés viennent de la séquence jouée, pas de l'entité.
+- **Une fusion ne reçoit que `nameEn` et `sourceIds`.** La spec disait « ajouter les 4
+  propriétés sur l'entité existante » : `exclusiveTo: ["athleanX"]` sur `pullups` l'aurait
+  retiré du moteur classique, et `source: "athleanX"` aurait menti sur son origine. Les deux
+  restent réservés aux créations.
+- **Les schémas moteurs des créations suivent le groupe du spec**, pas une lecture du
+  mouvement : Anterior Lower — Squat → `squat`, — Lunge → `unilat`, Posterior Lower — Hinge →
+  `hinge`, Upper Push → `poussee`, Upper Pull → `tirage`, Abs → `core`, Corrective → `hinge`.
+  C'est traçable, et sans effet aujourd'hui (aucune couverture ne les voit), mais quatre
+  classements surprennent : `squatToucherTalon` et `fenteArriereSautee` en `hinge`,
+  `plancheLateraleAlternee` en `poussee`, `dragonFly` en `tirage`. À reprendre le jour où
+  Athlean X entrera dans une couverture ou une substitution.
+- **Libellés en minuscules**, comme le reste de la table (« box squat alterné », pas « Box
+  squat alterné »). Pas de `perSide` : Athlean X se joue en fenêtres de 60 s, aucune quantité
+  prescrite à répartir.
+- **`nameEn` n'est pas la « seconde ligne » de la table de nommage** (étape 4 du brief) : c'est
+  le nom exact du spec, pour rejouer une séance. Les deux pourront différer (`pullups` porte
+  « Pullups » ici, « pull-ups » en seconde ligne). L'étape 4 n'est pas touchée.
+
+Ce qui est livré :
+
+- **`app/src/data/exercises.js`** : une quatrième partie, « Athlean X — exclusifs », sous les
+  variantes de régression ; `nameEn` et `sourceIds` sur les onze entités fusionnées ; deux
+  fonctions, `estExclusif(id)` et `idOfSource("A-1.1")` — c'est par la seconde que F-13
+  résoudra ses séquences.
+- **Invisibilité sans code moteur** : générateur, `pickVariant`, substitution et couverture
+  ne parcourent jamais `EXERCISES`, seulement les séances, les chaînes et les tables de
+  douleur. Un exercice qu'aucune d'elles ne cite n'existe pas pour eux. Le test le tient.
+
+**Tests** (`coherence.test.js`, 261 verts = 255 + 6, build OK) : le contrôle d'entrée morte
+exempte les exclusifs (les séquences de F-13 les atteindront) ; nouveau bloc « Athlean X dans
+la bibliothèque » — les 32 ids du spec mènent chacun à un exercice et un seul ; 20 créations,
+12 ids sur 11 fusions ; aucun `nameEn` en double ; source et exclusivité sur les créations,
+ni l'une ni l'autre sur les fusions ; aucun exclusif cité par une séance, un finisher, un
+chrono, une chaîne, une table de douleur ou un coefficient de ratio ; aucune fusion devenue
+inatteignable pour le Classique. Les garde-fous ont été cassés un par un (exclusivité sur
+`pullups`, source sur `superman`, `squatSaute` recréé, `pompesCobra` glissé dans une chaîne) :
+un test tombe à chaque fois.

@@ -3,7 +3,9 @@ import { WORKOUTS, WORKOUT_BY_NAME } from "../src/data/workouts.js";
 import { FINISHERS } from "../src/data/finishers.js";
 import { TIMERS } from "../src/data/timers.js";
 import { CORRECTIF, CORRECTIF_HEBDO, JOURS_CORRECTIF } from "../src/data/correctif.js";
-import { EXERCISES, UNITS, PER_SIDE } from "../src/data/exercises.js";
+import { EXERCISES, UNITS, PER_SIDE, estExclusif, idOfSource } from "../src/data/exercises.js";
+import { EVITE } from "../src/data/douleurs.js";
+import { TIRAGE_EQUIVALENT } from "../src/data/equivalences.js";
 import { CHAINS, chainOf } from "../src/data/chains.js";
 import { PATTERNS, patternsOfWorkout, patternsOfTimer } from "../src/data/patterns.js";
 
@@ -75,9 +77,13 @@ describe("bibliothèque", () => {
      Les variantes de régression sont la seule exception, et elle est bornée :
      aucune séance ne les prescrit, on ne les atteint que par une chaîne. Une
      variante hors de toute chaîne, elle, est bien morte — personne ne peut
-     plus la rencontrer. */
+     plus la rencontrer.
+
+     Les exclusifs d'Athlean X sont hors du périmètre de ce contrôle : ce sont
+     les séquences d'Athlean X qui les atteindront, pas le catalogue. Le bloc
+     « Athlean X dans la bibliothèque » plus bas tient qu'ils y restent. */
   it("aucune entrée morte dans la bibliothèque", () => {
-    const atteignable = (id) => idsUtilises.has(id) || chainOf(id) !== null;
+    const atteignable = (id) => idsUtilises.has(id) || chainOf(id) !== null || estExclusif(id);
     expect(Object.keys(EXERCISES).filter((id) => !atteignable(id))).toEqual([]);
   });
 
@@ -248,5 +254,73 @@ describe("les exercices sont des entités", () => {
       .filter((it) => EXERCISES[it.ex] && EXERCISES[it.ex].perSide === "reparti" && it.n % 2 !== 0)
       .map((it) => `${it.n} ${it.ex}`);
     expect([...new Set(impairs)]).toEqual([]);
+  });
+});
+
+/* F-12.5. Les exercices d'Athlean X entrent dans la même table que les autres,
+   sans doublon et sans rien changer au moteur classique. */
+describe("Athlean X dans la bibliothèque", () => {
+  /* Les trente-deux identifiants de `perfect_home_workout_spec_v2.md` §4 :
+     groupes 1 à 5 à trois exercices, un correctif en groupe 6. */
+  const SPEC = ["A", "B"].flatMap((w) => [
+    ...[1, 2, 3, 4, 5].flatMap((g) => [1, 2, 3].map((i) => `${w}-${g}.${i}`)),
+    `${w}-6.1`,
+  ]);
+  const portes = Object.entries(EXERCISES).filter(([, ex]) => ex.sourceIds);
+  const exclusifs = Object.keys(EXERCISES).filter(estExclusif);
+
+  it("chaque identifiant du spec mène à un exercice, et un seul", () => {
+    expect(SPEC.length).toBe(32);
+    expect(SPEC.filter((sid) => idOfSource(sid) === null)).toEqual([]);
+    const tous = portes.flatMap(([, ex]) => ex.sourceIds);
+    expect(tous.length).toBe(new Set(tous).size);
+    expect([...tous].sort()).toEqual([...SPEC].sort());
+  });
+
+  /* Les tirages horizontaux sont la seule entité citée deux fois par le spec. */
+  it("vingt créations, douze identifiants fusionnés sur onze exercices existants", () => {
+    expect(exclusifs.length).toBe(20);
+    const fusions = portes.filter(([id]) => !estExclusif(id));
+    expect(fusions.length).toBe(11);
+    expect(fusions.flatMap(([, ex]) => ex.sourceIds).length).toBe(12);
+    expect(EXERCISES.tiragesHorizontaux.sourceIds).toEqual(["A-4.3", "B-4.2"]);
+  });
+
+  it("aucun nom anglais en double : rien n'existe deux fois sous deux ids", () => {
+    const ens = portes.map(([, ex]) => ex.nameEn);
+    expect(ens.every(Boolean)).toBe(true);
+    expect(ens.length).toBe(new Set(ens).size);
+  });
+
+  it("une création porte la source et l'exclusivité ; une fusion, ni l'une ni l'autre", () => {
+    const creationsMalFormees = exclusifs.filter((id) =>
+      EXERCISES[id].source !== "athleanX" || EXERCISES[id].exclusiveTo.join() !== "athleanX");
+    expect(creationsMalFormees).toEqual([]);
+    const fusionsMarquees = portes
+      .filter(([id, ex]) => !estExclusif(id) && ex.source !== undefined)
+      .map(([id]) => id);
+    expect(fusionsMarquees).toEqual([]);
+  });
+
+  /* Le cœur du ticket : un exclusif n'existe pas pour le moteur classique.
+     Aucune séance ni finisher ni chrono ne le cite (donc ni la génération,
+     ni pickVariant, ni la couverture ne le voient), aucune chaîne, aucune
+     table de douleur, aucun coefficient de ratio. */
+  it("un exclusif n'apparaît nulle part dans le moteur classique", () => {
+    const evite = Object.values(EVITE).flatMap((t) => [...Object.keys(t), ...Object.values(t)]);
+    const vus = exclusifs.filter((id) =>
+      idsUtilises.has(id) || chainOf(id) !== null || evite.includes(id)
+      || Object.prototype.hasOwnProperty.call(TIRAGE_EQUIVALENT, id));
+    expect(vus).toEqual([]);
+  });
+
+  /* L'inverse : une fusion reste ce qu'elle était. Les onze exercices
+     existants restent atteignables par le catalogue ou une chaîne. */
+  it("une fusion reste visible du moteur classique", () => {
+    const perdus = portes
+      .filter(([id]) => !estExclusif(id))
+      .filter(([id]) => !idsUtilises.has(id) && chainOf(id) === null)
+      .map(([id]) => id);
+    expect(perdus).toEqual([]);
   });
 });
