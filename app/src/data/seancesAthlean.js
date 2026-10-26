@@ -1,5 +1,7 @@
-import { idOfSource, labelOf } from "./exercises.js";
-import { deroule } from "../lib/athlean.js";
+import { EXERCISES, idOfSource, labelOf } from "./exercises.js";
+import { bloc, deroule } from "../lib/athlean.js";
+import { ECHAUFFEMENT, ECHAUFFEMENT_SEC } from "./echauffement.js";
+import { STRETCHES } from "./stretches.js";
 
 /* Les séances d'Athlean X : Workout A et B, chacun en trois modes.
    =================================================================
@@ -92,16 +94,44 @@ export function seanceAthlean(workoutId, mode) {
    `deroule` fait la forme ; chaque étape d'exercice reçoit en plus son id
    maison, son id du spec et sa phase, que la saisie des reps (F-15) lira dans
    l'ordre où la séance a été jouée. Le nom est le libellé français de la
-   bibliothèque. */
-export function etapesAthlean(workoutId, mode) {
+   bibliothèque.
+
+   Avec `echauffement`, le bloc d'échauffement du Classique ouvre la liste,
+   avant le pré-départ. Il ne change rien à la séance elle-même : mêmes
+   exercices, même `dureeSeance`. */
+export function etapesAthlean(workoutId, mode, { echauffement = false } = {}) {
   const s = seanceAthlean(workoutId, mode);
   if (!s) return null;
+  const tete = echauffement ? [bloc("Échauffement", ECHAUFFEMENT_SEC, ECHAUFFEMENT, "À ton rythme")] : [];
   const joues = s.phases.flatMap((p) => p.exerciseIds.map((sourceId) => ({ sourceId, phase: p.id })));
   const ids = joues.map(({ sourceId }) => idOfSource(sourceId));
   let i = 0;
-  return deroule(ids.map(labelOf)).map((e) => {
+  return [...tete, ...deroule(ids.map(labelOf)).map((e) => {
     if (e.t !== "exercice") return e;
     const k = i++;
     return { ...e, ex: ids[k], sourceId: joues[k].sourceId, phase: joues[k].phase };
-  });
+  })];
 }
+
+/* Les schémas moteurs qu'une séance Athlean X a travaillés : ceux de ses
+   exercices, comme pour une séance Classique. Ils comptent dans la
+   couverture de la semaine. */
+export function patternsAthlean(workoutId, mode) {
+  const e = etapesAthlean(workoutId, mode);
+  if (!e) return [];
+  return [...new Set(e.filter((x) => x.t === "exercice").flatMap((x) => EXERCISES[x.ex].patterns))];
+}
+
+/* Les étirements après une séance Athlean X : les mêmes séquences que le
+   Classique, jouées comme lui — un bloc de cinq minutes qui en déroule la
+   liste. Les deux workouts sont corps entier : on suggère l'enchaînement
+   complet (Martin, 2026-10-26), les autres restent à un geste. */
+export const ETIREMENT_SUGGERE = "flow";
+
+export const etirementSuggere = () => STRETCHES.find((s) => s.id === ETIREMENT_SUGGERE);
+
+export const etirementSuivant = (courant) =>
+  STRETCHES[(STRETCHES.findIndex((s) => s.id === courant.id) + 1) % STRETCHES.length];
+
+export const etapesEtirement = (seq) =>
+  [bloc("Étirements", 300, seq.blocks.map((b) => ({ txt: `${b.items[0].txt} — ${b.tag.toLowerCase()}` })), seq.name)];

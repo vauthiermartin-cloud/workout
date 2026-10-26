@@ -3,9 +3,14 @@
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { WORKOUTS_ATHLEAN, MODES_ATHLEAN, seanceAthlean, etapesAthlean } from "../src/data/seancesAthlean.js";
+import {
+  WORKOUTS_ATHLEAN, MODES_ATHLEAN, seanceAthlean, etapesAthlean, patternsAthlean,
+  etirementSuggere, etirementSuivant, etapesEtirement,
+} from "../src/data/seancesAthlean.js";
+import { ECHAUFFEMENT, ECHAUFFEMENT_SEC } from "../src/data/echauffement.js";
+import { STRETCHES } from "../src/data/stretches.js";
 import { EXERCISES, idOfSource, labelOf } from "../src/data/exercises.js";
-import { dureeTotale } from "../src/lib/athlean.js";
+import { dureeTotale, dureeSeance } from "../src/lib/athlean.js";
 
 const SEANCES = Object.keys(WORKOUTS_ATHLEAN).flatMap((w) => MODES_ATHLEAN.map((m) => [w, m]));
 const exercices = (w, m) => etapesAthlean(w, m).filter((e) => e.t === "exercice");
@@ -152,5 +157,71 @@ describe("ce que lira la suite", () => {
     const b = exercices("B", "BUILD").filter((x) => x.sourceId === "B-4.2");
     expect(a.length).toBe(2);
     expect(a[0].ex).toBe(b[0].ex);
+  });
+});
+
+/* Une séance Athlean X compte dans la couverture de la semaine, par les
+   schémas de ses exercices (Martin, 2026-10-26). */
+describe("la couverture", () => {
+  it("une séance couvre exactement les schémas de ses exercices", () => {
+    SEANCES.forEach(([w, m]) => {
+      const attendus = new Set(exercices(w, m).flatMap((x) => EXERCISES[x.ex].patterns));
+      expect(new Set(patternsAthlean(w, m))).toEqual(attendus);
+    });
+  });
+
+  it("chaque séance tire autant qu'elle pousse, au moins en schéma", () => {
+    SEANCES.forEach(([w, m]) => {
+      expect(patternsAthlean(w, m)).toContain("poussee");
+      expect(patternsAthlean(w, m)).toContain("tirage");
+    });
+  });
+
+  it("le B travaille la supination par ses chin-ups, le A non", () => {
+    expect(patternsAthlean("B", "BUILD")).toContain("supination");
+    expect(patternsAthlean("A", "BUILD")).not.toContain("supination");
+  });
+
+  it("une séance inconnue ne couvre rien", () => {
+    expect(patternsAthlean("C", "NORMAL")).toEqual([]);
+  });
+});
+
+/* L'échauffement du Classique devant la séance, et ses étirements après. */
+describe("échauffement et étirements", () => {
+  it("l'échauffement ouvre la liste, avant le pré-départ, sans toucher à la séance", () => {
+    SEANCES.forEach(([w, m]) => {
+      const sans = etapesAthlean(w, m);
+      const avec = etapesAthlean(w, m, { echauffement: true });
+      expect(avec[0]).toMatchObject({ t: "bloc", nom: "Échauffement", sec: ECHAUFFEMENT_SEC, liste: ECHAUFFEMENT });
+      expect(avec[1].t).toBe("depart");
+      expect(avec.slice(1)).toEqual(sans);
+      expect(dureeSeance(avec)).toBe(dureeTotale(sans));
+    });
+  });
+
+  /* Le contenu est partagé avec le Classique : le sortir d'App ne devait
+     rien y changer. */
+  it("c'est l'échauffement du Classique, cinq minutes", () => {
+    expect(ECHAUFFEMENT_SEC).toBe(300);
+    expect(ECHAUFFEMENT.map((x) => x.txt)).toEqual(["Squats latéraux", "Élévations latérales de jambe", "30 s de deep squat"]);
+  });
+
+  it("suggère l'enchaînement complet, AUTRE fait le tour des cinq", () => {
+    expect(etirementSuggere().id).toBe("flow");
+    const vus = [];
+    let s = etirementSuggere();
+    STRETCHES.forEach(() => { vus.push(s.id); s = etirementSuivant(s); });
+    expect([...vus].sort()).toEqual(STRETCHES.map((x) => x.id).sort());
+    expect(s.id).toBe("flow");
+  });
+
+  it("une séquence se joue en un bloc de cinq minutes qui en déroule la liste", () => {
+    STRETCHES.forEach((seq) => {
+      const [b, ...reste] = etapesEtirement(seq);
+      expect(reste).toEqual([]);
+      expect(b).toMatchObject({ t: "bloc", nom: "Étirements", sec: 300, sous: seq.name });
+      expect(b.liste.length).toBe(seq.blocks.length);
+    });
   });
 });

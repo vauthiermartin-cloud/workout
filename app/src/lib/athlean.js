@@ -42,13 +42,22 @@ export function deroule(noms, { exercice = EXERCICE } = {}) {
 
 export const dureeTotale = (etapes) => etapes.reduce((a, e) => a + e.sec, 0);
 
+/* Un bloc libre : l'échauffement avant la séance, les étirements après. Une
+   seule minuterie et une liste à suivre à ton rythme, comme dans le chrono
+   Classique. Il ne compte pas dans la durée de la séance — les 34:40 et
+   26:00 du spec sont sans échauffement. */
+export const bloc = (nom, sec, liste, sous = null) => ({ t: "bloc", nom, sec, liste, sous });
+
+export const dureeSeance = (etapes) => dureeTotale(etapes.filter((e) => e.t !== "bloc"));
+
 /* Les signaux d'une étape, datés par le temps qui reste avant son échéance.
    Le pré-départ et les transitions comptent à rebours, un TICK par seconde
-   affichée, puis GO à zéro. L'exercice ne sonne qu'une fois, au WARNING.
+   affichée, puis GO à zéro. L'exercice ne sonne qu'une fois, au WARNING, et
+   un bloc libre comme lui : cinq minutes de TICK n'annonceraient rien.
    Une frontière entre deux étapes ne porte jamais les signaux des deux : la
    fin d'un exercice est muette, le GO appartient à la transition. */
 function signauxDe(etape, warning) {
-  if (etape.t === "exercice") return warning < etape.sec ? [{ son: "WARNING", r: warning }] : [];
+  if (etape.t === "exercice" || etape.t === "bloc") return warning < etape.sec ? [{ son: "WARNING", r: warning }] : [];
   const s = [];
   for (let r = etape.sec; r >= 1; r--) s.push({ son: "TICK", r });
   s.push({ son: "GO", r: 0 });
@@ -126,6 +135,23 @@ export const passer = (run, now) => (fini(run) ? run : relancer(run, run.idx + 1
    d'avant — la spec l'exclut, et l'index ne bouge pas. */
 export const recommencer = (run, now) => (fini(run) ? run : relancer(run, run.idx, now));
 
+/* Ce qui survit à un redémarrage de l'app : l'étape, et le temps qui lui
+   restait. Ni échéance ni `vu` — ils sont exprimés dans l'horloge monotone,
+   qui repart de zéro à chaque chargement et ne voudrait plus rien dire. */
+export const instantane = (run, now) =>
+  ({ idx: run.idx, restant: run.pause !== null ? run.pause : Math.max(0, run.fin - now) });
+
+/* La séance retrouvée, en pause, là où elle a été laissée. Le temps passé
+   app fermée ne compte pas : on ne sait pas s'il a été passé à s'entraîner.
+   C'est la même règle que le chrono Classique — position retenue au dernier
+   battement, et c'est le pratiquant qui relance. Rien ne sonne avant. */
+export function restaurer(etapes, snap, now, warning = WARNING) {
+  if (!snap || !Number.isInteger(snap.idx) || snap.idx < 0 || snap.idx >= etapes.length) return null;
+  const plein = etapes[snap.idx].sec * 1000;
+  const restant = Math.min(plein, Math.max(0, Number(snap.restant) || 0));
+  return { etapes, warning, idx: snap.idx, fin: now + restant, vu: now, pause: restant };
+}
+
 /* Ce que l'écran affiche. Le pré-départ et les transitions montrent en grand
    l'exercice qui arrive ; l'exercice montre le sien, et « ensuite » dès la
    première seconde. */
@@ -135,11 +161,16 @@ export function ecran(run, now) {
   const e = etapes[idx];
   const ms = run.pause !== null ? run.pause : run.fin - now;
   const prochain = etapes.slice(idx + 1).find((x) => x.t === "exercice");
+  /* Un bloc montre son propre nom et sa liste ; avant la séance, « ensuite »
+     annonce déjà le premier exercice. */
+  const propre = e.t === "exercice" || e.t === "bloc";
   return {
     t: e.t,
     restant: Math.max(0, Math.ceil(ms / 1000)),
-    titre: e.t === "exercice" ? e.nom : prochain ? prochain.nom : "",
-    ensuite: e.t === "exercice" && prochain ? prochain.nom : null,
+    titre: propre ? e.nom : prochain ? prochain.nom : "",
+    ensuite: propre && prochain ? prochain.nom : null,
+    liste: e.t === "bloc" ? e.liste : null,
+    sous: e.t === "bloc" ? e.sous : null,
     enPause: run.pause !== null,
   };
 }

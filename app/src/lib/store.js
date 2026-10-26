@@ -1,6 +1,10 @@
 export const K_LOG = "workout.log";
 export const K_SET = "workout.settings";
 export const K_BAK = "workout.lastBackup";
+/* Le journal d'Athlean X, à part du journal Classique : voir `journalAthlean.js`. */
+export const K_ATHLEAN = "workout.athlean";
+/* La séance Athlean X en cours, pour la retrouver après un redémarrage. */
+export const K_ATHLEAN_RUN = "workout.athleanRun";
 /* Une séance en cours tient dans une seule clé : elle se retrouve entière ou
    pas du tout, jamais à moitié. */
 export const K_RUN = "workout.run";

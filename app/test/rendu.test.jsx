@@ -20,7 +20,9 @@ import { Perfs } from "../src/components/Perfs.jsx";
 import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
 import { Timer } from "../src/components/Timer.jsx";
 import { Coche } from "../src/components/Coche.jsx";
-import { ChoixMode, AthleanAVenir } from "../src/components/Mode.jsx";
+import { ChoixMode, EntreeAthlean, RepriseAthlean, EtirementsAthlean } from "../src/components/Mode.jsx";
+import { C } from "../src/lib/theme.js";
+import { etapesAthlean, etirementSuggere } from "../src/data/seancesAthlean.js";
 import { ChronoAthlean } from "../src/components/ChronoAthlean.jsx";
 import { deroule, demarrer, avancer, mettreEnPause } from "../src/lib/athlean.js";
 import { MODES, MODE_PAR_DEFAUT } from "../src/data/modes.js";
@@ -319,8 +321,7 @@ describe("la note de qualité", () => {
   });
 });
 
-/* Le sélecteur de mode, Classique / Athlean X. Pur aiguillage : il ne montre
-   que deux portes, et la seconde ne mène encore à rien de lançable. */
+/* Le sélecteur de mode, Classique / Athlean X. */
 describe("le choix du mode", () => {
   it("s'ouvre sur Classique", () => {
     expect(MODE_PAR_DEFAUT).toBe("classique");
@@ -336,11 +337,62 @@ describe("le choix du mode", () => {
     const autre = html(<ChoixMode mode="athleanX" onChoix={() => {}} />);
     expect(autre.indexOf('aria-pressed="true"')).toBeGreaterThan(autre.indexOf("CLASSIQUE"));
   });
+});
 
-  it("Athlean X ne porte encore rien à lancer", () => {
-    const vide = html(<AthleanAVenir />);
-    expect(vide).toContain("ATHLEAN X");
-    ["LANCER", "DÉMARRER", "TIRER", "<button"].forEach((interdit) => expect(vide).not.toContain(interdit));
+/* L'entrée d'Athlean X (F-14). Le workout ne se choisit qu'à la première
+   séance ; le mode se choisit à chaque fois, sans présélection. */
+describe("l'entrée d'Athlean X", () => {
+  const props = { propose: null, dernier: null, workout: null, onWorkout: () => {}, modeSeance: null,
+    onModeSeance: () => {}, onLancer: () => {}, enregistree: null };
+  const presses = (h) => (h.match(/aria-pressed="true"/g) || []).length;
+
+  it("première séance : le choix A / B, rien de choisi, rien à lancer", () => {
+    const h = html(<EntreeAthlean {...props} />);
+    expect(h).toContain("PREMIÈRE SÉANCE");
+    expect(h).toContain("WORKOUT A</button>");
+    expect(h).toContain("WORKOUT B</button>");
+    expect(presses(h)).toBe(0);
+    expect(h).toContain("CHOISIS UN WORKOUT");
+    expect(h).not.toContain("LANCER");
+  });
+
+  it("ensuite : le workout s'impose, sans écran de choix", () => {
+    const h = html(<EntreeAthlean {...props} propose="B" dernier="A" />);
+    expect(h).toContain("WORKOUT B");
+    expect(h).toContain("DERNIÈRE SÉANCE : A");
+    expect(h).not.toContain("WORKOUT A</button>");
+    expect(h).not.toContain("WORKOUT B</button>");
+    expect(h).not.toContain("PREMIÈRE SÉANCE");
+  });
+
+  it("le mode n'est jamais présélectionné, et rien ne se lance sans lui", () => {
+    const h = html(<EntreeAthlean {...props} propose="B" dernier="A" />);
+    ["NORMAL", "BUILD", "DEFINE"].forEach((m) => expect(h).toContain(m));
+    expect(presses(h)).toBe(0);
+    expect(h).toContain("CHOISIS UN MODE");
+    expect(h).toContain("disabled");
+  });
+
+  it("workout et mode choisis : on lance, à la durée de la séance", () => {
+    const h = html(<EntreeAthlean {...props} propose="A" dernier="B" modeSeance="NORMAL" />);
+    expect(h).toContain("LANCER · 34:40");
+    expect(presses(h)).toBe(1);
+    const premiere = html(<EntreeAthlean {...props} workout="B" modeSeance="DEFINE" />);
+    expect(premiere).toContain("LANCER · 26:00");
+    expect(presses(premiere)).toBe(2);
+  });
+
+  it("une séance laissée en cours empêche d'en lancer une autre", () => {
+    const h = html(<EntreeAthlean {...props} propose="A" dernier="B" modeSeance="BUILD" enCours />);
+    expect(h).toContain("UNE SÉANCE EST EN COURS");
+    expect(h).not.toContain("LANCER");
+    expect(h).toContain("disabled");
+  });
+
+  it("dit ce qui vient d'être enregistré", () => {
+    const h = html(<EntreeAthlean {...props} propose="B" dernier="A"
+      enregistree={{ workoutId: "A", mode: "BUILD" }} />);
+    expect(h).toContain("Séance enregistrée : workout A · BUILD.");
   });
 });
 
@@ -374,5 +426,130 @@ describe("le chrono Athlean X", () => {
     const pause = html(<ChronoAthlean etapes={etapes} initial={run} />);
     expect(pause).toContain("REPRENDRE");
     expect(pause).toContain("EN PAUSE");
+  });
+});
+
+/* La séance Athlean X retrouvée au démarrage. */
+describe("la reprise d'Athlean X", () => {
+  const rec = { workoutId: "B", mode: "DEFINE", d: "2026-10-26", startedAt: 0, idx: 0, restant: 3000 };
+  const rendre = (kind, r = rec) => html(<RepriseAthlean pending={{ kind, rec: r }}
+    onReprendre={() => {}} onEnregistrer={() => {}} onAbandonner={() => {}} />);
+
+  it("sous quatre heures : reprendre, en pause, là où elle a été laissée", () => {
+    const h = rendre("resume");
+    expect(h).toContain("SÉANCE ATHLEAN X EN COURS");
+    expect(h).toContain("WORKOUT B · DEFINE");
+    expect(h).toContain("Tu allais attaquer l'exercice 1 sur 24.");
+    expect(h).toContain("REPRENDRE");
+    expect(h).toContain("ABANDONNER");
+    expect(h).not.toContain("ENREGISTRER");
+  });
+
+  it("dit l'exercice en cours, sans compter les transitions", () => {
+    // étapes : départ, ex 1, transition, ex 2, transition, ex 3…
+    expect(rendre("resume", { ...rec, idx: 5 })).toContain("exercice 3 sur 24.");
+    expect(rendre("resume", { ...rec, idx: 4 })).toContain("attaquer l'exercice 3 sur 24.");
+  });
+
+  it("au-delà : enregistrer telle quelle ou abandonner", () => {
+    const h = rendre("stale");
+    expect(h).toContain("SÉANCE ATHLEAN X NON TERMINÉE");
+    expect(h).toContain("Laissée en cours le 26/10.");
+    expect(h).toContain("ENREGISTRER");
+    expect(h).not.toContain("REPRENDRE");
+  });
+});
+
+/* L'univers d'Athlean X : le rouge, là où le Classique a le vert. Les
+   couleurs sortent du rendu en rgb() ou en hexadécimal selon React ; on
+   cherche les deux. */
+describe("l'univers rouge d'Athlean X", () => {
+  const rgb = (hex) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
+  const porte = (h, hex) => h.includes(hex) || h.includes(rgb(hex));
+  const props = { propose: "B", dernier: "A", workout: null, onWorkout: () => {}, modeSeance: "BUILD",
+    onModeSeance: () => {}, onLancer: () => {}, enregistree: null };
+
+  it("le sélecteur : vert pour le Classique, rouge pour Athlean X", () => {
+    const cl = html(<ChoixMode mode="classique" onChoix={() => {}} />);
+    expect(porte(cl, C.lime)).toBe(true);
+    expect(porte(cl, C.rouge)).toBe(false);
+    const ax = html(<ChoixMode mode="athleanX" onChoix={() => {}} />);
+    expect(porte(ax, C.rouge)).toBe(true);
+    expect(porte(ax, C.lime)).toBe(false);
+  });
+
+  it("l'entrée, la reprise et le chrono sont rouges, sans un vert", () => {
+    const rec = { workoutId: "A", mode: "BUILD", d: "2026-10-26", startedAt: 0, idx: 3, restant: 1000 };
+    [
+      html(<EntreeAthlean {...props} />),
+      html(<RepriseAthlean pending={{ kind: "resume", rec }} onReprendre={() => {}} onEnregistrer={() => {}} onAbandonner={() => {}} />),
+      html(<ChronoAthlean etapes={etapesAthlean("A", "BUILD")} />),
+    ].forEach((h) => {
+      expect(porte(h, C.rouge)).toBe(true);
+      expect(porte(h, C.lime)).toBe(false);
+    });
+  });
+
+  it("le rouge n'est pas l'orange des alertes", () => {
+    expect(C.rouge).not.toBe(C.ember);
+  });
+});
+
+describe("échauffement et étirements d'Athlean X", () => {
+  const props = { propose: "B", dernier: "A", workout: null, onWorkout: () => {}, modeSeance: "BUILD",
+    onModeSeance: () => {}, onLancer: () => {}, enregistree: null };
+
+  it("la case Échauffement, cochée par défaut, et la durée annoncée sans elle", () => {
+    const h = html(<EntreeAthlean {...props} />);
+    expect(h).toContain("Échauffement");
+    expect(h).toContain("✓");
+    expect(h).toContain("LANCER · 26:00");
+    expect(html(<EntreeAthlean {...props} echauffement={false} />)).not.toContain("✓");
+  });
+
+  it("le chrono annonce l'échauffement d'abord, et la durée de la séance", () => {
+    const h = html(<ChronoAthlean etapes={etapesAthlean("A", "BUILD", { echauffement: true })} />);
+    expect(h).toContain("ÉCHAUFFEMENT");
+    expect(h).toContain("ATHLEAN X · 26:00");
+  });
+
+  it("pendant l'échauffement : sa liste, et le premier exercice qui suit", () => {
+    const etapes = etapesAthlean("A", "BUILD", { echauffement: true });
+    const h = html(<ChronoAthlean etapes={etapes} initial={demarrer(etapes, 0)} />);
+    expect(h).toContain("Squats latéraux");
+    expect(h).toContain("ENSUITE : BOX SQUAT ALTERNÉ");
+  });
+
+  it("pendant un exercice : pas de liste, le nom seul", () => {
+    const etapes = etapesAthlean("A", "BUILD", { echauffement: true });
+    const run = avancer(demarrer(etapes, 0), 306_000).run;
+    const h = html(<ChronoAthlean etapes={etapes} initial={run} />);
+    expect(h).toContain("BOX SQUAT ALTERNÉ");
+    expect(h).not.toContain("Squats latéraux");
+  });
+
+  it("après la séance : le bouton, puis la séquence suggérée, puis ce qui a été fait", () => {
+    const rien = () => {};
+    expect(html(<EtirementsAthlean faits={null} propose={null} onProposer={rien} onAutre={rien} onLancer={rien} />))
+      .toContain("ÉTIREMENTS · 5 MIN");
+    const p = html(<EtirementsAthlean faits={null} propose={etirementSuggere()} onProposer={rien} onAutre={rien} onLancer={rien} />);
+    expect(p).toContain("ENCHAÎNEMENT COMPLET");
+    expect(p).toContain("LANCER");
+    expect(p).toContain("AUTRE");
+    expect(html(<EtirementsAthlean faits="Hanches" propose={null} onProposer={rien} onAutre={rien} onLancer={rien} />))
+      .toContain("✓ ÉTIREMENTS · HANCHES");
+  });
+
+  it("la confirmation porte les étirements sous elle", () => {
+    const h = html(<EntreeAthlean {...props} enregistree={{ workoutId: "A", mode: "BUILD" }}>
+      <EtirementsAthlean faits={null} propose={null} onProposer={() => {}} onAutre={() => {}} onLancer={() => {}} />
+    </EntreeAthlean>);
+    expect(h.indexOf("Séance enregistrée")).toBeLessThan(h.indexOf("ÉTIREMENTS · 5 MIN"));
+  });
+
+  it("la reprise sait dire qu'on était dans l'échauffement", () => {
+    const rec = { workoutId: "A", mode: "BUILD", d: "2026-10-26", startedAt: 0, idx: 0, restant: 1000, echauffement: true };
+    expect(html(<RepriseAthlean pending={{ kind: "resume", rec }} onReprendre={() => {}} onEnregistrer={() => {}} onAbandonner={() => {}} />))
+      .toContain("Tu étais dans l'échauffement.");
   });
 });

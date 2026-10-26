@@ -16,7 +16,7 @@ Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 
 
 **Deux fils de travail coexistent depuis le 2026-09-27, et il faut le savoir avant de lire la suite.** Le phasage en douze étapes de `brief-v2-multi-user.md` reste la feuille de route officielle ; à côté, `idees-perso-backlog.md` porte les demandes nées de l'usage réel, arbitrées par Martin hors du dépôt. Cinq d'entre elles ont été livrées les 27 et 28 septembre et ne correspondent à aucune étape du brief. **Le journal de ce qui a été livré est le `## Log` de ce fichier-là** — cette note-ci en donne l'état, pas le détail.
 
-**Un troisième fil s'est ouvert le 2026-10-26 : Athlean X**, un second mode de séance à programme fixe (Workout A/B × NORMAL/BUILD/DEFINE), spécifié dans la section « Fil Athlean X » de `idees-perso-backlog.md` en six tickets (F-11 → F-15). Le cap des 25 minutes ne vaut que pour le mode Classique. **F-11 est livré** : un sélecteur CLASSIQUE / ATHLEAN X en tête de l'onglet SÉANCE, défaut Classique non enregistré, rien derrière Athlean X pour l'instant. **F-12 est livré** : le chrono Athlean X, moteur et écran, existe mais rien ne l'ouvre — le branchement est F-14. **F-12.5 est livré** : les 32 exercices du spec Athlean X sont dans `exercises.js` — 20 créations exclusives, 12 identifiants posés sur 11 exercices existants. **F-13 est livré** : les six séances (A/B × NORMAL/BUILD/DEFINE) existent en données et se déroulent en étapes de chrono, aux durées du spec ; rien ne les ouvre encore. F-14 et F-15 ne sont pas commencés.
+**Un troisième fil s'est ouvert le 2026-10-26 : Athlean X**, un second mode de séance à programme fixe (Workout A/B × NORMAL/BUILD/DEFINE), spécifié dans la section « Fil Athlean X » de `idees-perso-backlog.md` en six tickets (F-11 → F-15). Le cap des 25 minutes ne vaut que pour le mode Classique. **F-11 à F-14 sont livrés, Athlean X se joue pour de vrai.** Un sélecteur CLASSIQUE / ATHLEAN X en tête de l'onglet SÉANCE, défaut Classique non enregistré (F-11). Un chrono dédié, par échéances (F-12). Les 32 exercices du spec dans `exercises.js`, 20 créations exclusives et 12 identifiants posés sur 11 exercices existants (F-12.5). Les six séances en données, aux durées du spec (F-13). Le branchement (F-14) : workout au choix à la toute première séance, puis l'opposé du dernier joué ; mode choisi à chaque séance ; journal à part dans `workout.athlean`, où une séance compte comme une séance Classique (série, semaine, mois, 28 jours et niveau, couverture, récap) ; une séance interrompue par un redémarrage se reprend. **F-16 et F-17**, demandés en cours de route : l'échauffement et les étirements du Classique branchés sur Athlean X, et un univers rouge pour Athlean X comme le Classique a son vert. **F-15 (saisie des reps) n'est pas commencé** : une séance s'enregistre avec des reps vides.
 
 **Le chrono est reprenable** (étape 1, faite le 2026-09-07). `app/src/lib/chrono.js` sépare deux notions : le `run`, enregistrement d'une séance en cours écrit dans une clé unique (`workout.run`), et le `beat`, dernier battement réellement observé. Un trou de plus de 4 s entre deux battements ne peut venir que d'une app endormie : le chrono gèle, ne valide rien, et demande. Reprise proposée au démarrage sous 4 h, enregistrement ou abandon au-delà.
 
@@ -139,7 +139,8 @@ Ordre d'envoi : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15, un ticket p
   - **Les durées 34:40 / 26:00 sont tenues sur des séquences synthétiques** de 32 et 24
     exercices ; F-13 les tient aussi sur les vraies séquences.
   - **Pas de reprise après redémarrage** : `performance.now()` repart de zéro à chaque
-    chargement. À trancher en F-14.
+    chargement. **Corrigé en F-14** : l'étape et le temps restant s'écrivent dans
+    `workout.athleanRun`, et la séance se reprend en pause.
   - **Trois sons seulement, TICK / GO / WARNING** : la fin d'un exercice est muette, malgré
     le « fin d'effort » du spec source (arbitrage de Martin).
   - **Un interrupteur de son, non enregistré** : chaque séance repart son activé. Son coupé,
@@ -160,8 +161,8 @@ Ordre d'envoi : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15, un ticket p
   - **L'invisibilité ne coûte aucun code** : générateur, `pickVariant`, substitution et
     couverture ne lisent que séances, chaînes et tables de douleur. Un test vérifie qu'aucun
     exclusif n'y figure.
-  - **Les schémas moteurs des créations suivent le groupe du spec**, pas le mouvement — sans
-    effet aujourd'hui, voir Questions ouvertes.
+  - **Les schémas moteurs des créations suivent le groupe du spec**, pas le mouvement — ils
+    comptent dans la couverture depuis F-14, voir Questions ouvertes.
 - ~~**F-13 · Catalogue et séquences Athlean X**~~ **Fait le 2026-10-26**, dans la même
   conversation que F-12.5 à la demande explicite de Martin (exception à la règle d'un ticket
   par conversation). `app/src/data/seancesAthlean.js`. Décisions à connaître :
@@ -178,8 +179,50 @@ Ordre d'envoi : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15, un ticket p
   - **Les données sont comparées au document source lui-même** : le test lit
     `perfect_home_workout_spec_v2.md` et vérifie catalogue, tours 2 et exemple du §6.
     Déplacer ou renommer ce fichier fait tomber le test, et c'est voulu.
-- **F-14 · Branchement, alternance A/B, journal — suivant.** `etapesAthlean(w, mode)` se
-  passe tel quel à `ChronoAthlean`.
+- ~~**F-14 · Branchement, alternance A/B, journal**~~ **Fait le 2026-10-26**, dans la même
+  conversation que F-12.5 et F-13, à la demande explicite de Martin. Décisions à connaître :
+  - **Journal à part, clé `workout.athlean`** (arbitrage de Martin, option 2 sur trois) : une
+    liste d'entrées `{ date, type: "athleanX", workoutId, mode, reps }`, plusieurs par jour
+    possibles. Le journal Classique, à une ligne par date, n'est jamais écrit par Athlean X.
+    Pur dans `app/src/lib/journalAthlean.js`.
+  - **Une séance Athlean X compte comme une séance Classique** (Martin, révision du même
+    jour) : série, points de la semaine, mois, 28 jours et donc niveau suggéré, huit dernières
+    semaines, **couverture des schémas moteurs** — que le générateur lit pour tirer la séance
+    Classique du lendemain —, détail du récap. `joursEntraines` fournit les compteurs,
+    `patternsAthlean` la couverture. Reste au Classique seul ce qu'Athlean X n'a pas :
+    ressenti, test du vendredi, finisher, étirements, revue de qualité. Le message de la fiche
+    du jour (« Séance déjà enregistrée ce jour-là ») reste Classique.
+  - **Reprise après redémarrage** (Martin : perdre une séance « pas possible ») : le chrono
+    écrit son étape et son temps restant dans `workout.athleanRun` à chaque seconde affichée
+    (`instantane`). Au démarrage, une carte comme celle du Classique : sous 4 h, REPRENDRE —
+    la séance revient **en pause**, à l'étape et au temps retenus (`restaurer`), le temps
+    passé app fermée ne compte pas ; au-delà, ENREGISTRER telle quelle ou ABANDONNER. Une
+    séance en suspens empêche d'en lancer une autre. REPRENDRE dans le chrono rouvre aussi le
+    son, puisque DÉMARRER n'a pas eu lieu.
+  - **« EFFACER L'HISTORIQUE » n'efface que le Classique** — vu et accepté par Martin.
+  - **`lastAthleanWorkout` n'est pas stocké, il se relit du journal** (`dernierWorkout`, la
+    date départage, l'ordre d'écriture ensuite). Rien à désynchroniser, l'import compris.
+  - **Seule une séance finie s'enregistre**, à sa date de départ ; fermée en route (FERMER),
+    rien n'est écrit et l'alternance ne bouge pas. F-15 viendra entre la fin du chrono et l'écriture
+    (`finirAthlean` dans `App.jsx`) ; d'ici là `reps` est vide.
+  - **Export et import portent `athlean`** ; une sauvegarde d'avant n'a pas la clé et
+    s'importe comme avant. L'import d'Athlean X dédoublonne au lieu de fusionner par date.
+  - **La barre GÉNÉRER LA SÉANCE ne s'affiche plus sous Athlean X** — elle y restait depuis
+    F-11 et tirait une séance Classique en arrière-plan.
+- ~~**F-16 · Échauffement et étirements Athlean X**~~ et ~~**F-17 · Univers rouge**~~ **Faits
+  le 2026-10-26**, demandés par Martin après F-14. Décisions à connaître :
+  - **Un type d'étape « bloc »** dans le moteur Athlean : minuterie libre avec liste, un seul
+    WARNING, exclu de `dureeSeance` — les durées du spec restent sans échauffement.
+  - **L'échauffement vit dans `app/src/data/echauffement.js`**, partagé avec le Classique.
+    Coché par défaut ; la reprise retient s'il était coché, parce qu'il décale les étapes.
+  - **Étirements après la séance**, « Enchaînement complet » suggéré, AUTRE fait le tour ; un
+    chrono à part, non repris après redémarrage ; inscrits en `str` sur la séance Athlean X.
+  - **L'import d'Athlean X dédoublonne par date, workout et mode**, pas par entrée entière.
+  - **`C.rouge` (`#F5163F`) est la couleur d'Athlean X**, `C.lime` celle du Classique,
+    `C.ember` celle des alertes dans les deux. Dans le chrono Athlean, décompte rouge pendant
+    l'effort, blanc pendant les temps morts. SUIVI reste vert.
+- **F-15 · Saisie des reps post-séance — suivant.** Elle s'insère dans `finirAthlean` ; les
+  étapes portent déjà `sourceId` dans l'ordre joué.
 
 **F-10 et F-01 restent en file dans `idees-perso-backlog.md`** : F-11 a été pris avant F-10
 sur demande explicite, les deux fils ne se bloquent pas.
@@ -528,8 +571,8 @@ Ce qui reste réellement ouvert :
 - **La table des zones sensibles attend le même kiné** (`app/src/data/douleurs.js`, 2026-09-27). Trois entrées méritent un œil : `jumpSquats → airSquats` en pubalgie, la plus large des trois zones, qui retire le seul squat pliométrique du catalogue ; `burpees → burpees sans saut ni pompe` en genou, seul cran sans saut disponible, qui retire la pompe avec ; et `airSquats → hipThrusts` en genou, qui est ce qui fait disparaître le schéma squat.
 - **Quel équipement de tirage horizontal exactement** — TRX, anneaux, sangle sur la barre ? Le catalogue nomme le mouvement sans nommer l'appareil, donc rien n'est bloqué, mais les consignes des lignes restent vagues tant que la réponse manque.
 - **Le ratio poussée/tirage n'a pas de plafond, et c'est une décision à confirmer.** Mesuré après F-06, les séances qui avaient déjà du tirage sont **entre 146 % et 292 % de la parité** : par les coefficients de Martin, le catalogue tire plus qu'il ne pousse. Deux lectures — les coefficients sont généreux envers le tirage, ou le déséquilibre ressenti venait entièrement des cinq séances à zéro. Le garde-fou ne pose donc qu'un plancher à 90 %, la marge d'arrondi des nombres écrits à la main. À rouvrir si les 292 % se ressentent à l'usage.
-- **Les schémas moteurs des 20 exercices Athlean X suivent le groupe du spec** (Upper Push → `poussee`, etc.), choisi sans arbitrage le 2026-10-26 pour la traçabilité. Quatre classements surprennent : `squatToucherTalon` et `fenteArriereSautee` en `hinge`, `plancheLateraleAlternee` en `poussee`, `dragonFly` en `tirage`. Sans effet tant qu'Athlean X n'entre dans aucune couverture ni substitution ; à relire le jour où ce sera le cas.
-- **Le chrono Athlean X n'a jamais tourné sur iPhone.** Trois choses à constater une fois F-14 branché : le son se déverrouille-t-il bien au tap sur DÉMARRER ; `performance.now()` avance-t-il écran verrouillé (sinon la séance se décale du temps de veille) ; et la vibration, absente de Safari iOS, ne se sentira pas — les sons portent seuls.
+- **Les schémas moteurs des 20 exercices Athlean X suivent le groupe du spec** (Upper Push → `poussee`, etc.), choisi sans arbitrage le 2026-10-26 pour la traçabilité. Quatre classements surprennent : `squatToucherTalon` et `fenteArriereSautee` en `hinge`, `plancheLateraleAlternee` en `poussee`, `dragonFly` en `tirage`. **Ce n'est plus sans effet depuis F-14** : Athlean X compte dans la couverture, que le générateur lit pour tirer la séance Classique — une séance A couvre « postérieure » par le squat toucher-talon, par exemple. À relire.
+- **Le chrono Athlean X n'a jamais tourné sur iPhone.** Il est branché depuis F-14 ; trois choses à constater au premier usage : le son se déverrouille-t-il bien au tap sur DÉMARRER ; `performance.now()` avance-t-il écran verrouillé (sinon la séance se décale du temps de veille) ; et la vibration, absente de Safari iOS, ne se sentira pas — les sons portent seuls.
 - **La règle poussée/tirage vaut-elle hors des 25 minutes ?** Aucun finisher ne prescrit de poussée aujourd'hui, donc la question ne s'est jamais posée. Un test la posera le jour où l'un en prescrira, plutôt que de laisser le cas passer sans que personne n'y pense.
 - **« Gainage descendant » porte son contenu dans des libellés de phase** au lieu de lignes typées, donc rien ne le compte ni ne sait le proposer à la saisie. Anomalie antérieure, découverte le 2026-09-27 en ajoutant le contrôle de parité fiche/chrono, et inscrite comme exception dans `coherence.test.js` sous `SANS_LIGNES`. Une session séparée a été ouverte pour la traiter.
 
@@ -545,9 +588,9 @@ Ordre de lecture recommandé pour reprendre le projet :
 Fichiers du projet :
 
 5. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux, plus quatre tables arrivées en septembre — `correctif.js` (le bloc pubalgie), `douleurs.js` (les zones sensibles et leurs substitutions), `equivalences.js` (la table poussée/tirage), et les deux tirages horizontaux dans `exercises.js`. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
-6. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/athlean.js` — le chrono Athlean X, moteur à part, par échéances. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures. `app/src/lib/substitution.js` — le point de passage unique de toute substitution d'exercice. `app/src/lib/qualite.js` et `app/src/lib/revue.js` — la note de qualité et le dossier de revue qui part dans le récap.
-7. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits. `Mode.jsx` le sélecteur Classique / Athlean X. `ChronoAthlean.jsx` l'écran du chrono Athlean X, que rien n'ouvre encore. Les séances Athlean X sont des données : `app/src/data/seancesAthlean.js`.
-8. `app/test/` — quinze fichiers, 284 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans, dates de la semaine, journal et série, substitution et zones sensibles, note de qualité et dossier de revue, ratio poussée/tirage, sélecteur de mode, chrono Athlean X, exercices Athlean X dans la bibliothèque (dans `coherence.test.js`), séances Athlean X confrontées au spec source. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement. `test/hasard.js` n'est pas un fichier de tests mais le générateur pseudo-aléatoire déterministe que partagent les simulations hebdomadaires.
+6. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/athlean.js` — le chrono Athlean X, moteur à part, par échéances. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours et `workout.athlean` pour le journal Athlean X, `workout.athleanRun` pour sa séance en cours. `app/src/lib/journalAthlean.js` — ce journal, l'alternance A/B, et ce que la série en lit. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures. `app/src/lib/substitution.js` — le point de passage unique de toute substitution d'exercice. `app/src/lib/qualite.js` et `app/src/lib/revue.js` — la note de qualité et le dossier de revue qui part dans le récap.
+7. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits. `Mode.jsx` le sélecteur Classique / Athlean X et l'entrée d'Athlean X (workout, mode, LANCER). `ChronoAthlean.jsx` l'écran du chrono Athlean X, séance comme échauffement et étirements. `Coche.jsx` prend une couleur, verte par défaut. Les séances Athlean X sont des données : `app/src/data/seancesAthlean.js`, l'échauffement commun aux deux modes `app/src/data/echauffement.js`.
+8. `app/test/` — seize fichiers, 339 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans, dates de la semaine, journal et série, substitution et zones sensibles, note de qualité et dossier de revue, ratio poussée/tirage, sélecteur de mode, chrono Athlean X, exercices Athlean X dans la bibliothèque (dans `coherence.test.js`), séances Athlean X confrontées au spec source, journal et alternance d'Athlean X. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement. `test/hasard.js` n'est pas un fichier de tests mais le générateur pseudo-aléatoire déterministe que partagent les simulations hebdomadaires.
 9. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main. `CLAUDE.md` le dit désormais aussi — la contradiction signalée ici le 2026-09-07 a été levée.
 10. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 11. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.

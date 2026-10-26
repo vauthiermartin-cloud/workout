@@ -9,7 +9,7 @@
 import { describe, it, expect } from "vitest";
 import {
   RETARD, SONS, WARNING, effet, avancer, demarrer, deroule, dureeTotale, ecran, fini, mettreEnPause,
-  passer, recommencer, reprendre, restantes,
+  passer, recommencer, reprendre, restantes, instantane, restaurer, bloc, dureeSeance,
 } from "../src/lib/athlean.js";
 
 const T0 = 1_000_000;
@@ -272,5 +272,80 @@ describe("écran", () => {
     const e = deroule(noms(2));
     const run = avancer(demarrer(e, T0), T0 + 71000).run;
     expect(ecran(run, T0 + 71000)).toMatchObject({ titre: "Exo 2", ensuite: null });
+  });
+});
+
+/* La reprise après un redémarrage de l'app. L'horloge monotone repart de
+   zéro au chargement : on ne garde que l'étape et le temps restant, et la
+   séance revient en pause. */
+describe("reprise après redémarrage", () => {
+  const e = deroule(noms(3));
+  const APRES = 5_000; // l'horloge du nouveau chargement
+
+  it("l'instantané retient l'étape et le temps restant, en marche comme en pause", () => {
+    const run = avancer(demarrer(e, T0), T0 + 25_000).run; // 5 s de départ, 20 s du 1er exercice
+    expect(instantane(run, T0 + 25_000)).toEqual({ idx: 1, restant: 40_000 });
+    const pause = mettreEnPause(run, T0 + 25_000);
+    expect(instantane(pause, T0 + 99_000)).toEqual({ idx: 1, restant: 40_000 });
+  });
+
+  it("la séance revient en pause, à l'étape et au temps retenus, sans un son", () => {
+    const run = restaurer(e, { idx: 1, restant: 40_000 }, APRES);
+    expect(run.pause).toBe(40_000);
+    expect(run.idx).toBe(1);
+    expect(ecran(run, APRES)).toMatchObject({ t: "exercice", restant: 40, enPause: true });
+    expect(jouer(run, APRES, APRES + 60_000).emis).toEqual([]);
+  });
+
+  it("reprendre la mène au bout au temps restant exact, sans rien rejouer", () => {
+    const run = reprendre(restaurer(e, { idx: 1, restant: 40_000 }, APRES), APRES);
+    // reste : 40 s, transition 5, exercice 60, transition 5, exercice 60
+    const { run: fin, emis } = jouer(run, APRES, APRES + 170_000);
+    expect(fini(fin)).toBe(true);
+    expect(compte(emis, "WARNING")).toBe(3);
+    expect(compte(emis, "GO")).toBe(2);
+    expect(fini(jouer(run, APRES, APRES + 169_000).run)).toBe(false);
+  });
+
+  it("un enregistrement abîmé ne restaure rien, un temps hors bornes est ramené", () => {
+    [null, {}, { idx: -1, restant: 1000 }, { idx: 6, restant: 1000 }, { idx: 1.5, restant: 1000 }]
+      .forEach((snap) => expect(restaurer(e, snap, APRES)).toBe(null));
+    expect(restaurer(e, { idx: 1, restant: 999_999 }, APRES).pause).toBe(60_000);
+    expect(restaurer(e, { idx: 1, restant: -3 }, APRES).pause).toBe(0);
+  });
+});
+
+/* Le bloc libre : l'échauffement avant la séance, les étirements après. */
+describe("bloc libre", () => {
+  const liste = [{ txt: "Squats latéraux" }, { txt: "Deep squat" }];
+  const e = [bloc("Échauffement", 300, liste, "À ton rythme"), ...deroule(noms(2))];
+
+  it("ne compte pas dans la durée de la séance", () => {
+    expect(dureeSeance(e)).toBe(dureeTotale(deroule(noms(2))));
+    expect(dureeTotale(e)).toBe(dureeSeance(e) + 300);
+  });
+
+  it("montre son nom, sa liste, et annonce déjà le premier exercice", () => {
+    const run = demarrer(e, T0);
+    expect(ecran(run, T0 + 1000)).toMatchObject({
+      t: "bloc", titre: "Échauffement", sous: "À ton rythme", liste, ensuite: "Exo 1", restant: 299,
+    });
+    expect(ecran(avancer(run, T0 + 300_000).run, T0 + 300_000).liste).toBe(null);
+  });
+
+  /* Cinq minutes de TICK n'annonceraient rien : un seul WARNING, comme un
+     exercice. Sa fin est muette, le pré-départ qui suit compte 5 → 1 puis GO. */
+  it("sonne une fois à 10 s de la fin, puis laisse le pré-départ compter", () => {
+    const { emis } = jouer(demarrer(e, T0), T0, T0 + 305_000);
+    const duBloc = emis.filter((s) => s.idx === 0);
+    expect(duBloc.map((s) => s.son)).toEqual(["WARNING"]);
+    expect(duBloc[0].t).toBe(T0 + 290_000);
+    const duDepart = emis.filter((s) => s.idx === 1).map((s) => s.son);
+    expect(duDepart).toEqual(["TICK", "TICK", "TICK", "TICK", "TICK", "GO"]);
+  });
+
+  it("se reprend comme une autre étape", () => {
+    const run = restaurer(e, { idx: 0, restant: 120_000 }, 0);
+    expect(ecran(run, 0)).toMatchObject({ t: "bloc", restant: 120, enPause: true });
   });
 });

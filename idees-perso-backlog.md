@@ -305,7 +305,7 @@ Données statiques Workout A/B × NORMAL/BUILD/DEFINE au format JSON du §6 du s
 
 ---
 
-### F-14 · Branchement, alternance A/B, journal — statut : Spec prête
+### F-14 · Branchement, alternance A/B, journal — statut : Shipped (2026-10-26) — voir le Log
 
 Connecte F-11 → F-13 → F-12.
 
@@ -340,12 +340,31 @@ Connecte F-11 → F-13 → F-12.
 
 ---
 
+### F-16 · Échauffement et étirements Athlean X — statut : Shipped (2026-10-26) — voir le Log
+
+Demande de Martin après F-14 : brancher l'échauffement et les étirements du Classique sur Athlean X.
+Arbitrages : **échauffement comme le Classique** (case cochée par défaut, même bloc de 5 min,
+même contenu, hors de la durée annoncée) ; **étirements proposés en fin de séance**, séquence
+suggérée « Enchaînement complet » (les deux workouts sont corps entier), AUTRE fait défiler les
+cinq, inscrits sur la séance.
+
+---
+
+### F-17 · Univers rouge d'Athlean X — statut : Shipped (2026-10-26) — voir le Log
+
+Demande de Martin : Athlean X en rouge, comme le Classique est en vert fluo. Arbitrage : **tout
+Athlean X** — bouton du sélecteur, entrée, carte de reprise, chrono, échauffement et étirements
+Athlean. Un rouge distinct de l'orange des alertes, qui reste l'alerte dans les deux modes ; les
+transitions du chrono passent en blanc. SUIVI reste vert, commun aux deux modes.
+
+---
+
 ### Idée — suivi de progression Athlean X (pas un ticket)
 Une fois quelques semaines de reps saisis via F-15 : affichage d'évolution par exercice (sourceId). Forme à définir une fois qu'on a des données réelles à regarder — ne pas spécifier à vide.
 
 ---
 
-**Ordre d'envoi du fil** : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15, une étape à la fois avec Claude Code, jamais plusieurs dans la même conversation (règle actée dans `CLAUDE.md`). Indépendant de l'ordre d'envoi
+**Ordre d'envoi du fil** : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15 (F-16 et F-17, demandés en cours de route, sont livrés avant F-15), une étape à la fois avec Claude Code, jamais plusieurs dans la même conversation (règle actée dans `CLAUDE.md`). Indépendant de l'ordre d'envoi
 ci-dessus : les deux fils ne se bloquent pas. Les entrées de Log des deux fils vont dans le `## Log`
 ci-dessous.
 
@@ -768,3 +787,178 @@ Ce qui est livré :
 Garde-fous cassés un par un : deux ids permutés dans le tour 2 B BUILD, un neuvième
 exercice en DEFINE A, le correctif glissé dans le tour 1 — un test tombe à chaque fois.
 L'en-tête de `athlean.test.js` renvoie désormais à ce fichier pour les vraies séquences.
+
+**2026-10-26 — F-14 · Branchement, alternance A/B, journal (fil Athlean X).** Livré : Athlean X
+se joue de bout en bout. **Fait dans la même conversation que F-12.5 et F-13, à la demande
+explicite de Martin.**
+
+**Arbitrage de Martin avant le code — où vit le journal.** Trois options présentées : une clé à
+part invisible du Classique ; une clé à part qui compte dans la série ; une ligne de plus dans
+`workout.log`. **Retenu : clé à part, comptée dans la série et les points de la semaine.** Ce
+qui a écarté `workout.log` : il ne tient qu'une séance par date, écrite par remplacement, et
+l'import fusionne par date — Classique le matin et Athlean X le soir, l'une des deux était
+perdue ; et chaque consommateur du journal aurait dû apprendre à ignorer Athlean X (le récap
+plantait sur une ligne sans `day`).
+
+Ce qui est livré :
+
+- **`app/src/lib/journalAthlean.js`, pur.** `entreeAthlean` (forme de la spec F-14),
+  `dernierWorkout` / `workoutPropose` (l'alternance), `entreeValide`, `fusionner` (l'import),
+  `joursEntraines` (ce que lisent série et semaine). Clé `workout.athlean` dans `store.js`.
+- **`lastAthleanWorkout` n'est pas stocké** : il se relit du journal, la date départageant,
+  l'ordre d'écriture ensuite. Une seule source, que l'import ne peut pas désynchroniser.
+  **Écart de forme avec la spec**, qui le nommait comme une donnée ; le comportement est le
+  même.
+- **`EntreeAthlean` dans `Mode.jsx`**, à la place de `AthleanAVenir` : jamais joué, le choix
+  WORKOUT A / WORKOUT B ; ensuite « WORKOUT B · EN ALTERNANCE · DERNIÈRE SÉANCE : A », sans
+  bouton de choix. Mode NORMAL / BUILD / DEFINE avec sa durée, **rien de présélectionné** ;
+  LANCER n'apparaît qu'une fois workout et mode choisis, avec la durée de la séance.
+- **Dans `App.jsx`** : le chrono s'ouvre sur `etapesAthlean`. **Seule une séance finie
+  s'enregistre** (`finirAthlean`) ; fermée en route, rien n'est écrit et l'alternance ne
+  bouge pas. Après l'enregistrement, l'écran confirme « Séance enregistrée : workout A ·
+  BUILD. » et le mode repart à vide. F-15 s'insérera entre la fin du chrono et l'écriture.
+- **Série et points de la semaine** lisent `joursEntraines(log, athlean)` ; le reste (niveau
+  suggéré, mois, 28 jours, couverture, ressentis, revue, récap) lit le journal Classique seul.
+  Le message de la fiche du jour (« Séance déjà enregistrée ce jour-là ») reste Classique : une
+  séance Athlean X ne fait pas croire que le thème du jour a été joué.
+- **Export et import** portent la clé `athlean` ; une sauvegarde d'avant n'en a pas et
+  s'importe comme avant. L'import dédoublonne au lieu de fusionner par date : deux séances du
+  même jour restent deux.
+- **Correction d'un reste de F-11** : la barre GÉNÉRER LA SÉANCE du Classique s'affichait aussi
+  sous Athlean X et y tirait une séance Classique en arrière-plan. Elle ne s'affiche plus.
+
+**Choix non écrits dans la spec, à relire :**
+
+- **« EFFACER L'HISTORIQUE » n'efface pas Athlean X.** Laissé tel quel : élargir une
+  suppression irréversible ne se décide pas en passant. En Questions ouvertes du pickup.
+- **Pas de reprise après redémarrage** (question laissée à F-14 par F-12) : non traitée. Une
+  séance Athlean X interrompue par un redémarrage est perdue, sans trace. En Questions
+  ouvertes.
+- **Libellés de mode** : NORMAL / BUILD / DEFINE gardés tels quels — ce sont les noms du
+  programme, comme HUMAN / WARRIOR / BEAST — avec une seconde ligne française (« deux tours
+  complets », « deuxième tour force », « deuxième tour hybride »).
+
+**Tests** (303 verts = 284 + 19, build OK) : `app/test/journalAthlean.test.js`, seizième
+fichier, 15 tests — premier lancement sans proposition ; **A → B → A → B sur quatre lancements
+espacés, samedi compris** ; le premier choix décide de la suite ; le mode n'influe pas ; deux
+séances le même jour alternent ; la date l'emporte sur l'ordre d'écriture ; forme de l'entrée ;
+lignes abîmées écartées ; import sans doublon, deux séances du jour gardées ; **sans séance
+Athlean X, la série lit le journal Classique tel quel** ; un jour ouvré Athlean X prolonge la
+série, un samedi ne la change pas ; le journal Classique n'est jamais modifié. Dans
+`rendu.test.jsx`, le test de `AthleanAVenir` laisse place à 5 tests de l'entrée : choix A/B à
+la première séance, workout imposé ensuite, mode jamais présélectionné, LANCER à la bonne
+durée, confirmation d'enregistrement. Garde-fous cassés un par un (pas d'alternance, ordre
+d'écriture au lieu de la date, Athlean X ignoré par la série, import sans dédoublonnage) : un
+test tombe à chaque fois.
+
+**Vérifié dans le navigateur** (aperçu local, stockage isolé de l'iPhone) : première séance au
+choix A/B ; A · BUILD lancée, déroulée jusqu'au bout, enregistrée au format attendu ; WORKOUT B
+imposé ensuite ; une séance B fermée en route n'écrit rien ; côté Classique, la fiche du lundi
+propose toujours ses séances ; SUIVI affiche « CETTE SEMAINE · 1/5 » avec mois, 28 jours et
+couverture à zéro ; le récap se génère. **Non vérifié sur iPhone** : son, vibration,
+`performance.now()` écran verrouillé.
+
+**2026-10-26 — F-14 révisé, retours de Martin sur la première livraison.** Trois points
+soumis à relecture, trois réponses :
+
+1. **« EFFACER L'HISTORIQUE » n'efface que le Classique** — accepté tel quel.
+2. **Perdre une séance Athlean X sur un redémarrage : « pas possible ».** Corrigé.
+   `instantane(run, now)` et `restaurer(etapes, snap, now)` dans `lib/athlean.js` : ne
+   survivent que l'étape et le temps restant, l'horloge monotone repartant de zéro au
+   chargement. `ChronoAthlean` reçoit `onSauver` et écrit dans `workout.athleanRun` à chaque
+   seconde affichée et à chaque geste ; la clé s'efface à la fin et sur FERMER.
+   `repriseAthlean(rec, now)` (`lib/journalAthlean.js`) reprend la règle du Classique : sous
+   4 h « resume », au-delà « stale », null pour un enregistrement illisible ou au bout. Au
+   démarrage, `RepriseAthlean` (`Mode.jsx`), même carte que le Classique : REPRENDRE ramène
+   la séance **en pause** à l'étape et au temps retenus — le temps passé app fermée ne compte
+   pas, comme le Classique retient la position du dernier battement ; ENREGISTRER (trop
+   ancienne) l'écrit telle quelle à sa date de départ ; ABANDONNER l'efface. Une séance en
+   suspens bloque LANCER. REPRENDRE dans le chrono appelle aussi `deverrouiller` : après un
+   redémarrage, c'est le premier geste, DÉMARRER n'a pas eu lieu.
+3. **« Que je fasse Athlean X ou le Classique, ça doit enregistrer la séance au même
+   titre. »** L'option 2 retenue plus tôt ne comptait Athlean X que dans la série et les
+   points de la semaine ; elle compte désormais **partout où l'app compte des séances** :
+   mois, 28 jours et donc niveau suggéré, huit dernières semaines, détail du récap (lignes
+   « 26/10 · Athlean X workout A · BUILD » intercalées par date). **Couverture des schémas
+   moteurs comprise** (arbitrage de Martin, question posée) : `patternsAthlean(w, mode)` dans
+   `seancesAthlean.js`, et le générateur en tient compte. Le stockage, lui, reste à part —
+   c'est ce qui permet Classique et Athlean X le même jour. Restent au Classique seul ce
+   qu'Athlean X n'a pas : ressenti, test du vendredi, finisher, étirements, revue ; la ligne
+   « Finishers … (sur N séances classiques) » du récap le dit désormais.
+
+Conséquence à connaître : les schémas des 20 créations, calqués sur les groupes du spec
+(F-12.5), ne sont plus sans effet — quatre classements surprenants comptent dans la
+couverture. En Questions ouvertes du pickup.
+
+**Tests** (318 verts = 303 + 15) : 4 dans `athlean.test.js` (l'instantané en marche et en
+pause ; restauration en pause sans un son ; reprise menée au bout au temps restant exact, sans
+rien rejouer ; enregistrement abîmé refusé, temps hors bornes ramené) ; 3 dans
+`journalAthlean.test.js` (reprenable sous 4 h, au-delà seulement enregistrable,
+enregistrements illisibles ou au bout écartés) ; 4 dans `seancesAthlean.test.js` (une séance
+couvre exactement les schémas de ses exercices, poussée et tirage dans chacune, supination
+en B seulement, séance inconnue vide) ; 4 de rendu (LANCER bloqué par une séance en suspens,
+carte de reprise sous 4 h, exercice en cours compté sans les transitions, carte au-delà).
+Garde-fous cassés : restauration en marche au lieu d'en pause, fenêtre de reprise sans
+limite — un test tombe à chaque fois.
+
+**Vérifié dans le navigateur** : B · DEFINE lancée, avancée au 4ᵉ exercice, page rechargée —
+carte « Tu étais à l'exercice 4 sur 24 » ; REPRENDRE rouvre le chrono en pause sur « pompes
+pieds surélevés » à la dernière seconde écrite, la séance se termine et s'enregistre, la clé
+de reprise s'efface. Une séance de 5 h d'âge posée à la main donne la carte « non terminée »,
+ABANDONNER l'efface sans toucher au journal. SUIVI avec deux séances Athlean X : 2 ce mois,
+2 sur 28 jours, couverture 8/10 et « Il manque mobilité, mollets » ; le récap les détaille.
+
+**2026-10-26 — F-16 · Échauffement et étirements Athlean X, et F-17 · Univers rouge (fil
+Athlean X).** Deux demandes de Martin après F-14, absentes du backlog, ajoutées au fil puis
+livrées dans la même conversation que F-12.5 → F-14, à sa demande.
+
+**F-16, ce qui est livré :**
+
+- **Un type d'étape « bloc » dans le moteur** (`lib/athlean.js`) : une minuterie libre avec
+  une liste, comme la phase « down » du chrono Classique. Il sonne comme un exercice — un
+  seul WARNING à 10 s, fin muette — plutôt que cinq minutes de TICK. `dureeSeance(etapes)`
+  l'exclut : les 34:40 et 26:00 restent ceux du spec, sans échauffement (§8). `ecran` lui
+  rend son nom, sa liste, un sous-titre, et « ensuite » annonce déjà le premier exercice.
+- **L'échauffement sorti d'`App.jsx`** vers `app/src/data/echauffement.js`, partagé par les
+  deux modes : même contenu, même 5 min. Le Classique lit la même liste qu'avant.
+- **`etapesAthlean(w, mode, { echauffement })`** met le bloc en tête, avant le pré-départ ;
+  les étapes de la séance sont identiques à celles d'avant. La case « Échauffement »
+  (`Coche`, qui prend désormais une couleur) est cochée par défaut, comme en Classique. La
+  reprise après redémarrage retient `echauffement` (il décale les étapes) et sait dire « Tu
+  étais dans l'échauffement. »
+- **Étirements** : `EtirementsAthlean` sous la confirmation d'enregistrement — ÉTIREMENTS ·
+  5 MIN, puis la séquence suggérée (`ETIREMENT_SUGGERE = "flow"`, « Enchaînement complet »),
+  AUTRE fait le tour des cinq, LANCER ouvre un chrono à part (`etapesEtirement`, un bloc de 5
+  min comme en Classique). Finis, ils s'inscrivent sur la séance Athlean X en `str` — le
+  champ des lignes Classiques — et le récap les détaille. Fermés en route, rien. Le chrono
+  d'étirements n'est pas repris après un redémarrage : la séance est déjà enregistrée.
+- **L'import dédoublonne par séance (date, workout, mode)** et non plus par entrée entière :
+  une sauvegarde faite avant les étirements portait la même séance sans `str`, et l'aurait
+  doublée dans tous les compteurs. À égalité, le côté qui porte les étirements l'emporte.
+
+**F-17, ce qui est livré :** `C.rouge` (`#F5163F`) dans `lib/theme.js`, un carmin distinct de
+`C.ember` (`#FF4D2E`), qui reste la couleur des alertes — SON COUPÉ, ARRÊTER ? — dans les deux
+modes. Rouge : bouton ATHLEAN X actif du sélecteur (CLASSIQUE actif reste vert), entrée
+d'Athlean X, carte de reprise, case d'échauffement, bouton des étirements, chrono. **Dans le
+chrono, le décompte est rouge pendant l'effort** (exercice ou bloc) **et blanc pendant les
+temps morts** (pré-départ, transitions, qui étaient orange) ; le nom reste blanc. SUIVI reste
+vert.
+
+**Tests** (339 verts = 318 + 21, build OK) : 4 dans `athlean.test.js` (bloc hors de la durée
+de séance ; nom, liste, premier exercice annoncé ; un WARNING puis le pré-départ qui compte 5
+→ 1 et GO ; reprise d'un bloc) ; 4 dans `seancesAthlean.test.js` (échauffement en tête sans
+toucher à la séance ; contenu de l'échauffement, celui du Classique ; suggestion et tour des
+cinq séquences ; une séquence en un bloc) ; 3 dans `journalAthlean.test.js` (reprise avec
+échauffement ; séance sauvegardée avant ses étirements non doublée, dans les deux sens ; deux
+fois la même séance le même jour restent deux) ; 10 de rendu (sélecteur vert / rouge ;
+entrée, reprise et chrono rouges sans un vert ; rouge ≠ orange des alertes ; case cochée et
+durée sans échauffement ; chrono qui annonce l'échauffement ; sa liste pendant, pas pendant un
+exercice ; les trois états des étirements ; leur place sous la confirmation ; reprise dans
+l'échauffement). Garde-fous cassés : un vert remis sur DÉMARRER, un dédoublonnage par entrée
+entière — un test tombe à chaque fois.
+
+**Vérifié dans le navigateur** : entrée Athlean X en rouge, case cochée, « LANCER · 26:00 » ;
+chrono ouvert sur ÉCHAUFFEMENT, liste et « ENSUITE : BOX SQUAT ALTERNÉ », décompte rouge ;
+pré-départ en blanc, premier exercice en rouge ; séance finie, étirements proposés
+(Enchaînement complet), AUTRE → Express, joués, inscrits (`str: "Express"`) et confirmés ;
+retour en Classique, tout vert comme avant.

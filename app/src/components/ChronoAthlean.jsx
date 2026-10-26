@@ -3,8 +3,8 @@ import { C, DISPLAY, MONO } from "../lib/theme.js";
 import { mmss } from "../lib/dates.js";
 import { couper, deverrouiller, ton, vibrer } from "../lib/audio.js";
 import {
-  WARNING, avancer, demarrer, dureeTotale, ecran, fini, mettreEnPause, passer,
-  effet, recommencer, reprendre,
+  WARNING, avancer, demarrer, dureeSeance, dureeTotale, ecran, fini, mettreEnPause, passer,
+  effet, instantane, recommencer, reprendre,
 } from "../lib/athlean.js";
 
 /* L'horloge du chrono Athlean X : monotone, insensible à un réglage de
@@ -20,9 +20,10 @@ function emettre(signal, actif) {
 
 /* Le chrono Athlean X, seul. Rien ne l'ouvre encore : le branchement derrière
    le sélecteur de mode est l'affaire d'un ticket suivant. `etapes` vient de
-   `deroule`. `initial` ne sert qu'aux tests, pour rendre un chrono déjà
-   lancé. */
-export function ChronoAthlean({ etapes, warning = WARNING, initial = null, onFin, onFermer }) {
+   `deroule`. `initial` est un chrono déjà lancé : celui qu'on reprend après
+   un redémarrage, ou celui d'un test. `onSauver` reçoit, à chaque seconde
+   affichée et à chaque geste, de quoi le retrouver si l'app est tuée. */
+export function ChronoAthlean({ etapes, warning = WARNING, initial = null, onFin, onFermer, onSauver }) {
   const [run, setRun] = useState(initial);
   const [now, setNow] = useState(maintenant);
   const [arme, setArme] = useState(false);
@@ -68,11 +69,20 @@ export function ChronoAthlean({ etapes, warning = WARNING, initial = null, onFin
 
   useEffect(() => { if (run && fini(run)) { couper(); onFin && onFin(); } }, [run && fini(run)]);
 
+  /* Une écriture par seconde affichée, pas par battement : dix par seconde
+     n'apprendraient rien de plus au stockage. */
+  const vue = run && !fini(run) ? ecran(run, now) : null;
+  useEffect(() => {
+    if (vue && onSauver) onSauver(instantane(run, maintenant()));
+  }, [run && run.idx, run && run.pause !== null, vue && vue.restant]);
+
   /* Le son se déverrouille dans le geste même : iOS l'exige. */
   const lancer = () => { deverrouiller(); appliquer(demarrer(etapes, maintenant(), warning)); };
   const basculer = () => {
     const t = maintenant();
-    if (run.pause !== null) appliquer(reprendre(run, t));
+    /* Reprendre déverrouille aussi le son : après un redémarrage de l'app,
+       c'est le premier geste de la séance, DÉMARRER n'a pas eu lieu. */
+    if (run.pause !== null) { deverrouiller(); appliquer(reprendre(run, t)); }
     else { couper(); appliquer(mettreEnPause(run, t)); }
   };
   const suivant = () => { couper(); appliquer(passer(runRef.current, maintenant())); };
@@ -88,20 +98,24 @@ export function ChronoAthlean({ etapes, warning = WARNING, initial = null, onFin
   const bouton = { flex:1, padding:"18px 0", border:`1px solid ${C.line}`, color:C.bone,
     fontFamily:DISPLAY, fontSize:17, letterSpacing:".04em", borderRadius:2 };
 
-  const premier = etapes.find((e) => e.t === "exercice");
+  /* Ce qu'annonce l'écran d'avant départ : l'échauffement s'il ouvre la
+     séance, sinon le premier exercice. La durée est celle de la séance, sans
+     échauffement ; un chrono d'étirements seuls annonce les siens. */
+  const premier = etapes[0].t === "bloc" ? etapes[0] : etapes.find((e) => e.t === "exercice");
+  const duree = dureeSeance(etapes) || dureeTotale(etapes);
 
   if (!run) {
     return (
       <div style={cadre}>
         <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", textAlign:"center" }}>
-          <div style={{ fontFamily:MONO, fontSize:11, letterSpacing:".16em", color:C.lime, marginBottom:10 }}>
-            ATHLEAN X · {mmss(dureeTotale(etapes))}
+          <div style={{ fontFamily:MONO, fontSize:11, letterSpacing:".16em", color:C.rouge, marginBottom:10 }}>
+            ATHLEAN X · {mmss(duree)}
           </div>
           <div style={{ fontFamily:DISPLAY, fontSize:"clamp(40px, 12vw, 64px)", lineHeight:.95 }}>
             {premier ? premier.nom.toUpperCase() : ""}
           </div>
         </div>
-        <button onClick={lancer} style={{ width:"100%", padding:"18px 0", background:C.lime, color:C.ink,
+        <button onClick={lancer} style={{ width:"100%", padding:"18px 0", background:C.rouge, color:C.ink,
           fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
           DÉMARRER
         </button>
@@ -111,8 +125,10 @@ export function ChronoAthlean({ etapes, warning = WARNING, initial = null, onFin
 
   const v = ecran(run, now);
   if (!v) return null;
-  const travail = v.t === "exercice";
-  const accent = travail ? C.lime : C.ember;
+  /* Le rouge est l'effort — exercice ou bloc libre ; les temps morts,
+     pré-départ et transitions, sont en blanc. L'orange reste aux alertes. */
+  const travail = v.t === "exercice" || v.t === "bloc";
+  const accent = travail ? C.rouge : C.bone;
 
   return (
     <div style={cadre}>
@@ -130,15 +146,27 @@ export function ChronoAthlean({ etapes, warning = WARNING, initial = null, onFin
 
       <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", textAlign:"center" }}>
         <div style={{ fontFamily:DISPLAY, fontSize: travail ? "clamp(34px, 10vw, 52px)" : "clamp(40px, 12vw, 64px)",
-          lineHeight:.95, color: travail ? C.bone : accent }}>
+          lineHeight:.95, color:C.bone }}>
           {v.titre.toUpperCase()}
         </div>
+        {v.sous && (
+          <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginTop:8 }}>
+            {v.sous.toUpperCase()}
+          </div>
+        )}
         <div style={{ fontFamily:DISPLAY, fontSize:"clamp(76px, 26vw, 132px)", lineHeight:.9, marginTop:12,
-          color: v.enPause ? C.ash : C.bone, fontVariantNumeric:"tabular-nums" }}>
+          color: v.enPause ? C.ash : accent, fontVariantNumeric:"tabular-nums" }}>
           {travail ? mmss(v.restant) : v.restant}
         </div>
         {v.enPause && (
           <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".14em", color:C.ash, marginTop:8 }}>EN PAUSE</div>
+        )}
+        {/* Un bloc libre se suit à ton rythme : sa liste, comme dans le chrono
+            Classique. Jamais pendant un exercice, où seul le nom s'affiche. */}
+        {v.liste && (
+          <div style={{ marginTop:18, display:"flex", flexDirection:"column", gap:6, fontSize:13.5, color:C.bone, lineHeight:1.4 }}>
+            {v.liste.map((it, i) => <div key={i}>{it.txt}</div>)}
+          </div>
         )}
         {v.ensuite && (
           <div style={{ marginTop:18, fontFamily:MONO, fontSize:11, letterSpacing:".1em", color:C.ash }}>

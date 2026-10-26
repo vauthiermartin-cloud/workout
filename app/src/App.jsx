@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { C, DISPLAY, MONO } from "./lib/theme.js";
-import { store, readJson, K_LOG, K_SET, K_BAK, K_RUN } from "./lib/store.js";
+import { store, readJson, K_LOG, K_SET, K_BAK, K_RUN, K_ATHLEAN, K_ATHLEAN_RUN } from "./lib/store.js";
+import { entreeAthlean, entreeValide, dernierWorkout, workoutPropose, fusionner, joursEntraines, repriseAthlean } from "./lib/journalAthlean.js";
+import { etapesAthlean, patternsAthlean, etirementSuggere, etirementSuivant, etapesEtirement } from "./data/seancesAthlean.js";
+import { restaurer } from "./lib/athlean.js";
 import { ecraserait, entreeA, entreeDeLOnglet } from "./lib/journal.js";
 import { doneWith, newBeat, newRun, position, record, resumableKind } from "./lib/chrono.js";
 import { iso, fromIso, mondayOf, weekdayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
@@ -15,6 +18,7 @@ import { DAYS, STRETCH_BY_DAY, FINISHER_BIAS } from "./data/days.js";
 import { WORKOUTS, WORKOUT_BY_NAME } from "./data/workouts.js";
 import { FINISHERS } from "./data/finishers.js";
 import { STRETCHES } from "./data/stretches.js";
+import { ECHAUFFEMENT, ECHAUFFEMENT_SEC } from "./data/echauffement.js";
 import { TIMERS } from "./data/timers.js";
 import { PATTERNS, patternsOfWorkout } from "./data/patterns.js";
 import { LEVELS } from "./data/levels.js";
@@ -32,7 +36,8 @@ import { Timer } from "./components/Timer.jsx";
 import { Perfs } from "./components/Perfs.jsx";
 import { BilanEntete, BilanPatterns } from "./components/Bilan.jsx";
 import { Revoir } from "./components/Revoir.jsx";
-import { ChoixMode, AthleanAVenir } from "./components/Mode.jsx";
+import { ChoixMode, EntreeAthlean, RepriseAthlean, EtirementsAthlean } from "./components/Mode.jsx";
+import { ChronoAthlean } from "./components/ChronoAthlean.jsx";
 import { MODE_PAR_DEFAUT } from "./data/modes.js";
 
 export default function App() {
@@ -49,6 +54,26 @@ export default function App() {
   const [seen, setSeen] = useState([]);
   const [runId, setRunId] = useState(0);
   const [log, setLog] = useState([]);
+  /* Athlean X : son journal à part, et la séance qu'on prépare. Le workout
+     choisi ne sert qu'à la première séance — ensuite il se déduit du
+     journal. Le mode repart à vide après chaque séance. */
+  const [athlean, setAthlean] = useState([]);
+  const [axWorkout, setAxWorkout] = useState(null);
+  const [axMode, setAxMode] = useState(null);
+  const [axEtapes, setAxEtapes] = useState(null);
+  const [axFaite, setAxFaite] = useState(null);
+  /* La séance en cours — workout, mode, date et instant de départ —, que le
+     chrono complète de son étape à chaque seconde dans `workout.athleanRun`.
+     `axInitial` est le chrono retrouvé après un redémarrage, en pause. */
+  const [axCourante, setAxCourante] = useState(null);
+  const [axInitial, setAxInitial] = useState(null);
+  const [axPending, setAxPending] = useState(null);
+  /* Échauffement coché par défaut, comme en Classique. Les étirements se
+     proposent une fois la séance enregistrée et ont leur propre chrono : ils
+     ne touchent ni à la séance en cours ni à sa reprise. */
+  const [axEchauffement, setAxEchauffement] = useState(true);
+  const [axEtirement, setAxEtirement] = useState(null);
+  const [axEtirementEtapes, setAxEtirementEtapes] = useState(null);
   const [level, setLevel] = useState(1);
   const [saveState, setSaveState] = useState("idle");
   const [askScore, setAskScore] = useState(false);
@@ -90,6 +115,14 @@ export default function App() {
   useEffect(() => {
     let entries = [];
     try { const v = store.get(K_LOG); if (v) { entries = JSON.parse(v); setLog(entries); } } catch {}
+    const ax = readJson(K_ATHLEAN);
+    if (Array.isArray(ax)) setAthlean(ax.filter(entreeValide));
+    /* Une séance Athlean X laissée en cours se retrouve, comme une séance
+       Classique. Illisible ou au bout, l'enregistrement est jeté. */
+    const axRec = readJson(K_ATHLEAN_RUN);
+    const axKind = repriseAthlean(axRec);
+    if (axKind) setAxPending({ kind: axKind, rec: axRec });
+    else if (axRec) store.del(K_ATHLEAN_RUN);
     try {
       const v = store.get(K_SET);
       if (v) {
@@ -118,6 +151,7 @@ export default function App() {
   }, []);
 
   const saveLog = (next) => { setLog(next); return store.set(K_LOG, JSON.stringify(next)); };
+  const saveAthlean = (next) => { setAthlean(next); return store.set(K_ATHLEAN, JSON.stringify(next)); };
   /* Un seul objet de réglages : l'écrire par morceaux avait déjà effacé le
      niveau le jour où une seconde clé est arrivée. */
   const saveSettings = (patch) => {
@@ -136,17 +170,24 @@ export default function App() {
 
   /* ---- calculs ---- */
   const entryToday = log.find((e) => e.d === todayIso);
-  const last28 = log.filter((e) => daysBetween(fromIso(e.d), today) < 28).length;
+  /* Une séance Athlean X compte comme une séance Classique dans tous les
+     compteurs — série, semaine, mois, 28 jours et donc niveau suggéré. Le
+     message de la fiche du jour, lui, parle du journal Classique seul : une
+     séance Athlean X ne fait pas croire que le thème du jour a été joué. */
+  const joursFaits = joursEntraines(log, athlean);
+  const last28 = joursFaits.filter((e) => daysBetween(fromIso(e.d), today) < 28).length;
   const suggested = LEVELS.slice().reverse().find((l) => last28 >= l.need).id;
-  const monthCount = log.filter((e) => {
+  const monthCount = joursFaits.filter((e) => {
     const d = fromIso(e.d);
     return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
   }).length;
 
   const wkStart = mondayOf(today);
   const weekDone = {};
-  log.forEach((e) => { const d = fromIso(e.d); if (d >= wkStart) weekDone[weekdayOf(d)] = true; });
+  joursFaits.forEach((e) => { const d = fromIso(e.d); if (d >= wkStart) weekDone[weekdayOf(d)] = true; });
   const weekCount = Object.keys(weekDone).length;
+  const classiqueFait = {};
+  log.forEach((e) => { const d = fromIso(e.d); if (d >= wkStart) classiqueFait[weekdayOf(d)] = true; });
 
   /* La date derrière l'onglet sélectionné, puis la ligne qui s'y trouve.
      ==================================================================
@@ -173,6 +214,12 @@ export default function App() {
       patternsOfWorkout(ficheSubstituee(w, substitutionsPour(e.mal || []))).forEach((p) => weekPatterns.add(p));
     }
   });
+  /* Athlean X couvre les schémas de ses exercices, et le générateur en tient
+     compte (Martin, 2026-10-26). Pas de zones sensibles : le programme est
+     fixe, rien n'y est substitué. */
+  athlean.forEach((e) => {
+    if (fromIso(e.date) >= wkStart) patternsAthlean(e.workoutId, e.mode).forEach((p) => weekPatterns.add(p));
+  });
 
   const weeks = [];
   for (let i = 7; i >= 0; i--) {
@@ -180,7 +227,7 @@ export default function App() {
     const e = new Date(s); e.setDate(e.getDate() + 7);
     weeks.push({
       label: `${pad(s.getDate())}/${pad(s.getMonth() + 1)}`,
-      n: log.filter((x) => { const d = fromIso(x.d); return d >= s && d < e; }).length,
+      n: joursFaits.filter((x) => { const d = fromIso(x.d); return d >= s && d < e; }).length,
       current: i === 0,
     });
   }
@@ -294,10 +341,7 @@ export default function App() {
      sens, et placée après la séance ce serait celle qu'on passe. */
   const startTimer = () => {
     const p = [];
-    if (warmup) p.push({ t:"down", sec:300, warm:true, label:"Échauffement", sub:"À ton rythme", list:[
-      f("Squats latéraux"), f("Élévations latérales de jambe"),
-      f("30 s de deep squat", "Talons au sol, coudes contre l'intérieur des genoux, tu pousses vers l'extérieur"),
-    ] });
+    if (warmup) p.push({ t:"down", sec:ECHAUFFEMENT_SEC, warm:true, label:"Échauffement", sub:"À ton rythme", list:ECHAUFFEMENT });
     if (correctif) p.push(...CORRECTIF);
     const w = TIMERS[wod.name];
     if (w) p.push(...planSubstitue(w, subs)); else p.push({ t:"up", cap:1500, label:wod.name, sub:"Chrono libre" });
@@ -545,9 +589,76 @@ export default function App() {
     setAskScore(false);
   };
 
+  /* ---- Athlean X ---- */
+  /* Une séance n'entre au journal que finie : fermée en route, elle ne
+     compte pas et l'alternance ne bouge pas. C'est la fin qui écrit, et
+     l'écriture qui fait avancer l'alternance — le prochain workout se
+     relit du journal. La saisie des reps (F-15) viendra se glisser entre
+     les deux ; d'ici là, `reps` reste vide. */
+  const fermerAthlean = () => {
+    store.del(K_ATHLEAN_RUN);
+    setAxEtapes(null);
+    setAxInitial(null);
+    setAxCourante(null);
+  };
+  /* La séance s'écrit à sa date de départ, comme une séance Classique
+     reprise : finie après minuit, elle reste celle de la veille. */
+  const enregistrerAthlean = ({ d, workoutId, mode }) => {
+    const e = entreeAthlean(d, workoutId, mode);
+    saveAthlean([...athlean, e]);
+    setAxFaite(e);
+  };
+  const finirAthlean = () => {
+    enregistrerAthlean(axCourante);
+    fermerAthlean();
+    setAxMode(null);
+    setAxWorkout(null);
+  };
+  const lancerAthlean = () => {
+    const c = { workoutId: workoutPropose(athlean) || axWorkout, mode: axMode, d: todayIso,
+      startedAt: Date.now(), echauffement: axEchauffement };
+    setAxFaite(null);
+    setAxEtirement(null);
+    setAxCourante(c);
+    setAxInitial(null);
+    setAxEtapes(etapesAthlean(c.workoutId, c.mode, { echauffement: c.echauffement }));
+  };
+  const sauverAthlean = (snap) => {
+    if (axCourante) store.set(K_ATHLEAN_RUN, JSON.stringify({ ...axCourante, ...snap }));
+  };
+  /* Reprise : le chrono revient en pause sur l'étape et le temps restant
+     retenus. C'est REPRENDRE, dans le chrono, qui relance et rouvre le son. */
+  const reprendreAthlean = () => {
+    const { rec } = axPending;
+    const etapes = etapesAthlean(rec.workoutId, rec.mode, { echauffement: !!rec.echauffement });
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    setAxCourante({ workoutId: rec.workoutId, mode: rec.mode, d: rec.d, startedAt: rec.startedAt, echauffement: !!rec.echauffement });
+    setAxInitial(restaurer(etapes, rec, now));
+    setAxEtapes(etapes);
+    setAxPending(null);
+    setAxFaite(null);
+    setMode("athleanX");
+    setTab("seance");
+  };
+  const enregistrerPendingAthlean = () => {
+    enregistrerAthlean(axPending.rec);
+    store.del(K_ATHLEAN_RUN);
+    setAxPending(null);
+  };
+  const abandonnerPendingAthlean = () => { store.del(K_ATHLEAN_RUN); setAxPending(null); };
+  /* Les étirements faits s'inscrivent sur la séance qu'on vient de finir.
+     Fermés en route, ils ne s'inscrivent pas. */
+  const finirEtirement = () => {
+    const maj = { ...axFaite, str: axEtirement.name };
+    saveAthlean(athlean.map((e) => (e === axFaite ? maj : e)));
+    setAxFaite(maj);
+    setAxEtirement(null);
+    setAxEtirementEtapes(null);
+  };
+
   /* ---- sauvegarde ---- */
   const download = () => {
-    const data = JSON.stringify({ v: 1, exported: todayIso, level, log }, null, 0);
+    const data = JSON.stringify({ v: 1, exported: todayIso, level, log, athlean }, null, 0);
     const blob = new Blob([data], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -558,6 +669,7 @@ export default function App() {
 
   const buildRecap = () => {
     const recent = log.filter((e) => daysBetween(fromIso(e.d), today) < 35).sort((a, b) => (a.d < b.d ? 1 : -1));
+    const recentAx = athlean.filter((e) => daysBetween(fromIso(e.date), today) < 35);
     const txt = [
       `RÉCAP ENTRAÎNEMENT — ${shortFr(todayIso)}`,
       `Niveau : ${LEVELS.find((l) => l.id === level).name} (${level}/3)`,
@@ -566,7 +678,7 @@ export default function App() {
       tests.length ? `Tests : ${tests.slice(0, 8).map((t) => `${shortFr(t.d)} = ${t.s}`).join(" | ")}` : "Tests : aucun",
       `Couverture de la semaine : ${weekPatterns.size}/${PATTERNS.length - perdus.length} — ${PATTERNS.filter((p) => weekPatterns.has(p.id)).map((p) => p.label.toLowerCase()).join(", ") || "rien"}`,
       perdus.length ? `Hors d'atteinte (zones sensibles) : ${perdus.join(", ")}` : null,
-      `Finishers : ${log.filter((e) => e.fin).length} · stretching : ${log.filter((e) => e.str).length} (sur ${log.length} séances)`,
+      `Finishers : ${log.filter((e) => e.fin).length} · stretching : ${log.filter((e) => e.str).length} (sur ${log.length} séances classiques)`,
       /* Le récap est la seule vue d'ensemble du ressenti tant que l'onglet de
          suivi n'a pas été repensé. Sans ça, la donnée existerait sans jamais
          être lisible. */
@@ -574,13 +686,19 @@ export default function App() {
         + ` · sans réponse ${log.filter((e) => !e.ressenti).length}`,
       ...lignesDeRevue(log),
       "", "DÉTAIL 35 JOURS",
-      ...recent.map((e) => `${shortFr(e.d)} ${DAYS.find((d) => d.key === e.day).short} · ${e.w} · N${e.lvl}`
-        + (e.s != null ? ` · score ${e.s}` : "")
-        + (e.ressenti ? ` · ${RESSENTIS.find((r) => r.id === e.ressenti).label.toLowerCase()}` : "")
-        + (e.fin ? ` · finisher : ${e.fin}` : "")
-        + (e.str ? ` · stretch : ${e.str}` : "")
-        + (e.mal && e.mal.length ? ` · zones : ${e.mal.join(", ")}` : "")
-        + (e.qualite === "garder" ? " · gardée" : e.qualite === "probleme" ? " · signalée" : "")),
+      /* Les séances Athlean X s'intercalent par date ; à date égale, la
+         Classique d'abord. */
+      ...[
+        ...recent.map((e) => ({ d: e.d, txt: `${shortFr(e.d)} ${DAYS.find((d) => d.key === e.day).short} · ${e.w} · N${e.lvl}`
+          + (e.s != null ? ` · score ${e.s}` : "")
+          + (e.ressenti ? ` · ${RESSENTIS.find((r) => r.id === e.ressenti).label.toLowerCase()}` : "")
+          + (e.fin ? ` · finisher : ${e.fin}` : "")
+          + (e.str ? ` · stretch : ${e.str}` : "")
+          + (e.mal && e.mal.length ? ` · zones : ${e.mal.join(", ")}` : "")
+          + (e.qualite === "garder" ? " · gardée" : e.qualite === "probleme" ? " · signalée" : "") })),
+        ...recentAx.map((e) => ({ d: e.date, txt: `${shortFr(e.date)} · Athlean X workout ${e.workoutId} · ${e.mode}`
+          + (e.str ? ` · stretch : ${e.str}` : "") })),
+      ].sort((x, y) => (x.d < y.d ? 1 : x.d > y.d ? -1 : 0)).map((l) => l.txt),
     ].filter((l) => l !== null).join("\n");
     try { navigator.clipboard.writeText(txt); } catch {}
     setRecap(txt);
@@ -596,7 +714,11 @@ export default function App() {
       const merged = Object.values(byDate).sort((a, b) => (a.d < b.d ? -1 : 1));
       saveLog(merged);
       if (parsed.level) saveLevel(parsed.level);
-      setImportMsg(`${merged.length} séances au total après fusion.`);
+      /* Une sauvegarde d'avant Athlean X n'a pas la clé : rien à fusionner. */
+      const ax = Array.isArray(parsed.athlean) ? fusionner(athlean, parsed.athlean) : athlean;
+      if (ax !== athlean) saveAthlean(ax);
+      setImportMsg(`${merged.length} séances au total après fusion`
+        + (ax.length ? `, et ${ax.length} séance${ax.length > 1 ? "s" : ""} Athlean X.` : "."));
       setImportText("");
     } catch {
       setImportMsg("Ce texte n'est pas une sauvegarde valide. Colle le contenu d'un fichier workout-….json.");
@@ -670,6 +792,11 @@ export default function App() {
           );
         })()}
 
+        {axPending && !axEtapes && (
+          <RepriseAthlean pending={axPending} onReprendre={reprendreAthlean}
+            onEnregistrer={enregistrerPendingAthlean} onAbandonner={abandonnerPendingAthlean} />
+        )}
+
         {backupStale && tab === "suivi" && (
           <div style={{ padding:12, marginBottom:20, border:`1px solid ${C.ember}`, borderRadius:2,
             fontSize:12.5, lineHeight:1.5, color:C.bone }}>
@@ -680,7 +807,25 @@ export default function App() {
         {tab === "seance" && mode === "athleanX" ? (
           <React.Fragment>
             <ChoixMode mode={mode} onChoix={setMode} />
-            <AthleanAVenir />
+            <EntreeAthlean propose={workoutPropose(athlean)} dernier={dernierWorkout(athlean)}
+              workout={axWorkout} onWorkout={setAxWorkout} modeSeance={axMode} onModeSeance={setAxMode}
+              enregistree={axFaite}
+              enCours={!!axPending} onLancer={lancerAthlean}
+              echauffement={axEchauffement} onEchauffement={() => setAxEchauffement(!axEchauffement)}>
+              {axFaite && (
+                <EtirementsAthlean faits={axFaite.str} propose={axEtirement}
+                  onProposer={() => setAxEtirement(etirementSuggere())}
+                  onAutre={() => setAxEtirement(etirementSuivant(axEtirement))}
+                  onLancer={() => setAxEtirementEtapes(etapesEtirement(axEtirement))} />
+              )}
+            </EntreeAthlean>
+            {axEtapes && (
+              <ChronoAthlean etapes={axEtapes} initial={axInitial} onSauver={sauverAthlean}
+                onFermer={fermerAthlean} onFin={finirAthlean} />
+            )}
+            {axEtirementEtapes && (
+              <ChronoAthlean etapes={axEtirementEtapes} onFermer={() => setAxEtirementEtapes(null)} onFin={finirEtirement} />
+            )}
           </React.Fragment>
         ) : tab === "seance" ? (
           <React.Fragment>
@@ -803,7 +948,7 @@ export default function App() {
               <div style={{ border:`1px dashed ${C.line}`, borderRadius:3, minHeight:200, display:"flex",
                 alignItems:"center", justifyContent:"center", textAlign:"center", padding:"0 24px",
                 color:C.ash, fontSize:13.5, lineHeight:1.6, whiteSpace:"pre-line" }}>
-                {weekDone[dayKey] ? "Séance déjà enregistrée ce jour-là.\nTu peux quand même en tirer une." : `${pool.length} séances possibles pour ce jour.\nAppuie pour en tirer une.`}
+                {classiqueFait[dayKey] ? "Séance déjà enregistrée ce jour-là.\nTu peux quand même en tirer une." : `${pool.length} séances possibles pour ce jour.\nAppuie pour en tirer une.`}
               </div>
             )}
           </React.Fragment>
@@ -1029,8 +1174,9 @@ export default function App() {
 
       {/* Aucune action au bas de la fiche quand la séance du jour est faite :
           « lancer le chrono » et « autre séance » proposaient de rejouer une
-          journée déjà jouée. */}
-      {tab === "seance" && !faitEtEnregistre && (
+          journée déjà jouée. Rien non plus sous Athlean X, qui a son propre
+          bouton : celui-ci tirait une séance Classique en arrière-plan. */}
+      {tab === "seance" && mode !== "athleanX" && !faitEtEnregistre && (
         <div style={{ position:"fixed", bottom:0, left:0, right:0, display:"flex", justifyContent:"center",
           padding:"16px 20px calc(20px + env(safe-area-inset-bottom))",
           background:`linear-gradient(to top, ${C.ink} 62%, rgba(11,11,12,0))` }}>
@@ -1106,7 +1252,7 @@ export default function App() {
       {endOpen && wod && (() => {
         const vol = volumeOf(wod.name, level);
         const volFin = finisher ? volumeOf(finisher.name, level) : null;
-        const streak = streakOf(log, today);
+        const streak = streakOf(joursFaits, today);
         const pats = patternsOfWorkout(wod);
         const manque = PATTERNS.filter((p) => !weekPatterns.has(p.id) && !perdus.includes(p.id));
         const ressenti = (ligneDuJour && ligneDuJour.ressenti) || null;
@@ -1381,7 +1527,7 @@ export default function App() {
             entry={entreeDuJour} accent={accent}
             vol={volumeOf(wod.name, lvl)}
             volFin={fin ? volumeOf(fin.name, lvl) : null}
-            streak={streakOf(log, today)} weekCount={weekCount}
+            streak={streakOf(joursFaits, today)} weekCount={weekCount}
             pats={patternsOfWorkout(wod)}
             manque={PATTERNS.filter((p) => !weekPatterns.has(p.id) && !perdus.includes(p.id))}
             reduced={reduced}
