@@ -631,7 +631,25 @@ Ce que le typage a fait apparaître, et qui n'était pas dans le brief :
 - **Les identifiants ne sont pas les libellés.** C'est ce qui rend la section 8.2 faisable :
   renommer se fait dans une case de table, pas dans 250 lignes de données.
 
-### 8.1 Chaînes de régressions — CHAÎNES FAITES (2026-09-07), SUBSTITUTION REPORTÉE
+### 8.1 Chaînes de régressions — CHAÎNES FAITES (2026-09-07), MOTEUR DE SUBSTITUTION FAIT (2026-09-27), BRANCHEMENT DES CHAÎNES REPORTÉ À L'ÉTAPE 9
+
+> **Mise à jour du 2026-10-26 — ce que F-02 et F-06 ont changé à cette section.**
+>
+> **Le moteur de substitution existe** (F-02, 2026-09-27) : `substituer(exercice, raison,
+> contrainte)` dans `app/src/lib/substitution.js`, point de passage unique, une table par
+> raison. Une seule table y est branchée aujourd'hui, la douleur. **Les chaînes ne le sont
+> pas** : elles s'y ajouteront comme une entrée de plus dans `TABLES`, sans toucher à un
+> appelant, quand l'étape 9 donnera l'écran qui commande la substitution permanente. Ce qui
+> reste reporté n'est donc plus « la substitution », c'est le branchement des chaînes sur un
+> moteur déjà là.
+>
+> **La chaîne du tirage horizontal est tranchée** (F-06, 2026-09-28) : elle sera **une chaîne
+> à part**, pas un cran de celle des tractions. Un tirage horizontal travaille un autre plan ;
+> le glisser dans la chaîne des tractions laisserait l'étape 9 croire qu'elle baisse la
+> difficulté alors qu'elle change ce qui est travaillé. Elle fera varier l'angle du corps —
+> pieds surélevés, pieds au sol, genoux pliés. **Pas encore écrite** : `chains.js` compte
+> toujours sept chaînes, et les deux tirages horizontaux n'y figurent pas. À écrire à
+> l'étape 9.
 
 > **Livré : `app/src/data/chains.js`**, sept chaînes ordonnées du plus accessible au plus dur,
 > et 17 variantes ajoutées à la table des exercices dans une section à part — le catalogue ne

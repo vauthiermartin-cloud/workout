@@ -33,8 +33,8 @@ Les décisions produit de ces documents sont tranchées. Ne pas les rouvrir sans
    (« FAIT », « SOCLE FAIT, SUBSTITUTION REPORTÉE », etc.). Ce document porte sa propre
    convention de statut dans ses titres — elle ne sert à rien si elle n'est pas tenue à jour au
    même rythme que le reste. La 8.1 (chaînes de régression) est restée sur « SUBSTITUTION
-   REPORTÉE » après que F-02 a livré le moteur générique et que F-06 a tranché la chaîne du
-   tirage horizontal — à corriger.
+   REPORTÉE » un mois après que F-02 a livré le moteur générique et que F-06 a tranché la
+   chaîne du tirage horizontal — corrigé le 2026-10-26.
 
 ## Règles de travail
 
