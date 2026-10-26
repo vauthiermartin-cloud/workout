@@ -16,7 +16,7 @@ vendredi. Hébergée sur GitHub Pages, installée sur l'écran d'accueil iPhone.
 
 Les décisions produit de ces documents sont tranchées. Ne pas les rouvrir sans demander.
 
-**Avant de conclure un ticket, deux mises à jour, pas une seule :**
+**Avant de conclure un ticket, les mises à jour suivantes, pas une seule :**
 
 1. Le statut du ticket traité et son entrée dans le `## Log`, directement dans
    `idees-perso-backlog.md` — c'est l'historique détaillé, écart par écart, garde-fou par
@@ -28,6 +28,13 @@ Les décisions produit de ces documents sont tranchées. Ne pas les rouvrir sans
    ticket n'est pas fini tant que ce fichier ne reflète pas ce qu'il a changé — c'est resté
    faux du 2026-09-07 au 2026-09-28 (cinq tickets d'écart) parce que rien ne le rendait
    obligatoire ; ça ne doit pas se reproduire.
+3. **Si le ticket touche une étape de `brief-v2-multi-user.md`** (une chaîne, la substitution,
+   le nommage, tout ce que ce document décrit) : rafraîchir l'annotation inline de cette étape
+   (« FAIT », « SOCLE FAIT, SUBSTITUTION REPORTÉE », etc.). Ce document porte sa propre
+   convention de statut dans ses titres — elle ne sert à rien si elle n'est pas tenue à jour au
+   même rythme que le reste. La 8.1 (chaînes de régression) est restée sur « SUBSTITUTION
+   REPORTÉE » après que F-02 a livré le moteur générique et que F-06 a tranché la chaîne du
+   tirage horizontal — à corriger.
 
 ## Règles de travail
 
