@@ -6,5 +6,7 @@ input, textarea { font:inherit; }
 #root { min-height:100vh; }
 @keyframes wodIn { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:none} }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline:2px solid #D9FF3D; outline-offset:2px; }
+/* L'univers d'Athlean X : son focus est rouge, comme le reste (C.rouge). */
+.univers-athlean button:focus-visible, .univers-athlean input:focus-visible { outline-color:#F5163F; }
 @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
 .boot { padding:40px 24px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#75787E; letter-spacing:.14em; }

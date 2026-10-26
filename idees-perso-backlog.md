@@ -330,7 +330,7 @@ Connecte F-11 → F-13 → F-12.
 
 ---
 
-### F-15 · Saisie des reps post-séance Athlean X — statut : Spec prête
+### F-15 · Saisie des reps post-séance Athlean X — statut : Shipped (2026-10-26) — voir le Log
 
 Écran récap en fin de séance Athlean X : liste de tous les exercices joués (dans l'ordre de la séance), un champ numérique reps par exercice, pré-rempli vide. Validation → écrit dans le journal (structure F-14) → retour écran d'accueil.
 
@@ -360,7 +360,9 @@ transitions du chrono passent en blanc. SUIVI reste vert, commun aux deux modes.
 ---
 
 ### Idée — suivi de progression Athlean X (pas un ticket)
-Une fois quelques semaines de reps saisis via F-15 : affichage d'évolution par exercice (sourceId). Forme à définir une fois qu'on a des données réelles à regarder — ne pas spécifier à vide.
+Une fois quelques semaines de reps saisis via F-15 : affichage d'évolution par exercice (sourceId).
+**Depuis F-15**, les reps sont une liste par passage (`{ "A-1.1": [14, 12] }`) : l'évolution
+pourra se lire séance après séance, et d'un tour à l'autre dans une même séance. Forme à définir une fois qu'on a des données réelles à regarder — ne pas spécifier à vide.
 
 ---
 
@@ -962,3 +964,56 @@ chrono ouvert sur ÉCHAUFFEMENT, liste et « ENSUITE : BOX SQUAT ALTERNÉ », d�
 pré-départ en blanc, premier exercice en rouge ; séance finie, étirements proposés
 (Enchaînement complet), AUTRE → Express, joués, inscrits (`str: "Express"`) et confirmés ;
 retour en Classique, tout vert comme avant.
+
+**2026-10-26 — F-15 · Saisie des reps post-séance Athlean X (fil Athlean X).** Livré : le fil
+Athlean X est complet (F-11 → F-17). Même conversation que les précédents, à la demande de
+Martin.
+
+**Arbitrage de Martin avant le code — un exercice joué deux fois.** La spec voulait un champ
+par exercice joué et `reps` en `{ id: nombre }`. Or NORMAL rejoue les 16 exercices, BUILD et
+DEFINE en rejouent 8 : une valeur par id ne peut pas porter deux passages. Trois options
+présentées (un champ par passage ; un champ par exercice, total ; un champ par exercice,
+meilleur). **Retenu : un champ par passage**, et `reps` devient **une liste par id du spec,
+un nombre par passage dans l'ordre** : `{ "A-1.1": [14, 12] }`. **Écart de forme avec la
+spec F-14**, qui écrivait `{ "A-1.1": 14 }`.
+
+Ce qui est livré :
+
+- **`app/src/lib/repsAthlean.js`, pur.** `passagesDe(w, mode)` : les passages de la séance
+  jouée — pas le catalogue —, dans l'ordre du chrono, avec leur tour, leur phase et son
+  libellé, l'échauffement à part. `lireSaisie` : un entier positif ou nul, sinon `null`,
+  aucune plausibilité (hors scope). `repsDeSaisie` : un champ vide garde sa place (`[null,
+  11]`), un id sans aucun passage noté n'a pas de clé.
+- **`SaisieReps` dans `Mode.jsx`** : « TES REPS », une ligne par passage sous sa phase
+  (TOUR 1 — CORPS ENTIER, TOUR 2 — FORCE, CORRECTIF), champs vides au clavier numérique,
+  ENREGISTRER jamais bloqué. Retour ensuite à l'entrée d'Athlean X, avec la confirmation et
+  les étirements.
+- **Écart d'ordre avec la spec, choisi sans arbitrage** : la spec écrivait le journal après
+  le récap. **La séance s'écrit dès la fin du chrono**, reps vides, et le récap la complète.
+  Dans l'ordre de la spec, une app tuée sur le récap perdait la séance — ce que Martin a
+  écarté en révisant F-14. Ici elle ne perd que les reps pas encore validés. Une séance
+  « trop ancienne » enregistrée depuis la carte de reprise ne passe pas par le récap.
+- **`completer(entrees, faite, patch)`** dans `journalAthlean.js` : la séance finie se
+  retrouve par sa clé (date, workout, mode, la dernière), jamais par identité d'objet.
+  **Défaut trouvé au navigateur et corrigé, F-16 compris** : reps et étirements remplaçaient
+  l'entrée par `e === axFaite` ; un journal relu entre-temps (rechargement à chaud ici, un
+  import en usage réel) faisait tomber la saisie sans rien dire. Effacée entre-temps, la
+  séance est réécrite plutôt que perdue.
+- **Le focus clavier d'Athlean X est rouge** : le contour global était vert (`global.css`),
+  une classe `univers-athlean` sur tout le bloc le passe en `C.rouge`. Reste de F-17.
+
+**Tests** (356 verts = 339 + 17, build OK) : `app/test/repsAthlean.test.js`, dix-septième
+fichier, 10 tests — 32 ou 24 passages dans l'ordre du chrono et rien d'autre ; ce que la
+séance ne rejoue pas n'a qu'une ligne ; tour de chaque passage ; nom, exercice, libellé de
+phase ; séance inconnue vide ; un champ entier ou rien ; rien de noté, aucune clé ; une liste
+par id, dans l'ordre ; un passage non noté garde sa place ; la clé est l'id du spec. 4 dans
+`journalAthlean.test.js` pour `completer` (par la clé, pas l'objet ; ce que l'entrée portait
+reste ; la dernière de deux mêmes séances ; effacée, réécrite). 3 de rendu (24 champs vides
+sous leurs phases ; deux lignes avec leur tour pour un exercice repris ; ENREGISTRER jamais
+bloqué). Garde-fous cassés : retour à l'identité d'objet, clés vides gardées — des tests
+tombent à chaque fois.
+
+**Vérifié dans le navigateur** : A · DEFINE finie, récap de 24 passages, séance déjà au
+journal ; 8 et 6 tapés sur les pull-ups des deux tours → `{ "A-4.1": [8, 6] }` ; étirements
+ensuite, inscrits sur la même entrée ; une séance B · NORMAL tuée sur le récap reste au
+journal, reps vides, sans reprise fantôme.

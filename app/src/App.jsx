@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { C, DISPLAY, MONO } from "./lib/theme.js";
 import { store, readJson, K_LOG, K_SET, K_BAK, K_RUN, K_ATHLEAN, K_ATHLEAN_RUN } from "./lib/store.js";
-import { entreeAthlean, entreeValide, dernierWorkout, workoutPropose, fusionner, joursEntraines, repriseAthlean } from "./lib/journalAthlean.js";
+import { entreeAthlean, entreeValide, dernierWorkout, workoutPropose, fusionner, joursEntraines, repriseAthlean, completer } from "./lib/journalAthlean.js";
 import { etapesAthlean, patternsAthlean, etirementSuggere, etirementSuivant, etapesEtirement } from "./data/seancesAthlean.js";
 import { restaurer } from "./lib/athlean.js";
+import { passagesDe, repsDeSaisie } from "./lib/repsAthlean.js";
 import { ecraserait, entreeA, entreeDeLOnglet } from "./lib/journal.js";
 import { doneWith, newBeat, newRun, position, record, resumableKind } from "./lib/chrono.js";
 import { iso, fromIso, mondayOf, weekdayOf, daysBetween, shortFr, pad } from "./lib/dates.js";
@@ -36,7 +37,7 @@ import { Timer } from "./components/Timer.jsx";
 import { Perfs } from "./components/Perfs.jsx";
 import { BilanEntete, BilanPatterns } from "./components/Bilan.jsx";
 import { Revoir } from "./components/Revoir.jsx";
-import { ChoixMode, EntreeAthlean, RepriseAthlean, EtirementsAthlean } from "./components/Mode.jsx";
+import { ChoixMode, EntreeAthlean, RepriseAthlean, EtirementsAthlean, SaisieReps } from "./components/Mode.jsx";
 import { ChronoAthlean } from "./components/ChronoAthlean.jsx";
 import { MODE_PAR_DEFAUT } from "./data/modes.js";
 
@@ -74,6 +75,9 @@ export default function App() {
   const [axEchauffement, setAxEchauffement] = useState(true);
   const [axEtirement, setAxEtirement] = useState(null);
   const [axEtirementEtapes, setAxEtirementEtapes] = useState(null);
+  /* Le récap des reps (F-15), ouvert à la fin du chrono : les passages de la
+     séance jouée et ce qu'on y tape. */
+  const [axSaisie, setAxSaisie] = useState(null);
   const [level, setLevel] = useState(1);
   const [saveState, setSaveState] = useState("idle");
   const [askScore, setAskScore] = useState(false);
@@ -593,8 +597,7 @@ export default function App() {
   /* Une séance n'entre au journal que finie : fermée en route, elle ne
      compte pas et l'alternance ne bouge pas. C'est la fin qui écrit, et
      l'écriture qui fait avancer l'alternance — le prochain workout se
-     relit du journal. La saisie des reps (F-15) viendra se glisser entre
-     les deux ; d'ici là, `reps` reste vide. */
+     relit du journal. Les reps viennent après, par le récap. */
   const fermerAthlean = () => {
     store.del(K_ATHLEAN_RUN);
     setAxEtapes(null);
@@ -608,11 +611,24 @@ export default function App() {
     saveAthlean([...athlean, e]);
     setAxFaite(e);
   };
+  /* La fin du chrono écrit la séance tout de suite, reps vides, puis ouvre
+     le récap. La spec mettait le récap avant l'écriture ; dans cet ordre,
+     une app tuée sur le récap perdait la séance. Ici, elle ne perd que les
+     reps pas encore validés. */
   const finirAthlean = () => {
     enregistrerAthlean(axCourante);
+    setAxSaisie({ passages: passagesDe(axCourante.workoutId, axCourante.mode), valeurs: [] });
     fermerAthlean();
     setAxMode(null);
     setAxWorkout(null);
+    try { window.scrollTo(0, 0); } catch {}
+  };
+  const validerReps = () => {
+    const { entrees, maj } = completer(athlean, axFaite, { reps: repsDeSaisie(axSaisie.passages, axSaisie.valeurs) });
+    saveAthlean(entrees);
+    setAxFaite(maj);
+    setAxSaisie(null);
+    try { window.scrollTo(0, 0); } catch {}
   };
   const lancerAthlean = () => {
     const c = { workoutId: workoutPropose(athlean) || axWorkout, mode: axMode, d: todayIso,
@@ -649,8 +665,8 @@ export default function App() {
   /* Les étirements faits s'inscrivent sur la séance qu'on vient de finir.
      Fermés en route, ils ne s'inscrivent pas. */
   const finirEtirement = () => {
-    const maj = { ...axFaite, str: axEtirement.name };
-    saveAthlean(athlean.map((e) => (e === axFaite ? maj : e)));
+    const { entrees, maj } = completer(athlean, axFaite, { str: axEtirement.name });
+    saveAthlean(entrees);
     setAxFaite(maj);
     setAxEtirement(null);
     setAxEtirementEtapes(null);
@@ -805,8 +821,13 @@ export default function App() {
         )}
 
         {tab === "seance" && mode === "athleanX" ? (
-          <React.Fragment>
+          <div className="univers-athlean">
             <ChoixMode mode={mode} onChoix={setMode} />
+            {axSaisie && axFaite ? (
+              <SaisieReps seance={axFaite} passages={axSaisie.passages} valeurs={axSaisie.valeurs}
+                onChange={(i, v) => setAxSaisie((cur) => { const valeurs = [...cur.valeurs]; valeurs[i] = v; return { ...cur, valeurs }; })}
+                onValider={validerReps} />
+            ) : (
             <EntreeAthlean propose={workoutPropose(athlean)} dernier={dernierWorkout(athlean)}
               workout={axWorkout} onWorkout={setAxWorkout} modeSeance={axMode} onModeSeance={setAxMode}
               enregistree={axFaite}
@@ -819,6 +840,7 @@ export default function App() {
                   onLancer={() => setAxEtirementEtapes(etapesEtirement(axEtirement))} />
               )}
             </EntreeAthlean>
+            )}
             {axEtapes && (
               <ChronoAthlean etapes={axEtapes} initial={axInitial} onSauver={sauverAthlean}
                 onFermer={fermerAthlean} onFin={finirAthlean} />
@@ -826,7 +848,7 @@ export default function App() {
             {axEtirementEtapes && (
               <ChronoAthlean etapes={axEtirementEtapes} onFermer={() => setAxEtirementEtapes(null)} onFin={finirEtirement} />
             )}
-          </React.Fragment>
+          </div>
         ) : tab === "seance" ? (
           <React.Fragment>
             <ChoixMode mode={mode} onChoix={setMode} />

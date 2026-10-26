@@ -19,8 +19,9 @@
    plus `str`, le nom de la séquence d'étirements quand elle a été faite —
    le même champ que sur une ligne Classique.
    `reps` a pour clés les ids du spec (« A-1.1 »), jamais l'id maison : un
-   renommage dans la bibliothèque ne la périme pas. Vide tant que la saisie
-   (F-15) n'existe pas. */
+   renommage dans la bibliothèque ne la périme pas. Chaque valeur est une
+   liste, un nombre par passage (voir `repsAthlean.js`) ; vide tant que le
+   récap de fin de séance n'a pas été validé. */
 
 import { RESUME_WINDOW } from "./chrono.js";
 import { MODES_ATHLEAN, etapesAthlean } from "../data/seancesAthlean.js";
@@ -68,6 +69,19 @@ const parCle = (liste) => {
   liste.filter(entreeValide).forEach((e) => m.set(cle(e), [...(m.get(cle(e)) || []), e]));
   return m;
 };
+/* Compléter la séance qu'on vient de finir — ses reps, ses étirements. On
+   la retrouve par sa clé, la dernière qui la porte, jamais par identité
+   d'objet : le journal a pu être relu entre-temps (un import, un
+   rechargement), et une identité perdue faisait tomber la saisie sans
+   rien dire. Introuvable — effacée entre-temps —, elle est réécrite :
+   mieux vaut la retrouver que perdre ce qu'on vient de noter. */
+export function completer(entrees, faite, patch) {
+  const maj = { ...faite, ...patch };
+  const k = cle(faite);
+  const i = entrees.map(cle).lastIndexOf(k);
+  return { entrees: i === -1 ? [...entrees, maj] : entrees.map((e, j) => (j === i ? { ...e, ...patch } : e)), maj: i === -1 ? maj : { ...entrees[i], ...patch } };
+}
+
 const poids = (g) => [g.length, g.filter((e) => e.str).length];
 export function fusionner(local, importees) {
   const l = parCle(local), i = parCle(importees);

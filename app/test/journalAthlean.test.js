@@ -3,7 +3,7 @@
 import { describe, it, expect } from "vitest";
 import {
   TYPE_ATHLEAN, entreeAthlean, dernierWorkout, workoutPropose, entreeValide, fusionner, joursEntraines,
-  repriseAthlean,
+  repriseAthlean, completer,
 } from "../src/lib/journalAthlean.js";
 import { streakOf } from "../src/lib/volume.js";
 
@@ -163,5 +163,35 @@ describe("la séance laissée en cours", () => {
   it("tient compte de l'échauffement, qui décale les étapes", () => {
     expect(repriseAthlean({ ...rec, idx: 48, echauffement: true }, T)).toBe("resume");
     expect(repriseAthlean({ ...rec, idx: 48 }, T)).toBe(null);
+  });
+});
+
+/* Compléter la séance qu'on vient de finir : ses reps (F-15), ses
+   étirements (F-16). */
+describe("compléter la séance finie", () => {
+  const a = entreeAthlean("2026-10-26", "A", "BUILD");
+  const b = entreeAthlean("2026-10-26", "B", "NORMAL");
+
+  it("retrouve la séance par sa clé, pas par l'objet en mémoire", () => {
+    const relu = JSON.parse(JSON.stringify([a, b])); // le journal relu du stockage
+    const { entrees, maj } = completer(relu, b, { reps: { "B-1.1": [14, 11] } });
+    expect(entrees[1].reps).toEqual({ "B-1.1": [14, 11] });
+    expect(entrees[0]).toEqual(a);
+    expect(maj).toEqual(entrees[1]);
+  });
+
+  it("garde ce que l'entrée portait déjà", () => {
+    const { entrees } = completer([{ ...a, str: "Express" }], a, { reps: { "A-1.1": [9] } });
+    expect(entrees[0]).toMatchObject({ str: "Express", reps: { "A-1.1": [9] } });
+  });
+
+  it("deux mêmes séances le même jour : c'est la dernière qu'on complète", () => {
+    const { entrees } = completer([a, b, a], a, { str: "Hanches" });
+    expect(entrees.map((e) => e.str)).toEqual([undefined, undefined, "Hanches"]);
+  });
+
+  it("effacée entre-temps, elle est réécrite plutôt que perdue", () => {
+    const { entrees } = completer([b], a, { reps: { "A-1.1": [9] } });
+    expect(entrees).toEqual([b, { ...a, reps: { "A-1.1": [9] } }]);
   });
 });

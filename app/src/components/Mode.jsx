@@ -194,3 +194,42 @@ export function EtirementsAthlean({ faits, propose, onProposer, onAutre, onLance
     </div>
   );
 }
+
+/* Le récap de fin de séance Athlean X : une ligne par passage, dans l'ordre
+   joué, rangée sous sa phase. Tout est facultatif — un champ vide passe, et
+   ENREGISTRER sans rien noter ne bloque rien. La séance est déjà au journal
+   quand cet écran s'ouvre : il ne fait qu'y ajouter les reps. */
+export function SaisieReps({ seance, passages, valeurs, onChange, onValider }) {
+  const champ = { width:64, padding:"8px 6px", background:C.steel, border:`1px solid ${C.line}`, borderRadius:2,
+    color:C.bone, fontFamily:MONO, fontSize:16, textAlign:"center" };
+  return (
+    <React.Fragment>
+      <div style={{ fontFamily:DISPLAY, fontSize:40, lineHeight:.92 }}>TES REPS</div>
+      <div style={{ fontFamily:MONO, fontSize:11, letterSpacing:".1em", color:C.rouge, margin:"4px 0 6px" }}>
+        WORKOUT {seance.workoutId} · {seance.mode}
+      </div>
+      <p style={{ fontSize:12.5, color:C.ash, lineHeight:1.5, margin:"0 0 18px" }}>
+        Séance enregistrée. Note ce que tu as fait sur chaque minute ; un champ vide reste vide.
+      </p>
+      {passages.map((p, i) => (
+        <React.Fragment key={i}>
+          {(i === 0 || passages[i - 1].phase !== p.phase) && (
+            <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:".12em", color:C.ash, margin: i ? "18px 0 6px" : "0 0 6px" }}>
+              {p.phaseLabel.toUpperCase()}
+            </div>
+          )}
+          <label style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12,
+            padding:"8px 0", borderBottom:`1px solid ${C.line}` }}>
+            <span style={{ fontSize:14, color:C.bone }}>{p.nom}</span>
+            <input type="text" inputMode="numeric" pattern="[0-9]*" aria-label={`${p.nom}, tour ${p.tour}`}
+              value={valeurs[i] ?? ""} onChange={(e) => onChange(i, e.target.value)} style={champ} />
+          </label>
+        </React.Fragment>
+      ))}
+      <button onClick={onValider} style={{ width:"100%", marginTop:24, padding:"18px 0", background:C.rouge, color:C.ink,
+        fontFamily:DISPLAY, fontSize:19, letterSpacing:".04em", borderRadius:2 }}>
+        ENREGISTRER
+      </button>
+    </React.Fragment>
+  );
+}

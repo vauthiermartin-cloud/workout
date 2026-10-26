@@ -20,7 +20,8 @@ import { Perfs } from "../src/components/Perfs.jsx";
 import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
 import { Timer } from "../src/components/Timer.jsx";
 import { Coche } from "../src/components/Coche.jsx";
-import { ChoixMode, EntreeAthlean, RepriseAthlean, EtirementsAthlean } from "../src/components/Mode.jsx";
+import { ChoixMode, EntreeAthlean, RepriseAthlean, EtirementsAthlean, SaisieReps } from "../src/components/Mode.jsx";
+import { passagesDe } from "../src/lib/repsAthlean.js";
 import { C } from "../src/lib/theme.js";
 import { etapesAthlean, etirementSuggere } from "../src/data/seancesAthlean.js";
 import { ChronoAthlean } from "../src/components/ChronoAthlean.jsx";
@@ -551,5 +552,35 @@ describe("échauffement et étirements d'Athlean X", () => {
     const rec = { workoutId: "A", mode: "BUILD", d: "2026-10-26", startedAt: 0, idx: 0, restant: 1000, echauffement: true };
     expect(html(<RepriseAthlean pending={{ kind: "resume", rec }} onReprendre={() => {}} onEnregistrer={() => {}} onAbandonner={() => {}} />))
       .toContain("Tu étais dans l'échauffement.");
+  });
+});
+
+/* Le récap des reps (F-15). */
+describe("la saisie des reps d'Athlean X", () => {
+  const seance = { workoutId: "A", mode: "BUILD" };
+  const passages = passagesDe("A", "BUILD");
+  const rendre = (valeurs = []) => html(<SaisieReps seance={seance} passages={passages} valeurs={valeurs}
+    onChange={() => {}} onValider={() => {}} />);
+
+  it("une ligne par passage, sous sa phase, champs vides", () => {
+    const h = rendre();
+    expect(h.match(/<input/g)).toHaveLength(24);
+    expect(h).not.toMatch(/value="[^"]/);
+    ["TOUR 1 — CORPS ENTIER", "TOUR 2 — FORCE", "CORRECTIF"].forEach((t) => expect(h).toContain(t));
+    expect(h.match(/TOUR 2 — FORCE/g)).toHaveLength(1);
+    expect(h).toContain("WORKOUT A · BUILD");
+  });
+
+  it("l'exercice repris a deux lignes, chacune avec son tour", () => {
+    const h = rendre();
+    expect(h).toContain('aria-label="box squat alterné, tour 1"');
+    expect(h).toContain('aria-label="box squat alterné, tour 2"');
+  });
+
+  it("montre ce qui a été tapé, et s'enregistre toujours", () => {
+    const h = rendre(["14"]);
+    expect(h).toContain('value="14"');
+    expect(h).toContain("ENREGISTRER");
+    expect(h).not.toContain("disabled");
   });
 });
