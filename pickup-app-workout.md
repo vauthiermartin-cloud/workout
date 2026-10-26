@@ -16,7 +16,7 @@ Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 
 
 **Deux fils de travail coexistent depuis le 2026-09-27, et il faut le savoir avant de lire la suite.** Le phasage en douze étapes de `brief-v2-multi-user.md` reste la feuille de route officielle ; à côté, `idees-perso-backlog.md` porte les demandes nées de l'usage réel, arbitrées par Martin hors du dépôt. Cinq d'entre elles ont été livrées les 27 et 28 septembre et ne correspondent à aucune étape du brief. **Le journal de ce qui a été livré est le `## Log` de ce fichier-là** — cette note-ci en donne l'état, pas le détail.
 
-**Un troisième fil s'est ouvert le 2026-10-26 : Athlean X**, un second mode de séance à programme fixe (Workout A/B × NORMAL/BUILD/DEFINE), spécifié dans `athlean-x-backlog.md` en six tickets (F-11 → F-15). Le cap des 25 minutes ne vaut que pour le mode Classique. **F-11 est livré** : un sélecteur CLASSIQUE / ATHLEAN X en tête de l'onglet SÉANCE, défaut Classique non enregistré, rien derrière Athlean X pour l'instant. Le reste du fil n'est pas commencé.
+**Un troisième fil s'est ouvert le 2026-10-26 : Athlean X**, un second mode de séance à programme fixe (Workout A/B × NORMAL/BUILD/DEFINE), spécifié dans la section « Fil Athlean X » de `idees-perso-backlog.md` en six tickets (F-11 → F-15). Le cap des 25 minutes ne vaut que pour le mode Classique. **F-11 est livré** : un sélecteur CLASSIQUE / ATHLEAN X en tête de l'onglet SÉANCE, défaut Classique non enregistré, rien derrière Athlean X pour l'instant. Le reste du fil n'est pas commencé.
 
 **Le chrono est reprenable** (étape 1, faite le 2026-09-07). `app/src/lib/chrono.js` sépare deux notions : le `run`, enregistrement d'une séance en cours écrit dans une clé unique (`workout.run`), et le `beat`, dernier battement réellement observé. Un trou de plus de 4 s entre deux battements ne peut venir que d'une app endormie : le chrono gèle, ne valide rien, et demande. Reprise proposée au démarrage sous 4 h, enregistrement ou abandon au-delà.
 
@@ -115,7 +115,8 @@ Deux tickets restent en file, dans cet ordre.
 
 ### Le fil Athlean X, ouvert le 2026-10-26
 
-`athlean-x-backlog.md` porte un second mode de séance, à côté de la génération du jour.
+La section « Fil Athlean X » de `idees-perso-backlog.md` porte un second mode de séance, à
+côté de la génération du jour.
 Ordre d'envoi : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15, un ticket par conversation.
 
 - ~~**F-11 · Sélecteur de mode**~~ **Fait le 2026-10-26.** `ChoixMode` et `AthleanAVenir`

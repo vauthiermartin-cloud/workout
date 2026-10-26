@@ -12,7 +12,11 @@ vendredi. Hébergée sur GitHub Pages, installée sur l'écran d'accueil iPhone.
 4. `idees-perso-backlog.md` — backlog d'idées produit de Martin, issues de l'usage réel, pas
    encore dans le brief officiel. Un ticket à la fois, dans l'ordre du fichier « Ordre d'envoi »
    — c'est ce fichier qui pilote le travail, les deux autres sont des références consultées mais
-   pas pilotées.
+   pas pilotées. **Il porte deux fils depuis le 2026-10-26** : le backlog d'usage réel, et la
+   section « Fil Athlean X » — un mode de séance à programme fixe à côté du mode Classique,
+   avec sa propre promesse (le cap des 25 minutes ne vaut que pour Classique), tickets F-11 à
+   F-15 dans leur propre ordre d'envoi. Les deux fils ne se bloquent pas et partagent le même
+   `## Log`.
 
 Les décisions produit de ces documents sont tranchées. Ne pas les rouvrir sans demander.
 
