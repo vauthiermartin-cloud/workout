@@ -16,7 +16,7 @@ Le contenu est complet et validé : 25 séances réparties lundi→vendredi, 20 
 
 **Deux fils de travail coexistent depuis le 2026-09-27, et il faut le savoir avant de lire la suite.** Le phasage en douze étapes de `brief-v2-multi-user.md` reste la feuille de route officielle ; à côté, `idees-perso-backlog.md` porte les demandes nées de l'usage réel, arbitrées par Martin hors du dépôt. Cinq d'entre elles ont été livrées les 27 et 28 septembre et ne correspondent à aucune étape du brief. **Le journal de ce qui a été livré est le `## Log` de ce fichier-là** — cette note-ci en donne l'état, pas le détail.
 
-**Un troisième fil s'est ouvert le 2026-10-26 : Athlean X**, un second mode de séance à programme fixe (Workout A/B × NORMAL/BUILD/DEFINE), spécifié dans la section « Fil Athlean X » de `idees-perso-backlog.md` en six tickets (F-11 → F-15). Le cap des 25 minutes ne vaut que pour le mode Classique. **F-11 est livré** : un sélecteur CLASSIQUE / ATHLEAN X en tête de l'onglet SÉANCE, défaut Classique non enregistré, rien derrière Athlean X pour l'instant. **F-12 est livré** : le chrono Athlean X, moteur et écran, existe mais rien ne l'ouvre — le branchement est F-14. **F-12.5 est livré** : les 32 exercices du spec Athlean X sont dans `exercises.js` — 20 créations exclusives, 12 identifiants posés sur 11 exercices existants. Le reste du fil (F-13 → F-15) n'est pas commencé.
+**Un troisième fil s'est ouvert le 2026-10-26 : Athlean X**, un second mode de séance à programme fixe (Workout A/B × NORMAL/BUILD/DEFINE), spécifié dans la section « Fil Athlean X » de `idees-perso-backlog.md` en six tickets (F-11 → F-15). Le cap des 25 minutes ne vaut que pour le mode Classique. **F-11 est livré** : un sélecteur CLASSIQUE / ATHLEAN X en tête de l'onglet SÉANCE, défaut Classique non enregistré, rien derrière Athlean X pour l'instant. **F-12 est livré** : le chrono Athlean X, moteur et écran, existe mais rien ne l'ouvre — le branchement est F-14. **F-12.5 est livré** : les 32 exercices du spec Athlean X sont dans `exercises.js` — 20 créations exclusives, 12 identifiants posés sur 11 exercices existants. **F-13 est livré** : les six séances (A/B × NORMAL/BUILD/DEFINE) existent en données et se déroulent en étapes de chrono, aux durées du spec ; rien ne les ouvre encore. F-14 et F-15 ne sont pas commencés.
 
 **Le chrono est reprenable** (étape 1, faite le 2026-09-07). `app/src/lib/chrono.js` sépare deux notions : le `run`, enregistrement d'une séance en cours écrit dans une clé unique (`workout.run`), et le `beat`, dernier battement réellement observé. Un trou de plus de 4 s entre deux battements ne peut venir que d'une app endormie : le chrono gèle, ne valide rien, et demande. Reprise proposée au démarrage sous 4 h, enregistrement ou abandon au-delà.
 
@@ -137,7 +137,7 @@ Ordre d'envoi : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15, un ticket p
   - **WARNING à 10 s, constante** passée en paramètre ; pas de réglage persistant tant
     qu'aucun écran ne le commande.
   - **Les durées 34:40 / 26:00 sont tenues sur des séquences synthétiques** de 32 et 24
-    exercices. F-13 doit reprendre le test sur les vraies séquences.
+    exercices ; F-13 les tient aussi sur les vraies séquences.
   - **Pas de reprise après redémarrage** : `performance.now()` repart de zéro à chaque
     chargement. À trancher en F-14.
   - **Trois sons seulement, TICK / GO / WARNING** : la fin d'un exercice est muette, malgré
@@ -162,9 +162,24 @@ Ordre d'envoi : F-11 → F-12 → F-12.5 → F-13 → F-14 → F-15, un ticket p
     exclusif n'y figure.
   - **Les schémas moteurs des créations suivent le groupe du spec**, pas le mouvement — sans
     effet aujourd'hui, voir Questions ouvertes.
-- **F-13 · Catalogue et séquences Athlean X — suivant.** Écrire les séquences avec les ids du
-  spec et les résoudre par `idOfSource` ; reprendre les durées 34:40 / 26:00 sur les vraies
-  séquences.
+- ~~**F-13 · Catalogue et séquences Athlean X**~~ **Fait le 2026-10-26**, dans la même
+  conversation que F-12.5 à la demande explicite de Martin (exception à la règle d'un ticket
+  par conversation). `app/src/data/seancesAthlean.js`. Décisions à connaître :
+  - **Données écrites avec les ids du spec**, résolues par `idOfSource`. Par séance : les
+    groupes 1 à 5, le correctif, et deux sélections de deuxième tour (BUILD, DEFINE) rangées
+    à part du catalogue — spec §7, on les change sans toucher aux exercices.
+  - `seanceAthlean(w, mode)` rend le format du spec §6 (phases d'ids du spec) ;
+    `etapesAthlean(w, mode)` rend les étapes du chrono en passant par `deroule`, qui n'a pas
+    bougé. Chaque étape d'exercice porte en plus `ex`, `sourceId` et `phase` : c'est ce que
+    la saisie des reps (F-15) lira, dans l'ordre joué.
+  - **Le chrono affichera le libellé français**, pas le nom anglais du spec — qui veut des
+    noms anglais, mais `CLAUDE.md` interdit l'anglais dans le chrono. `nameEn` reste sur
+    l'entité. Libellés de phase traduits aussi (« Tour 2 — force », « Correctif »…).
+  - **Les données sont comparées au document source lui-même** : le test lit
+    `perfect_home_workout_spec_v2.md` et vérifie catalogue, tours 2 et exemple du §6.
+    Déplacer ou renommer ce fichier fait tomber le test, et c'est voulu.
+- **F-14 · Branchement, alternance A/B, journal — suivant.** `etapesAthlean(w, mode)` se
+  passe tel quel à `ChronoAthlean`.
 
 **F-10 et F-01 restent en file dans `idees-perso-backlog.md`** : F-11 a été pris avant F-10
 sur demande explicite, les deux fils ne se bloquent pas.
@@ -531,8 +546,8 @@ Fichiers du projet :
 
 5. `app/src/data/` — le contenu : séances, finishers, étirements, plans de chrono, schémas moteurs, niveaux, plus quatre tables arrivées en septembre — `correctif.js` (le bloc pubalgie), `douleurs.js` (les zones sensibles et leurs substitutions), `equivalences.js` (la table poussée/tirage), et les deux tirages horizontaux dans `exercises.js`. C'est là que se trouve tout ce qui se discute côté produit. **Commencer par `exercises.js`** : c'est la table des exercices, tout le reste la cite par identifiant, et elle se lit en deux parties — le prescrit, puis les variantes de régression. `chains.js` ordonne ces variantes ; il ne substitue rien. `items.js` dit la différence entre une ligne de travail (`r` en répétitions, `h` en secondes) et une note de structure (`f`) — distinction qui commande ce que l'écran de perfs saura proposer à la saisie.
 6. `app/src/lib/chrono.js` — le chrono reprenable. `app/src/lib/athlean.js` — le chrono Athlean X, moteur à part, par échéances. `app/src/lib/store.js` — les clés de stockage local, dont `workout.run` pour la séance en cours. `app/src/lib/ressenti.js` — les trois valeurs du retour de fin de séance et leurs deux règles pures. `app/src/lib/substitution.js` — le point de passage unique de toute substitution d'exercice. `app/src/lib/qualite.js` et `app/src/lib/revue.js` — la note de qualité et le dossier de revue qui part dans le récap.
-7. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits. `Mode.jsx` le sélecteur Classique / Athlean X. `ChronoAthlean.jsx` l'écran du chrono Athlean X, que rien n'ouvre encore.
-8. `app/test/` — quatorze fichiers, 261 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans, dates de la semaine, journal et série, substitution et zones sensibles, note de qualité et dossier de revue, ratio poussée/tirage, sélecteur de mode, chrono Athlean X, exercices Athlean X dans la bibliothèque (dans `coherence.test.js`). **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement. `test/hasard.js` n'est pas un fichier de tests mais le générateur pseudo-aléatoire déterministe que partagent les simulations hebdomadaires.
+7. `app/src/App.jsx` et `app/src/components/` — les écrans. `Bilan.jsx` porte ce que l'écran de fin et sa relecture ont en commun, `Revoir.jsx` la relecture à deux onglets, `Perfs.jsx` la saisie des chiffres — dont le corps sert aux deux endroits. `Mode.jsx` le sélecteur Classique / Athlean X. `ChronoAthlean.jsx` l'écran du chrono Athlean X, que rien n'ouvre encore. Les séances Athlean X sont des données : `app/src/data/seancesAthlean.js`.
+8. `app/test/` — quinze fichiers, 284 tests : cohérence de la bibliothèque, générateur, chrono, table des exercices, chaînes de régressions, ressenti, perfs, rendu des écrans, dates de la semaine, journal et série, substitution et zones sensibles, note de qualité et dossier de revue, ratio poussée/tirage, sélecteur de mode, chrono Athlean X, exercices Athlean X dans la bibliothèque (dans `coherence.test.js`), séances Athlean X confrontées au spec source. **Les faire tourner avant de livrer** (`npm test` dans `app/`) : ils bloquent le déploiement. `test/hasard.js` n'est pas un fichier de tests mais le générateur pseudo-aléatoire déterministe que partagent les simulations hebdomadaires.
 9. `app/vite.config.js` — build, et génération du service worker. **La version de cache est dérivée d'un hash du build** (`workout-<hash>`) : il n'y a plus rien à incrémenter à la main. `CLAUDE.md` le dit désormais aussi — la contradiction signalée ici le 2026-09-07 a été levée.
 10. `manifest.json` et les icônes — inchangés depuis le début, servis depuis `app/public/`.
 11. Export JSON de l'onglet SUIVI (`workout-2026-09-04.json`) — historique réel des séances, jeu de test pour la synchro et pour les écrans de stats.

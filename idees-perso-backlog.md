@@ -291,7 +291,7 @@ Moteur dédié, séparé du moteur existant (EMOM/Tabata/etc. intouchés).
 
 ---
 
-### F-13 · Catalogue et séquences Athlean X — statut : Spec prête (dépend de F-12.5 pour les ids)
+### F-13 · Catalogue et séquences Athlean X — statut : Shipped (2026-10-26) — voir le Log
 
 **Depuis F-12.5** : écrire les séquences avec les ids du spec (`A-1.1`…) et les résoudre par
 `idOfSource` (`app/src/data/exercises.js`). Plusieurs ids maison de la table F-12.5 n'existent
@@ -713,3 +713,58 @@ chrono, une chaîne, une table de douleur ou un coefficient de ratio ; aucune fu
 inatteignable pour le Classique. Les garde-fous ont été cassés un par un (exclusivité sur
 `pullups`, source sur `superman`, `squatSaute` recréé, `pompesCobra` glissé dans une chaîne) :
 un test tombe à chaque fois.
+
+**2026-10-26 — F-13 · Catalogue et séquences Athlean X (fil Athlean X).** Livré, non branché
+— le branchement est F-14. **Fait dans la même conversation que F-12.5, à la demande
+explicite de Martin** : exception consentie à la règle d'un ticket par conversation, signalée
+avant de commencer.
+
+Ce qui est livré :
+
+- **`app/src/data/seancesAthlean.js`, contenu figé.** Par séance (A, B) : les groupes 1 à 5
+  dans l'ordre du spec §4, le correctif (groupe 6), et les sélections de deuxième tour BUILD
+  et DEFINE du §5, rangées à part du catalogue — spec §7 : on les change sans toucher aux
+  exercices. Tout est écrit avec les ids du spec (`A-1.1`…), jamais avec les ids maison.
+- **`seanceAthlean(w, mode)`** rend la séance au format du §6 : des phases `round1` /
+  `round2` (/ `finisher` en BUILD et DEFINE) portant des ids du spec. NORMAL joue deux fois
+  le catalogue entier, correctif compris ; BUILD et DEFINE jouent les groupes 1 à 5, la
+  sélection de 8, puis le correctif seul.
+- **`etapesAthlean(w, mode)`** rend la liste chronologique pour `ChronoAthlean` en passant
+  par `deroule` de F-12, inchangé. Chaque étape d'exercice reçoit `ex` (id maison, via
+  `idOfSource`), `sourceId` et `phase` : c'est ce que F-15 lira, dans l'ordre joué, et la clé
+  du journal de F-14 reste l'id du spec.
+
+**Écarts avec la spec, choisis sans arbitrage — à relire :**
+
+- **Le chrono affichera les libellés français** (« tractions… », « box squat alterné »), pas
+  les noms anglais du spec, qui annonce « Noms des exercices : anglais ». `CLAUDE.md` tranche
+  l'inverse — jamais d'anglais dans le chrono — et c'est la règle du dépôt qui l'emporte.
+  `nameEn` reste sur chaque entité pour la traçabilité.
+- **Libellés de phase traduits** : « Tour 1 — corps entier », « Tour 2 — corps entier »
+  (NORMAL), « Tour 2 — force » (BUILD, *Strength Focus*), « Tour 2 — hybride » (DEFINE,
+  *Hybrid Focus*), « Correctif ». L'écran de F-12 ne les affiche pas encore ; F-14 dira s'il
+  doit.
+- **Ids de phase du spec §6** (`round1`, `round2`, `finisher`), y compris pour NORMAL, que
+  l'exemple du §6 ne couvre pas : deux phases `round1` et `round2`, le correctif dans chacune.
+
+**Tests** (`app/test/seancesAthlean.test.js`, quinzième fichier, 23 tests ; 284 verts =
+261 + 23, build OK) :
+
+- **Comptes et durées sur les vraies séquences**, pour les six séances : 32/31 et 34:40 en
+  NORMAL, 24/23 et 26:00 en BUILD et DEFINE — ce que F-12 n'avait pu tenir que sur des
+  séquences fictives. Pré-départ en tête, aucune transition après le dernier exercice.
+- Chaque id cité résout vers un exercice ; les 32 ids du spec sont tous joués ; une séance A
+  ne joue que du A ; en BUILD et DEFINE le correctif est le dernier et n'est nulle part
+  ailleurs ; NORMAL a deux tours identiques de 16 ; une sélection de deuxième tour compte 8
+  ids distincts pris dans le travail du catalogue.
+- **Conformité au document source lui-même** : le test lit
+  `perfect_home_workout_spec_v2.md` et compare l'ordre du catalogue §4, chacun des quatre
+  tableaux de deuxième tour §5 avec sa ligne de finisher, et l'exemple JSON du §6 (A BUILD).
+  Les données étant recopiées à la main, c'est ce qui attrape une faute de recopie. Le
+  fichier source devient donc une dépendance des tests : le déplacer fait tomber la suite.
+- Ce que lira la suite : `sourceId`, `ex` et `phase` sur chaque exercice joué ; le nom affiché
+  est le libellé de la bibliothèque ; A-4.3 et B-4.2 mènent au même exercice.
+
+Garde-fous cassés un par un : deux ids permutés dans le tour 2 B BUILD, un neuvième
+exercice en DEFINE A, le correctif glissé dans le tour 1 — un test tombe à chaque fois.
+L'en-tête de `athlean.test.js` renvoie désormais à ce fichier pour les vraies séquences.

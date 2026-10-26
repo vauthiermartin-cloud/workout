@@ -1,9 +1,9 @@
 /* Le chrono d'Athlean X.
 
    Les séquences sont synthétiques : les vraies — Workout A/B × NORMAL/BUILD/
-   DEFINE — sont le contenu d'un ticket suivant, qui vérifiera qu'elles ont
-   bien 32 et 24 exercices. Ici, on tient que le moteur donne les trois durées
-   de la spec à partir de ces comptes, et qu'il ne double ni ne rejoue aucun
+   DEFINE — sont tenues par `seancesAthlean.test.js` (F-13), comptes et
+   durées compris. Ici, on tient que le moteur donne les trois durées de la
+   spec à partir de ces comptes, et qu'il ne double ni ne rejoue aucun
    signal. */
 
 import { describe, it, expect } from "vitest";
