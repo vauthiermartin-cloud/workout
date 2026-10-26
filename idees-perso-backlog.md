@@ -199,7 +199,7 @@ Source : `perfect_home_workout_spec_v2.md` (upload claude.ai, session du 2026-10
 
 ---
 
-### F-12 · Chrono Athlean X — statut : Spec prête
+### F-12 · Chrono Athlean X — statut : Shipped (2026-10-26) — voir le Log
 
 Moteur dédié, séparé du moteur existant (EMOM/Tabata/etc. intouchés).
 
@@ -217,7 +217,13 @@ Moteur dédié, séparé du moteur existant (EMOM/Tabata/etc. intouchés).
 
 **Hors scope.** Vrai "retour à l'étape précédente" (rewind = redémarrage de l'étape courante, pas navigation arrière dans la séquence).
 
-**Tests.** Durées totales exactes par calcul programmatique (34:40 / 26:00 / 26:00) ; zéro bip doublé sur un cycle background→foreground simulé ; pause conserve le temps restant exact ; skip et rewind ne cassent pas le compte total d'étapes restantes.
+**Arbitrages de Martin (2026-10-26), avant le code :**
+1. **Les tests de durée de F-12 portent sur des séquences fictives** : durée attendue = 5 s de pré-départ + n × 60 s + (n − 1) × 5 s de transition. Les trois durées réelles (34:40 / 26:00 / 26:00) passent dans les tests de F-13, qui a seul les vraies séquences.
+2. **WARNING fixe à 10 s restantes** : une constante, pas de réglage enregistré pour l'instant. **Écart acté avec la spec** (« configurable 5/10s »).
+3. **Pas de quatrième son « fin d'effort » à 0 s d'un exercice**, bien que `perfect_home_workout_spec_v2.md` §2.2 en prévoie un : on garde les trois sons TICK / GO / WARNING du backlog.
+4. **Un interrupteur Son activé / désactivé**, demandé par le spec source §2.4 et absent du backlog. Défaut : activé. **Il n'est pas enregistré** : chaque séance repart son activé. **Son coupé, la vibration se coupe aussi** : la garder seule contredirait la règle « vibration en complément des sons, jamais seule ».
+
+**Tests.** Durées totales exactes par calcul programmatique, sur séquences fictives (voir arbitrage 1) ; zéro bip doublé sur un cycle background→foreground simulé ; pause conserve le temps restant exact ; skip et rewind ne cassent pas le compte total d'étapes restantes.
 
 ---
 
@@ -291,7 +297,7 @@ Données statiques Workout A/B × NORMAL/BUILD/DEFINE au format JSON du §6 du s
 
 **Hors scope.** Aucune génération dynamique — contenu figé, éditable seulement en modifiant les données.
 
-**Tests.** Pour chaque (workout, mode) : nombre d'exercices/transitions exact (32/31, 24/23, 24/23) et durée totale conforme au spec (34:40 / 26:00 / 26:00).
+**Tests.** Pour chaque (workout, mode) : nombre d'exercices/transitions exact (32/31, 24/23, 24/23) et durée totale conforme au spec (34:40 / 26:00 / 26:00). **Ces trois durées réelles sont à la charge de F-13** (arbitrage de Martin du 2026-10-26) : F-12 ne les a vérifiées que sur des séquences fictives de 32 et 24 exercices, faute de contenu.
 
 ---
 
@@ -564,3 +570,76 @@ la spec : pur aiguillage, aucun contenu, aucun chrono, aucune donnée Athlean X.
 - 224 tests verts (221 + 3), build OK. Vérification visuelle dans un navigateur non faite :
   le renderer de preview expire sur cette machine, le repli reste le rendu statique en test.
 
+**2026-10-26 — F-12 · Chrono Athlean X (fil Athlean X).** Moteur livré, non branché — le
+branchement est F-14. Deux points tranchés avec Martin avant d'écrire du code :
+
+- **Les durées 34:40 / 26:00 / 26:00 sont testées sur des séquences synthétiques.** Le
+  document source `perfect_home_workout_spec_v2.md` n'est pas dans le dépôt, et les séquences
+  réelles sont le contenu de F-13. Elles se retrouvent toutes par le calcul :
+  5 + n × 60 + (n − 1) × 5, avec n = 32 (2 080 s) ou 24 (1 560 s). **F-13 reprend le test
+  sur les vraies séquences**, et c'est là que se vérifieront les comptes 32/31 et 24/23.
+- **Le WARNING est fixe à 10 s restantes** : une constante (`WARNING`), pas de réglage
+  enregistré dans `workout.settings`. **Écart acté avec la spec**, qui le voulait
+  « configurable 5/10s ». Le moteur accepte une autre valeur en paramètre de `demarrer` —
+  c'est ce qui la rend testable à 5 et à 10 —, mais rien dans l'app ne la change.
+
+Ce qui est livré :
+
+- **`app/src/lib/athlean.js`, moteur pur.** Aucun import de `chrono.js`, qui n'a pas bougé.
+  `deroule(noms)` construit pré-départ / exercice / transition, sans transition après le
+  dernier. Le moteur ne lit jamais l'horloge : chaque fonction reçoit `now`. Il tient une
+  **échéance** par étape, et l'étape suivante s'enchaîne sur l'échéance de la précédente,
+  pas sur l'instant où le battement l'a remarquée — un battement en retard ne fait pas
+  dériver la séance.
+- **Un seul curseur contre le double bip** : `vu`, l'instant jusqu'où les signaux ont été
+  traités. Il ne recule jamais, et un signal n'est émis que s'il tombe après lui. Pause,
+  reprise, passer et recommencer le replacent à l'instant du geste.
+- **Signaux** : TICK à chaque seconde affichée du pré-départ et des transitions (5, 4, 3, 2,
+  1), GO à zéro, WARNING une fois par exercice. Une frontière entre deux étapes ne porte
+  jamais les signaux des deux : la fin d'un exercice est muette, le GO appartient à la
+  transition.
+- **Passer** avance d'une étape à son plein temps ; **recommencer** redémarre l'étape en
+  cours, index inchangé. Ni l'un ni l'autre ne sonne à l'instant du geste — le premier TICK
+  d'une transition sur laquelle on vient de passer est sauté, c'est le « pas un de trop » de
+  la spec. En pause, les deux laissent la séance en pause, étape pleine.
+- **`audio.js` gagne quatre fonctions, `beep` est intact** : `deverrouiller` (appelé dans
+  le geste DÉMARRER, un échantillon muet pour iOS), `ton` (retient les sons en cours),
+  `couper` (passer et recommencer coupent son et vibration), `vibrer` (sans effet ni erreur
+  sans API de vibration — Safari iOS n'en a pas). La vibration est déclarée dans la même
+  table que le son (`SONS`) : aucun signal ne vibre sans sonner.
+- **Pas de quatrième son à la fin d'un exercice** (arbitrage 3) : elle reste muette, et un
+  test le vérifie.
+- **Interrupteur SON ACTIVÉ / SON COUPÉ** en haut à gauche de l'écran (arbitrage 4). Il
+  n'est pas enregistré : l'écran s'ouvre toujours son activé, comme l'app repart sur
+  Classique. La règle tient dans une fonction pure, `effet(signal, actif)`, qui rend le son
+  et sa vibration ou rien : son coupé, aucune vibration ne part seule. Couper le son coupe
+  aussi celui qui est en train de jouer.
+- **`app/src/components/ChronoAthlean.jsx`, l'écran**, que rien n'ouvre. Avant départ : le
+  premier exercice, la durée totale, DÉMARRER. Pendant : le nom en grand, le temps, et
+  « ENSUITE : … » dès la première seconde ; pré-départ et transitions montrent l'exercice qui
+  arrive. Trois gestes : RECOMMENCER, PAUSE / REPRENDRE, PASSER. FERMER en deux temps.
+  L'horloge est `performance.now()`.
+
+**Écarts et choix non écrits dans la spec :**
+
+- **Une app endormie ne gèle pas la séance**, à l'inverse du chrono Classique : les
+  échéances continuent de tomber, et au retour l'écran est à l'étape où le temps l'a menée.
+  C'est ce qu'impose une horloge par échéances. **Les signaux tombés pendant l'absence ne
+  sont pas rejoués** : seul sonne encore un signal en retard d'une seconde au plus
+  (`RETARD`).
+- **La pause gèle aussi ce qui serait tombé entre le dernier battement et le doigt** (moins
+  de 100 ms) : la spec dit « immédiatement ».
+- **Pas de reprise après redémarrage de l'app.** La spec ne la demande pas, et
+  `performance.now()` repart de zéro à chaque chargement : la persister demanderait une
+  autre horloge. À trancher en F-14 si le besoin existe.
+
+**Tests** : `app/test/athlean.test.js` (quatorzième fichier, 28 tests) — les trois durées,
+chaque signal une fois sur une séance entière, zéro doublon sur un cycle arrière-plan →
+premier plan simulé par un bond de temps, aucune rafale au retour, pause au temps restant
+exact à la milliseconde, aucune alerte rejouée à la reprise, compte d'étapes restantes
+intact sur un enchaînement de gestes, fin d'exercice muette, rien du tout (vibration
+comprise) son coupé. Plus 3 tests de rendu dans `rendu.test.jsx`. Les
+garde-fous ont été cassés un par un pour vérifier qu'un test tombe à chaque fois.
+255 tests verts (224 + 31), build OK. **Non vérifié sur iPhone** : déverrouillage du son,
+comportement de `performance.now()` écran verrouillé, et absence de vibration sur iOS sont
+à constater à l'usage, une fois F-14 branché.

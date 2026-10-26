@@ -21,6 +21,8 @@ import { Revoir, SupprimerSeance } from "../src/components/Revoir.jsx";
 import { Timer } from "../src/components/Timer.jsx";
 import { Coche } from "../src/components/Coche.jsx";
 import { ChoixMode, AthleanAVenir } from "../src/components/Mode.jsx";
+import { ChronoAthlean } from "../src/components/ChronoAthlean.jsx";
+import { deroule, demarrer, avancer, mettreEnPause } from "../src/lib/athlean.js";
 import { MODES, MODE_PAR_DEFAUT } from "../src/data/modes.js";
 import { Zones, ZonesEffet } from "../src/components/Zones.jsx";
 import { Qualite } from "../src/components/Qualite.jsx";
@@ -339,5 +341,38 @@ describe("le choix du mode", () => {
     const vide = html(<AthleanAVenir />);
     expect(vide).toContain("ATHLEAN X");
     ["LANCER", "DÉMARRER", "TIRER", "<button"].forEach((interdit) => expect(vide).not.toContain(interdit));
+  });
+});
+
+/* Le chrono Athlean X, rendu seul : rien ne l'ouvre encore dans l'app. */
+describe("le chrono Athlean X", () => {
+  const etapes = deroule(["Box squat alterné", "Pompes en V", "Squat sauté"]);
+  /* Le rendu lit `performance.now()` : le run est lancé sur la même horloge. */
+  const lance = (ms) => avancer(demarrer(etapes, performance.now() - ms), performance.now()).run;
+
+  it("s'ouvre sur DÉMARRER, le premier exercice et la durée totale", () => {
+    const avant = html(<ChronoAthlean etapes={etapes} />);
+    expect(avant).toContain("DÉMARRER");
+    expect(avant).toContain("BOX SQUAT ALTERNÉ");
+    expect(avant).toContain("3:15");
+    expect(avant).not.toContain("PAUSE");
+  });
+
+  it("pendant l'exercice : son nom, le temps, ENSUITE et les trois gestes", () => {
+    const pendant = html(<ChronoAthlean etapes={etapes} initial={lance(20000)} />);
+    expect(pendant).toContain("BOX SQUAT ALTERNÉ");
+    expect(pendant).toContain("ENSUITE : POMPES EN V");
+    ["RECOMMENCER", "PAUSE", "PASSER"].forEach((b) => expect(pendant).toContain(b));
+    /* Le son est activé à l'ouverture, toujours : le réglage n'est pas retenu. */
+    expect(pendant).toContain("SON ACTIVÉ");
+    expect(pendant).not.toContain("SON COUPÉ");
+    expect(pendant).not.toContain("DÉMARRER");
+  });
+
+  it("en pause, le bouton dit REPRENDRE", () => {
+    const run = mettreEnPause(lance(20000), performance.now());
+    const pause = html(<ChronoAthlean etapes={etapes} initial={run} />);
+    expect(pause).toContain("REPRENDRE");
+    expect(pause).toContain("EN PAUSE");
   });
 });
